@@ -3,7 +3,6 @@
 #include "tf_alloc.h"
 #include "tf_exec.h"
 #include "tf_lexer.h"
-#include "tf_obj.h"
 
 int main(int argc, char **argv) {
     if (argc != 2) {

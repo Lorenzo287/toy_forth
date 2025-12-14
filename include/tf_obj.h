@@ -8,6 +8,7 @@
 #define TF_ERR 1
 
 /* === Types Definition === */
+
 typedef enum {
     TF_OBJ_TYPE_BOOL,
     TF_OBJ_TYPE_INT,
@@ -22,13 +23,14 @@ typedef enum {
 // 		 add quoted expression for user func definition
 
 /* === Object Definition === */
+
 typedef struct tf_obj {
     int refcount;
     tf_type type;
     union {
         int i;
         float f;
-		bool b;
+        bool b;
         struct {
             char *ptr;
             size_t len;
@@ -43,6 +45,7 @@ typedef struct tf_obj {
 } tf_obj;
 
 /* === Object Functions === */
+
 tf_obj *init_obj(int type);
 tf_obj *init_list_obj(void);
 tf_obj *create_int_obj(int i);

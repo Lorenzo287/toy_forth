@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tf_obj.h"
 
 // private helper
 static void skip_spaces(tf_lexer *lexer) {

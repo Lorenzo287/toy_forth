@@ -1,10 +1,8 @@
 #include "tf_exec.h"
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "tf_alloc.h"
 #include "tf_lib.h"
-#include "tf_obj.h"
 
 /* wrappers for managing the context stack, based on less abstract object
    manipulation functions defined in tf_obj */
@@ -18,6 +16,8 @@ void stack_push(tf_ctx *ctx, tf_obj *o) {
     push_obj(ctx->stack, o);
 }
 
+/* === Context Initialization === */
+
 tf_ctx *init_ctx(void) {
     tf_ctx *ctx = xmalloc(sizeof(tf_ctx));
     ctx->stack = init_list_obj();
@@ -25,6 +25,10 @@ tf_ctx *init_ctx(void) {
     ctx->funcount = 0;
 
     set_c_func(ctx, "+", math_functions);
+    set_c_func(ctx, "-", math_functions);
+    set_c_func(ctx, "*", math_functions);
+    set_c_func(ctx, "/", math_functions);
+
     // set_user_func();
     // WARN: how can this be set here if they are defined at runtime?
     return ctx;
@@ -35,7 +39,7 @@ tf_func *init_func(tf_ctx *ctx, tf_obj *name) {
         xrealloc(ctx->functions, sizeof(tf_func *) * (ctx->funcount + 1));
     tf_func *f = xmalloc(sizeof(tf_func));
     f->name = name;
-	retain_obj(name);
+    retain_obj(name);
     f->callback = NULL;
     f->userfunc = NULL;
     ctx->functions[ctx->funcount++] = f;
@@ -58,8 +62,18 @@ void set_c_func(tf_ctx *ctx, char *name, tf_cb cb) {
     release_obj(o_name);
 }
 
+tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
+    for (size_t i = 0; i < ctx->funcount; i++) {
+        tf_func *f = ctx->functions[i];
+        if (compare_string_obj(f->name, name) == 0) return f;
+    }
+    return NULL;
+}
+
+/* === Execution === */
+
 int exec(tf_ctx *ctx, tf_obj *prg) {
-    assert(prg->type == TF_OBJ_TYPE_LIST);
+    if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
     for (size_t i = 0; i < prg->list.len; i++) {
         tf_obj *o = prg->list.elem[i];
         switch (o->type) {
@@ -87,14 +101,4 @@ int call_symbol(tf_ctx *ctx, tf_obj *symb) {
     } else {
         return f->callback(ctx, f->name->str.ptr);
     }
-}
-
-tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
-    printf("\nfuncount: %zu\n", ctx->funcount);
-    for (size_t i = 0; i < ctx->funcount; i++) {
-        tf_func *f = ctx->functions[i];
-        printf("\n%zu) %s\n", i, f->name->str.ptr);
-        if (compare_string_obj(f->name, name) == 0) return f;
-    }
-    return NULL;
 }
