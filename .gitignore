@@ -1,2 +1,37 @@
+# Build directories
 build/
+bin/
+obj/
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+CMakeLists.txt.user
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Binaries and object files
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+toy_forth
+toy_forth.out
+
+# IDEs and Editors
 .cache/
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+.DS_Store
+
+# Local tools
+Makefile

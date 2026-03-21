@@ -3,7 +3,7 @@
 int math_functions(tf_ctx *ctx, char *name) {
     if (stack_len(ctx) < 2) return TF_ERR;
 
-    // WARN: it would be better to use a dedicated func to check the type,
+    // WARN: it would be better to use here a dedicated func to check the type,
     // instead of this weird type-dependent stack_pop and pop_obj
 
     tf_obj *b = stack_pop(ctx, TF_OBJ_TYPE_INT);

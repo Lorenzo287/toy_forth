@@ -84,7 +84,7 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             }
             break;
         default:
-            push_obj(ctx->stack, o);
+			stack_push(ctx, o);
             retain_obj(o);
             break;
         }

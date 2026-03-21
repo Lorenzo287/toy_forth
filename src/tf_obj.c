@@ -58,7 +58,6 @@ tf_obj *create_string_obj(char *s, size_t len) {
 
 /* === Object Utilities === */
 
-// TODO: not convinced by this function's logic
 int compare_string_obj(tf_obj *a, tf_obj *b) {
     size_t min_len = a->str.len < b->str.len ? a->str.len : b->str.len;
     int cmp = memcmp(a->str.ptr, b->str.ptr, min_len);

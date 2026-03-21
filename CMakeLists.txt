@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(toy_forth)
+project(toy_forth C)
+
+set(CMAKE_C_STANDARD 11)
+
+# Output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -7,8 +12,15 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.c")
 
 add_executable(toy_forth ${SOURCES})
 
-target_compile_options(toy_forth PRIVATE
-    -Wall
-    -W
-    -O2
-)
+if(MSVC)
+    target_compile_options(toy_forth PRIVATE /W4)
+else()
+    target_compile_options(toy_forth PRIVATE 
+        -Wall 
+        -Wextra 
+        -Wpedantic
+        -O2
+    )
+    # Add debug symbols if specifically asked for Debug build
+    target_compile_options(toy_forth PRIVATE $<$<CONFIG:Debug>:-g -O0>)
+endif()
