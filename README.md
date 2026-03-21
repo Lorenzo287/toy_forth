@@ -1,6 +1,12 @@
 # Toy Forth Interpreter
 
-A minimalist, stack-based Forth-like interpreter written in C. This project is a toy implementation designed to demonstrate basic tokenization, object management with reference counting, and stack-oriented execution.
+A minimalist, stack-based Forth-like interpreter written in C. This project is a toy implementation based on the **[Toy Forth](https://github.com/antirez/toyforth)** project by **Salvatore Sanfilippo (antirez)**, developed during his instructional YouTube C coding course.
+
+## Credits & License
+
+- **Original Author**: Salvatore Sanfilippo ([antirez](https://github.com/antirez))
+- **Source Code**: [antirez/toyforth](https://github.com/antirez/toyforth)
+- **License**: This project is licensed under the **MIT License** (see the [LICENSE](LICENSE) file for details).
 
 ## Features
 
