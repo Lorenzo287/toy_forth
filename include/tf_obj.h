@@ -15,12 +15,8 @@ typedef enum {
     TF_OBJ_TYPE_FLOAT,
     TF_OBJ_TYPE_STR,
     TF_OBJ_TYPE_SYMBOL,
-    TF_OBJ_TYPE_LIST,
-    TF_OBJ_TYPE_ALL = 255  // used by pop_obj
+    TF_OBJ_TYPE_LIST
 } tf_type;
-
-// TODO: add support for variables with $ syntax,
-// 		 add quoted expression for user func definition
 
 /* === Object Definition === */
 
@@ -62,5 +58,6 @@ void retain_obj(tf_obj *o);
 void release_obj(tf_obj *o);
 void free_obj(tf_obj *o);
 void print_obj(tf_obj *o);
+void print_value(tf_obj *o);
 
 #endif  // TF_OBJ_H

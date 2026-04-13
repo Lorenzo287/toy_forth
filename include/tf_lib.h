@@ -4,5 +4,7 @@
 #include "tf_exec.h"
 
 int math_functions(tf_ctx *ctx, char *name);
+int stack_functions(tf_ctx *ctx, char *name);
+int io_functions(tf_ctx *ctx, char *name);
 
 #endif  // TF_LIB_H

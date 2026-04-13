@@ -11,89 +11,67 @@ A minimalist, stack-based Forth-like interpreter written in C. This project is a
 ## Features
 
 - **Stack-based architecture**: All operations perform their logic on a central data stack.
-- **Dynamic Object System**: Support for multiple types including:
-  - Integers (`TF_OBJ_TYPE_INT`)
-  - Floating point numbers (`TF_OBJ_TYPE_FLOAT`)
-  - Booleans (`TF_OBJ_TYPE_BOOL`)
-  - Strings (`TF_OBJ_TYPE_STR`)
-  - Symbols (`TF_OBJ_TYPE_SYMBOL`)
-  - Lists (`TF_OBJ_TYPE_LIST`)
-- **Memory Management**: Simple reference counting for objects (`retain_obj`/`release_obj`).
-- **Core Operations**: Basic integer arithmetic: `+`, `-`, `*`, `/`.
+- **Dynamic Object System**: Support for Integers, Floats, Booleans, Strings, Symbols, and Lists.
+- **Memory Management**: Automatic reference counting for all objects.
+- **Core Operations**: Basic arithmetic and stack manipulation.
 
 ## Getting Started
 
-The project uses **CMake** as its unified build system, supporting both Windows (MSVC/MinGW) and Linux/WSL (GCC/Clang).
+The project uses CMake as its unified build system. To avoid artifact corruption between Windows and WSL, separate build directories are recommended.
 
-### Prerequisites
+### Building for Windows
+```powershell
+mkdir build; cd build
+cmake ..
+cmake --build .
+```
 
-- A C compiler (GCC, Clang, or MSVC)
-- CMake (version 3.10 or higher)
-
-### Building the Project
-
-To avoid artifact corruption when switching between Windows and WSL, it is recommended to use separate build directories.
-
-#### For Windows
-1. Open your terminal (PowerShell or Command Prompt).
-2. Create a Windows-specific build directory:
-   ```powershell
-   mkdir build
-   cd build
-   ```
-3. Generate and build:
-   ```powershell
-   cmake ..
-   cmake --build .
-   ```
-
-#### For Linux / WSL (with Debug symbols for Valgrind)
-1. Open your WSL terminal.
-2. Create a Linux-specific build directory:
-   ```bash
-   mkdir build-linux
-   cd build-linux
-   ```
-3. Generate for Debug mode and build:
-   ```bash
-   cmake -DCMAKE_BUILD_TYPE=Debug ..
-   make
-   ```
+### Building for Linux / WSL (with Debug symbols)
+```bash
+mkdir build-linux; cd build-linux
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+```
 
 ## Usage
 
-Run Forth programs by passing the file path to the compiled executable.
-
-**On Windows:**
-```powershell
-.\build\toy_forth.exe program.fth
-```
-
-**On Linux / WSL:**
+Run Forth programs by passing the file path:
 ```bash
-./build-linux/toy_forth program.fth
+# Windows
+.\build\toy_forth.exe fth\program.fth
+
+# Linux / WSL
+./build-linux/toy_forth fth/program.fth
 ```
 
-### Example
-
-The provided `program.fth`:
+### Example (`fth/program.fth`)
 ```forth
 5 10 + 1 + 2 /
 ```
-The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`), push `2`, and divide (`8`).
+The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`), push `2`, and divide, leaving `8` on the stack.
 
 ## Architecture
 
-- **`tf_obj`**: The base object structure that holds values and metadata.
-- **`tf_lexer`**: A simple tokenizer that parses text into a list of `tf_obj`.
-- **`tf_ctx`**: Execution context containing the data stack and function table.
-- **`tf_exec`**: The execution engine that processes tokens and calls functions.
-- **`tf_lib`**: Core library functions (e.g., math operations).
+- **Lexer**: Tokenizes source text into a list of objects.
+- **Context**: Maintains the data stack and function dictionary.
+- **Execution Engine**: Processes tokens, resolving symbols and executing functions.
+- **Core Library**: Implements primitive words (math, stack ops).
 
-## Future Improvements
+## Future Improvements (Roadmap)
 
-- [ ] Support for user-defined functions (colon definitions).
-- [ ] Better type checking in math operations.
-- [ ] Support for variables and constants.
-- [ ] Additional stack manipulation words (`DUP`, `DROP`, `SWAP`, etc.).
-- [ ] Quoted expressions for functional-like behavior.
+### Phase 1: Core Functionality
+- [x] **Standard Forth Words**: Implement essential stack manipulation words: `dup`, `drop`, `swap`, `over`, `rot`.
+- [ ] **I/O & Control**: Added `print`. Still need basic conditional/looping constructs (`if/else`, `while`).
+- [x] **Architectural Cleanup**: Refactored the object system and stack wrappers for better type-safety and consistency.
+
+### Phase 2: Advanced Features (Antirez Proposals)
+- [ ] **Variable Capturing**: Implement the `(a b)` syntax to capture stack values into local variables, and `$a`, `$b` to retrieve them.
+- [ ] **Quoted Symbols**: Support `'symbol` syntax to push a symbol to the stack without immediate execution.
+- [ ] **Quotations (Blocks)**: Support `[ ... ]` syntax to push a block of code (list of tokens) to the stack.
+- [ ] **User-Defined Functions**: Implement colon definitions `: name ... ;` to register new words in the dictionary.
+- [ ] **Block Execution**: Implement `exec` or similar to run a block of code pushed to the stack.
+
+### Phase 3: System Enhancements
+- [ ] **Dictionary Management**: Improve the function table for faster lookups (e.g., hash table).
+- [ ] **Memory Management**: Refine reference counting to handle potential cycles if recursive lists/blocks are added.
+- [ ] **Variables & Constants**: Support for global variables and constants.

@@ -20,7 +20,8 @@ struct ctx {
 };
 
 size_t stack_len(tf_ctx *ctx);
-tf_obj *stack_pop(tf_ctx *ctx, tf_type type);
+tf_obj *stack_pop(tf_ctx *ctx);
+tf_obj *stack_pop_type(tf_ctx *ctx, tf_type type);
 void stack_push(tf_ctx *ctx, tf_obj *o);
 
 tf_ctx *init_ctx(void);

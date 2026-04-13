@@ -9,7 +9,10 @@
 size_t stack_len(tf_ctx *ctx) {
     return ctx->stack->list.len;
 }
-tf_obj *stack_pop(tf_ctx *ctx, tf_type type) {
+tf_obj *stack_pop(tf_ctx *ctx) {
+    return pop_obj(ctx->stack);
+}
+tf_obj *stack_pop_type(tf_ctx *ctx, tf_type type) {
     return pop_obj_type(ctx->stack, type);
 }
 void stack_push(tf_ctx *ctx, tf_obj *o) {
@@ -28,6 +31,14 @@ tf_ctx *init_ctx(void) {
     set_c_func(ctx, "-", math_functions);
     set_c_func(ctx, "*", math_functions);
     set_c_func(ctx, "/", math_functions);
+
+    set_c_func(ctx, "dup", stack_functions);
+    set_c_func(ctx, "drop", stack_functions);
+    set_c_func(ctx, "swap", stack_functions);
+    set_c_func(ctx, "over", stack_functions);
+    set_c_func(ctx, "rot", stack_functions);
+
+    set_c_func(ctx, "print", io_functions);
 
     // set_user_func();
     // WARN: how can this be set here if they are defined at runtime?

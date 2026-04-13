@@ -83,11 +83,17 @@ void push_obj(tf_obj *l, tf_obj *elem) {
     l->list.elem[l->list.len++] = elem;
 }
 
-// pop object only if the type is correct, unless called with ALL type
+// pop object only if the type is correct
 tf_obj *pop_obj_type(tf_obj *l, tf_type type) {
     if (l->list.len == 0) return NULL;
     tf_obj *o = l->list.elem[l->list.len - 1];
-    if (o->type != type && type != TF_OBJ_TYPE_ALL) return NULL;
+    if (o->type != type) return NULL;
+    return pop_obj(l);
+}
+
+tf_obj *pop_obj(tf_obj *l) {
+    if (l->list.len == 0) return NULL;
+    tf_obj *o = l->list.elem[l->list.len - 1];
 
     l->list.len--;
     if (l->list.len < l->list.cap / 2 && l->list.cap > 1) {
@@ -95,10 +101,6 @@ tf_obj *pop_obj_type(tf_obj *l, tf_type type) {
         l->list.elem = xrealloc(l->list.elem, sizeof(tf_obj *) * l->list.cap);
     }
     return o;
-}
-
-tf_obj *pop_obj(tf_obj *l) {
-    return pop_obj_type(l, TF_OBJ_TYPE_ALL);
 }
 
 void retain_obj(tf_obj *o) {
@@ -126,6 +128,7 @@ void free_obj(tf_obj *o) {
     free(o);
 }
 
+// Print the object with type information (for debugging)
 void print_obj(tf_obj *o) {
     switch (o->type) {
     case TF_OBJ_TYPE_INT:
@@ -147,6 +150,37 @@ void print_obj(tf_obj *o) {
         printf("[");
         for (size_t i = 0; i < o->list.len; i++) {
             print_obj(o->list.elem[i]);
+            if (i != o->list.len - 1) printf(" ");
+        }
+        printf("]");
+        break;
+    default:
+        printf("?");
+    }
+}
+
+// Print the raw value of the object (for Forth 'print' word)
+void print_value(tf_obj *o) {
+    switch (o->type) {
+    case TF_OBJ_TYPE_INT:
+        printf("%d", o->i);
+        break;
+    case TF_OBJ_TYPE_FLOAT:
+        printf("%.02f", o->f);
+        break;
+    case TF_OBJ_TYPE_SYMBOL:
+        printf("%s", o->str.ptr);
+        break;
+    case TF_OBJ_TYPE_STR:
+        printf("%s", o->str.ptr);
+        break;
+    case TF_OBJ_TYPE_BOOL:
+        printf("%s", o->b ? "true" : "false");
+        break;
+    case TF_OBJ_TYPE_LIST:
+        printf("[");
+        for (size_t i = 0; i < o->list.len; i++) {
+            print_value(o->list.elem[i]);
             if (i != o->list.len - 1) printf(" ");
         }
         printf("]");
