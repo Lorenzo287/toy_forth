@@ -1,12 +1,6 @@
 # Toy Forth Interpreter
 
-A minimalist, stack-based Forth-like interpreter written in C. This project is a toy implementation based on the **[Toy Forth](https://github.com/antirez/toyforth)** project by **Salvatore Sanfilippo (antirez)**, developed during his instructional YouTube C coding course.
-
-## Credits & License
-
-- **Original Author**: Salvatore Sanfilippo ([antirez](https://github.com/antirez))
-- **Source Code**: [antirez/toyforth](https://github.com/antirez/toyforth)
-- **License**: This project is licensed under the **MIT License** (see the [LICENSE](LICENSE) file for details).
+A minimalist, stack-based Forth-like interpreter written in C, based on the **[Toy Forth](https://github.com/antirez/toyforth)** project by **Salvatore Sanfilippo (antirez)**.
 
 ## Features
 
@@ -75,3 +69,8 @@ The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`)
 - [ ] **Dictionary Management**: Improve the function table for faster lookups (e.g., hash table).
 - [ ] **Memory Management**: Refine reference counting to handle potential cycles if recursive lists/blocks are added.
 - [ ] **Variables & Constants**: Support for global variables and constants.
+
+## License
+
+This project is licensed under the **MIT License** (see the [LICENSE](LICENSE) file for details).
+
