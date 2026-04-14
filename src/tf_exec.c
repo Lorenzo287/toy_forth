@@ -27,21 +27,19 @@ tf_ctx *init_ctx(void) {
     ctx->functions = NULL;
     ctx->funcount = 0;
 
-    set_c_func(ctx, "+", math_functions);
-    set_c_func(ctx, "-", math_functions);
-    set_c_func(ctx, "*", math_functions);
-    set_c_func(ctx, "/", math_functions);
+    set_native_func(ctx, "+", math_functions);
+    set_native_func(ctx, "-", math_functions);
+    set_native_func(ctx, "*", math_functions);
+    set_native_func(ctx, "/", math_functions);
 
-    set_c_func(ctx, "dup", stack_functions);
-    set_c_func(ctx, "drop", stack_functions);
-    set_c_func(ctx, "swap", stack_functions);
-    set_c_func(ctx, "over", stack_functions);
-    set_c_func(ctx, "rot", stack_functions);
+    set_native_func(ctx, "dup", stack_functions);
+    set_native_func(ctx, "drop", stack_functions);
+    set_native_func(ctx, "swap", stack_functions);
+    set_native_func(ctx, "over", stack_functions);
+    set_native_func(ctx, "rot", stack_functions);
 
-    set_c_func(ctx, "print", io_functions);
+    set_native_func(ctx, "print", io_functions);
 
-    // set_user_func();
-    // WARN: how can this be set here if they are defined at runtime?
     return ctx;
 }
 
@@ -51,28 +49,38 @@ tf_func *init_func(tf_ctx *ctx, tf_obj *name) {
     tf_func *f = xmalloc(sizeof(tf_func));
     f->name = name;
     retain_obj(name);
-    f->callback = NULL;
-    f->userfunc = NULL;
+    f->type = TF_FUNC_TYPE_NATIVE;
+    f->native_impl = NULL;
     ctx->functions[ctx->funcount++] = f;
     return f;
 }
 
-void set_c_func(tf_ctx *ctx, char *name, tf_cb cb) {
+void set_native_func(tf_ctx *ctx, char *name, tf_cb cb) {
     tf_obj *o_name = create_string_obj(name, strlen(name));
     tf_func *f = get_func(ctx, o_name);
-    if (f) {  // overwrite if already defined
-        if (f->userfunc) {
-            release_obj(f->userfunc);
-            f->userfunc = NULL;
-        }
-        f->callback = cb;
-    } else {
+    if (f) {  // overwrite if name is already taken
+        if (f->type == TF_FUNC_TYPE_USER) release_obj(f->user_impl);
+    } else {  // allocate if name is not taken
         f = init_func(ctx, o_name);
-        f->callback = cb;
     }
+    f->type = TF_FUNC_TYPE_NATIVE;
+    f->native_impl = cb;
     release_obj(o_name);
 }
 
+void set_user_func(tf_ctx *ctx, tf_obj *name, tf_obj *uf) {
+    tf_func *f = get_func(ctx, name);
+    if (f) {
+        if (f->type == TF_FUNC_TYPE_USER) { release_obj(f->user_impl); }
+    } else {
+        f = init_func(ctx, name);
+    }
+    f->type = TF_FUNC_TYPE_USER;
+    f->user_impl = uf;
+    retain_obj(uf);
+}
+
+// FIX: O(n) scan to find function, could implement with hash map?
 tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
     for (size_t i = 0; i < ctx->funcount; i++) {
         tf_func *f = ctx->functions[i];
@@ -95,7 +103,7 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             }
             break;
         default:
-			stack_push(ctx, o);
+            stack_push(ctx, o);
             retain_obj(o);
             break;
         }
@@ -106,10 +114,9 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
 int call_symbol(tf_ctx *ctx, tf_obj *symb) {
     tf_func *f = get_func(ctx, symb);
     if (!f) return TF_ERR;
-    if (f->userfunc) {
-        // TODO: exec()
-        return TF_ERR;
+    if (f->type == TF_FUNC_TYPE_USER) {
+        return exec(ctx, f->user_impl);
     } else {
-        return f->callback(ctx, f->name->str.ptr);
+        return f->native_impl(ctx, f->name->str.ptr);
     }
 }

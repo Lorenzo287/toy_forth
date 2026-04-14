@@ -6,8 +6,9 @@ A minimalist, stack-based Forth-like interpreter written in C, based on the **[T
 
 - **Stack-based architecture**: All operations perform their logic on a central data stack.
 - **Dynamic Object System**: Support for Integers, Floats, Booleans, Strings, Symbols, and Lists.
+- **Floating Point Support**: Math operations support mixed-type arithmetic with automatic type promotion (INT + FLOAT = FLOAT).
 - **Memory Management**: Automatic reference counting for all objects.
-- **Core Operations**: Basic arithmetic and stack manipulation.
+- **Core Operations**: Basic arithmetic, comparison, and stack manipulation.
 
 ## Getting Started
 
@@ -47,16 +48,17 @@ The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`)
 ## Architecture
 
 - **Lexer**: Tokenizes source text into a list of objects.
-- **Context**: Maintains the data stack and function dictionary.
-- **Execution Engine**: Processes tokens, resolving symbols and executing functions.
+- **Context**: Maintains the data stack and a dictionary of "Native" (C-based) and "User" (Forth-based) functions.
+- **Execution Engine**: Processes tokens, resolving symbols and executing functions using a tagged-union dispatch system.
 - **Core Library**: Implements primitive words (math, stack ops).
 
 ## Future Improvements (Roadmap)
 
 ### Phase 1: Core Functionality
 - [x] **Standard Forth Words**: Implement essential stack manipulation words: `dup`, `drop`, `swap`, `over`, `rot`.
+- [x] **Solid Math Core**: Added support for Floating Point numbers, type promotion, and safety checks (division by zero).
 - [ ] **I/O & Control**: Added `print`. Still need basic conditional/looping constructs (`if/else`, `while`).
-- [x] **Architectural Cleanup**: Refactored the object system and stack wrappers for better type-safety and consistency.
+- [x] **Architectural Cleanup**: Refactored the object system and function dictionary for better type-safety and consistency using tagged unions. 
 
 ### Phase 2: Advanced Features (Antirez Proposals)
 - [ ] **Variable Capturing**: Implement the `(a b)` syntax to capture stack values into local variables, and `$a`, `$b` to retrieve them.

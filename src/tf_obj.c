@@ -135,7 +135,7 @@ void print_obj(tf_obj *o) {
         printf("{int:%d}", o->i);
         break;
     case TF_OBJ_TYPE_FLOAT:
-        printf("{float:%.02f}", o->f);
+        printf("{float:%g}", o->f);
         break;
     case TF_OBJ_TYPE_SYMBOL:
         printf("{symbol:%s}", o->str.ptr);
@@ -166,7 +166,7 @@ void print_value(tf_obj *o) {
         printf("%d", o->i);
         break;
     case TF_OBJ_TYPE_FLOAT:
-        printf("%.02f", o->f);
+        printf("%g", o->f);
         break;
     case TF_OBJ_TYPE_SYMBOL:
         printf("%s", o->str.ptr);
