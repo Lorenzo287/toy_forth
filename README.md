@@ -41,9 +41,17 @@ Run Forth programs by passing the file path:
 
 ### Example (`fth/program.fth`)
 ```forth
-5 10 + 1 + 2 /
+\ Classic style definition
+: square dup * ;
+5 square print
+
+\ Functional style definition
+'cube [ dup square * ] def
+3 cube print
+
+\ Control flow (while loop)
+5 [ dup 0 > ] [ dup print 1 - ] while
 ```
-The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`), push `2`, and divide, leaving `8` on the stack.
 
 ## Architecture
 
@@ -57,15 +65,14 @@ The interpreter will push `5` and `10`, add them (`15`), push `1`, add it (`16`)
 ### Phase 1: Core Functionality
 - [x] **Standard Forth Words**: Implement essential stack manipulation words: `dup`, `drop`, `swap`, `over`, `rot`.
 - [x] **Solid Math Core**: Added support for Floating Point numbers, type promotion, and safety checks (division by zero).
-- [ ] **I/O & Control**: Added `print`. Still need basic conditional/looping constructs (`if/else`, `while`).
-- [x] **Architectural Cleanup**: Refactored the object system and function dictionary for better type-safety and consistency using tagged unions. 
+- [x] **I/O & Control**: Added `print`, `if`, `ifelse`, and `while` (block-based).
 
 ### Phase 2: Advanced Features (Antirez Proposals)
 - [ ] **Variable Capturing**: Implement the `(a b)` syntax to capture stack values into local variables, and `$a`, `$b` to retrieve them.
-- [ ] **Quoted Symbols**: Support `'symbol` syntax to push a symbol to the stack without immediate execution.
-- [ ] **Quotations (Blocks)**: Support `[ ... ]` syntax to push a block of code (list of tokens) to the stack.
-- [ ] **User-Defined Functions**: Implement colon definitions `: name ... ;` to register new words in the dictionary.
-- [ ] **Block Execution**: Implement `exec` or similar to run a block of code pushed to the stack.
+- [x] **Quoted Symbols**: Support `'symbol` syntax to push a symbol to the stack without immediate execution.
+- [x] **Quotations (Blocks)**: Support `[ ... ]` syntax to push a block of code (list of tokens) to the stack.
+- [x] **User-Defined Functions**: Implement colon definitions `: name ... ;` and functional `def`.
+- [x] **Block Execution**: Implement `exec` or similar to run a block of code pushed to the stack.
 
 ### Phase 3: System Enhancements
 - [ ] **Dictionary Management**: Improve the function table for faster lookups (e.g., hash table).

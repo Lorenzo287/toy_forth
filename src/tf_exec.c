@@ -26,6 +26,8 @@ tf_ctx *init_ctx(void) {
     ctx->stack = init_list_obj();
     ctx->functions = NULL;
     ctx->funcount = 0;
+    ctx->curr_prg = NULL;
+    ctx->curr_ip = 0;
 
     set_native_func(ctx, "+", math_functions);
     set_native_func(ctx, "-", math_functions);
@@ -39,6 +41,21 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "rot", stack_functions);
 
     set_native_func(ctx, "print", io_functions);
+
+    set_native_func(ctx, "==", compare_functions);
+    set_native_func(ctx, "!=", compare_functions);
+    set_native_func(ctx, "<", compare_functions);
+    set_native_func(ctx, ">", compare_functions);
+    set_native_func(ctx, "<=", compare_functions);
+    set_native_func(ctx, ">=", compare_functions);
+
+    set_native_func(ctx, "exec", control_functions);
+    set_native_func(ctx, "if", control_functions);
+    set_native_func(ctx, "ifelse", control_functions);
+    set_native_func(ctx, "while", control_functions);
+
+    set_native_func(ctx, ":", definition_functions);
+    set_native_func(ctx, "def", definition_functions);
 
     return ctx;
 }
@@ -93,11 +110,19 @@ tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
 
 int exec(tf_ctx *ctx, tf_obj *prg) {
     if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
-    for (size_t i = 0; i < prg->list.len; i++) {
-        tf_obj *o = prg->list.elem[i];
+
+    tf_obj *old_prg = ctx->curr_prg;
+    size_t old_ip = ctx->curr_ip;
+
+    ctx->curr_prg = prg;
+    for (ctx->curr_ip = 0; ctx->curr_ip < prg->list.len; ctx->curr_ip++) {
+        tf_obj *o = prg->list.elem[ctx->curr_ip];
         switch (o->type) {
         case TF_OBJ_TYPE_SYMBOL:
-            if (call_symbol(ctx, o) == TF_ERR) {
+            if (o->str.quoted) {
+                stack_push(ctx, o);
+                retain_obj(o);
+            } else if (call_symbol(ctx, o) == TF_ERR) {
                 printf("Run time error\n");
                 return TF_ERR;
             }
@@ -108,6 +133,9 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             break;
         }
     }
+
+    ctx->curr_prg = old_prg;
+    ctx->curr_ip = old_ip;
     return TF_OK;
 }
 

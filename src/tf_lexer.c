@@ -11,37 +11,78 @@ static void skip_spaces(tf_lexer *lexer) {
 
 // private helper
 static int is_sym_char(int c) {
-    const char *sym_chars = "+-*/%";
+    const char *sym_chars = "+-*/%<>=!:;";
     return isalpha(c) || strchr(sym_chars, c) != NULL;
 }
+
+static tf_obj *tokenize_until(tf_lexer *lexer, int terminator);
 
 /* receive a string as input and return a list of tokens,
  * namely a list of tf_obj type objects */
 tf_obj *lexer(char *prg_text) {
-    tf_lexer lexer = {.start = prg_text, .pos = prg_text};
+    tf_lexer lexer_state = {.start = prg_text, .pos = prg_text};
+    return tokenize_until(&lexer_state, 0);
+}
+
+/* tokenize until terminator, needed to tokenize blocks '[ ... ]'
+ * where ']' is the terminator
+ *
+ * recursive function wrapped by lexer() */
+tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
     tf_obj *prg = init_list_obj();
 
-    while (lexer.pos && lexer.pos[0] != 0) {
-        skip_spaces(&lexer);
-        if (*lexer.pos == 0) break;  // end of program
+    while (lexer->pos && lexer->pos[0] != 0) {
+        skip_spaces(lexer);
+        if (*lexer->pos == 0) break;  // end of program
+
+        // Handle comments: skip until end of line
+        if (lexer->pos[0] == '\\') {
+            while (lexer->pos[0] != '\n' && lexer->pos[0] != 0) lexer->pos++;
+            continue;
+        }
+
+		// BASE CASE, we reached ']' terminator
+        if (terminator && *lexer->pos == terminator) {
+            lexer->pos++;
+            return prg;
+        }
 
         tf_obj *o = NULL;
-        if (isdigit(lexer.pos[0]) ||
-            (lexer.pos[0] == '-' && isdigit(lexer.pos[1])))
-            o = tokenize_number(&lexer);
-        else if (is_sym_char(lexer.pos[0]))
-            o = tokenize_symbol(&lexer);
-        else if (lexer.pos[0] == '"' && lexer.pos[1] != 0)
-            o = tokenize_string(&lexer);
+        if (isdigit(lexer->pos[0]) ||
+            (lexer->pos[0] == '-' && isdigit(lexer->pos[1]))) {
+            o = tokenize_number(lexer);
+        } else if (lexer->pos[0] == '[') {
+            lexer->pos++;
+            o = tokenize_until(lexer, ']');
+        } else if (lexer->pos[0] == '\'') {
+            lexer->pos++;
+            o = tokenize_symbol(lexer);
+            if (o && o->type == TF_OBJ_TYPE_SYMBOL) {
+                o->str.quoted = true;
+            }
+        } else if (is_sym_char(lexer->pos[0])) {
+            o = tokenize_symbol(lexer);
+        } else if (lexer->pos[0] == '"' && lexer->pos[1] != 0) {
+            o = tokenize_string(lexer);
+        }
 
-        if (!o) {
+        if (o == NULL) {
             release_obj(prg);
             fprintf(stderr, "Syntax error at character %zu: [%.16s...]\n",
-                    lexer.pos - lexer.start - 2, lexer.pos);
+                    lexer->pos - lexer->start, lexer->pos);
             return NULL;
         }
         push_obj(prg, o);
     }
+
+    if (terminator != 0) {
+        release_obj(prg);
+        fprintf(stderr,
+                "Syntax error: expected '%c' but reached end of program\n",
+                terminator);
+        return NULL;
+    }
+
     return prg;
 }
 

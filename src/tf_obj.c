@@ -51,6 +51,7 @@ tf_obj *create_string_obj(char *s, size_t len) {
     tf_obj *o = init_obj(TF_OBJ_TYPE_STR);
     o->str.ptr = xmalloc(len + 1);
     o->str.len = len;
+    o->str.quoted = false;
     memcpy(o->str.ptr, s, len);
     o->str.ptr[len] = 0;
     return o;
@@ -138,7 +139,7 @@ void print_obj(tf_obj *o) {
         printf("{float:%g}", o->f);
         break;
     case TF_OBJ_TYPE_SYMBOL:
-        printf("{symbol:%s}", o->str.ptr);
+        printf("{symbol:%s%s}", o->str.quoted ? "'" : "", o->str.ptr);
         break;
     case TF_OBJ_TYPE_STR:
         printf("{string:\"%s\"}", o->str.ptr);
