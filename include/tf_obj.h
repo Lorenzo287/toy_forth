@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TF_OK 0
-#define TF_ERR 1
+typedef enum { TF_OK, TF_ERR } tf_ret;
 
 /* === Types Definition === */
 
@@ -30,7 +29,7 @@ typedef struct tf_obj {
         struct {
             char *ptr;
             size_t len;
-            bool quoted;  // TODO:
+            bool quoted;
         } str;
         struct {
             struct tf_obj **elem;
@@ -57,7 +56,7 @@ tf_obj *pop_obj(tf_obj *l);
 void retain_obj(tf_obj *o);
 void release_obj(tf_obj *o);
 void free_obj(tf_obj *o);
-void print_obj(tf_obj *o);
+void print_obj(tf_obj *o, size_t *count);
 void print_value(tf_obj *o);
 
 #endif  // TF_OBJ_H

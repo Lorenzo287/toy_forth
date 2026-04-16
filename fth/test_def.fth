@@ -1,2 +1,2 @@
 'square [ dup * ] def
-5 square print
+5 square println

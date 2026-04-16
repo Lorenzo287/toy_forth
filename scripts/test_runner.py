@@ -10,7 +10,7 @@ def run_test():
         print(f"Error: {exe} not found. Please build the project first.")
         return
 
-    print(f"Running Toy Forth Test Suite...")
+    print("Running Toy Forth Test Suite...")
     print("-" * 40)
 
     try:
@@ -83,7 +83,7 @@ def run_test():
             sys.exit(1)
 
     except subprocess.CalledProcessError as e:
-        print(f"Interpreter crashed or returned error:")
+        print("Interpreter crashed or returned error:")
         print("STDOUT:", e.stdout)
         print("STDERR:", e.stderr)
         sys.exit(1)

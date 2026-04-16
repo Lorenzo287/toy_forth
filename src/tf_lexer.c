@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tf_alloc.h"
 
 // private helper
 static void skip_spaces(tf_lexer *lexer) {
@@ -11,7 +12,7 @@ static void skip_spaces(tf_lexer *lexer) {
 
 // private helper
 static int is_sym_char(int c) {
-    const char *sym_chars = "+-*/%<>=!:;";
+    const char *sym_chars = "+-*/%<>=!:;.";
     return isalpha(c) || strchr(sym_chars, c) != NULL;
 }
 
@@ -35,9 +36,13 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
         skip_spaces(lexer);
         if (*lexer->pos == 0) break;  // end of program
 
-        // Handle comments: skip until end of line
         if (lexer->pos[0] == '\\') {
             while (lexer->pos[0] != '\n' && lexer->pos[0] != 0) lexer->pos++;
+            continue;
+        }
+        if (lexer->pos[0] == '(') {
+            while (lexer->pos[0] != ')' && lexer->pos[0] != 0) lexer->pos++;
+			lexer->pos++;
             continue;
         }
 
@@ -68,7 +73,7 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
 
         if (o == NULL) {
             release_obj(prg);
-            fprintf(stderr, "Syntax error at character %zu: [%.16s...]\n",
+            fprintf(stderr, "Syntax error at character %zu: ... %.16s ...\n",
                     lexer->pos - lexer->start, lexer->pos);
             return NULL;
         }
@@ -123,14 +128,41 @@ tf_obj *tokenize_symbol(tf_lexer *lexer) {
 }
 
 tf_obj *tokenize_string(tf_lexer *lexer) {
-    lexer->pos++;
-    char *start = lexer->pos;
-    while (lexer->pos[0] != '"' && lexer->pos[0] != 0) lexer->pos++;
-    if (*lexer->pos != '"') {  // closing " not found
+    lexer->pos++; // skip opening "
+    size_t cap = 64;
+    size_t len = 0;
+    char *buf = xmalloc(cap);
+
+    while (lexer->pos[0] != '"' && lexer->pos[0] != 0) {
+        if (len + 1 >= cap) {
+            cap *= 2;
+            buf = xrealloc(buf, cap);
+        }
+
+        if (lexer->pos[0] == '\\') {
+            lexer->pos++;
+            if (lexer->pos[0] == 0) break;
+            switch (lexer->pos[0]) {
+            case 'n': buf[len++] = '\n'; break;
+            case 'r': buf[len++] = '\r'; break;
+            case 't': buf[len++] = '\t'; break;
+            case '"': buf[len++] = '"'; break;
+            case '\\': buf[len++] = '\\'; break;
+            default: buf[len++] = lexer->pos[0]; break;
+            }
+        } else {
+            buf[len++] = lexer->pos[0];
+        }
+        lexer->pos++;
+    }
+
+    if (lexer->pos[0] != '"') {
+        free(buf);
         return NULL;
     }
-    int str_len = lexer->pos - start;
-    tf_obj *o = create_string_obj(start, str_len);
-    lexer->pos++;
+    lexer->pos++; // skip closing "
+
+    tf_obj *o = create_string_obj(buf, len);
+    free(buf);
     return o;
 }

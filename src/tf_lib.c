@@ -1,8 +1,26 @@
 #include "tf_lib.h"
 #include <stdio.h>
 #include <string.h>
+#include "tf_obj.h"
 
 int math_functions(tf_ctx *ctx, char *name) {
+    // Unary operations
+    if (strcmp(name, "abs") == 0) {
+        if (stack_len(ctx) < 1) return TF_ERR;
+        tf_obj *a = stack_pop(ctx);
+        if (a->type == TF_OBJ_TYPE_INT) {
+            stack_push(ctx, create_int_obj(a->i < 0 ? -a->i : a->i));
+        } else if (a->type == TF_OBJ_TYPE_FLOAT) {
+            stack_push(ctx, create_float_obj(a->f < 0 ? -a->f : a->f));
+        } else {
+            stack_push(ctx, a);
+            return TF_ERR;
+        }
+        release_obj(a);
+        return TF_OK;
+    }
+
+    // Binary operations
     if (stack_len(ctx) < 2) return TF_ERR;
 
     tf_obj *b = stack_pop(ctx);
@@ -17,33 +35,30 @@ int math_functions(tf_ctx *ctx, char *name) {
 
     bool is_float =
         (a->type == TF_OBJ_TYPE_FLOAT || b->type == TF_OBJ_TYPE_FLOAT);
-    char op = name[0];
 
     if (is_float) {  // at least one float
         float fa = (a->type == TF_OBJ_TYPE_FLOAT) ? a->f : (float)a->i;
         float fb = (b->type == TF_OBJ_TYPE_FLOAT) ? b->f : (float)b->i;
         float fresult = 0;
 
-        if (op == '/' && fb == 0.0f) {
-            stack_push(ctx, a);
-            stack_push(ctx, b);
-            return TF_ERR;
-        }
-
-        switch (op) {
-        case '+':
+        if (strcmp(name, "+") == 0)
             fresult = fa + fb;
-            break;
-        case '-':
+        else if (strcmp(name, "-") == 0)
             fresult = fa - fb;
-            break;
-        case '*':
+        else if (strcmp(name, "*") == 0)
             fresult = fa * fb;
-            break;
-        case '/':
+        else if (strcmp(name, "/") == 0) {
+            if (fb == 0.0f) {
+                stack_push(ctx, a);
+                stack_push(ctx, b);
+                return TF_ERR;
+            }
             fresult = fa / fb;
-            break;
-        default:
+        } else if (strcmp(name, "max") == 0)
+            fresult = (fa > fb) ? fa : fb;
+        else if (strcmp(name, "min") == 0)
+            fresult = (fa < fb) ? fa : fb;
+        else {
             stack_push(ctx, a);
             stack_push(ctx, b);
             return TF_ERR;
@@ -54,29 +69,30 @@ int math_functions(tf_ctx *ctx, char *name) {
         int ib = b->i;
         int iresult = 0;
 
-        if ((op == '/' || op == '%') && ib == 0) {
+        if (strcmp(name, "+") == 0)
+            iresult = ia + ib;
+        else if (strcmp(name, "-") == 0)
+            iresult = ia - ib;
+        else if (strcmp(name, "*") == 0)
+            iresult = ia * ib;
+        else if (strcmp(name, "/") == 0 || strcmp(name, "%") == 0 ||
+                 strcmp(name, "mod") == 0) {
+            if (ib == 0) {
+                stack_push(ctx, a);
+                stack_push(ctx, b);
+                return TF_ERR;
+            }
+            if (strcmp(name, "/") == 0)
+                iresult = ia / ib;
+            else
+                iresult = ia % ib;
+        } else if (strcmp(name, "max") == 0)
+            iresult = (ia > ib) ? ia : ib;
+        else if (strcmp(name, "min") == 0)
+            iresult = (ia < ib) ? ia : ib;
+        else {
             stack_push(ctx, a);
             stack_push(ctx, b);
-            return TF_ERR;
-        }
-
-        switch (op) {
-        case '+':
-            iresult = ia + ib;
-            break;
-        case '-':
-            iresult = ia - ib;
-            break;
-        case '*':
-            iresult = ia * ib;
-            break;
-        case '/':
-            iresult = ia / ib;
-            break;
-        case '%':
-            iresult = ia % ib;
-            break;
-        default:
             return TF_ERR;
         }
         stack_push(ctx, create_int_obj(iresult));
@@ -132,12 +148,24 @@ int stack_functions(tf_ctx *ctx, char *name) {
 }
 
 int io_functions(tf_ctx *ctx, char *name) {
-    if (strcmp(name, "print") == 0) {
+    if (strcmp(name, "print") == 0 || strcmp(name, ".") == 0 ||
+        strcmp(name, "println") == 0) 
+    {
         if (stack_len(ctx) < 1) return TF_ERR;
         tf_obj *o = stack_pop(ctx);
         print_value(o);
-        printf("\n");
+        if (strcmp(name, "println") == 0) printf("\n");
         release_obj(o);
+    } else if (strcmp(name, ".s") == 0) {
+        // could use print_value(ctx->stack) but that would print '[ ... ]',
+        // this way we omit the brackets
+        size_t len = stack_len(ctx);
+        printf("<%zu> ", len);
+        for (size_t i = 0; i < len; i++) {
+            print_value(ctx->stack->list.elem[i]);
+            printf(" ");
+        }
+        printf("\n");
     } else {
         return TF_ERR;
     }
@@ -176,14 +204,16 @@ int compare_functions(tf_ctx *ctx, char *name) {
         if (!strcmp(name, "==")) {
             if (a->type == TF_OBJ_TYPE_BOOL)
                 result = (a->b == b->b);
-            else if (a->type == TF_OBJ_TYPE_STR || a->type == TF_OBJ_TYPE_SYMBOL)
+            else if (a->type == TF_OBJ_TYPE_STR ||
+                     a->type == TF_OBJ_TYPE_SYMBOL)
                 result = (compare_string_obj(a, b) == 0);
             else
                 result = (a == b);  // pointer comparison for other types
         } else if (!strcmp(name, "!=")) {
             if (a->type == TF_OBJ_TYPE_BOOL)
                 result = (a->b != b->b);
-            else if (a->type == TF_OBJ_TYPE_STR || a->type == TF_OBJ_TYPE_SYMBOL)
+            else if (a->type == TF_OBJ_TYPE_STR ||
+                     a->type == TF_OBJ_TYPE_SYMBOL)
                 result = (compare_string_obj(a, b) != 0);
             else
                 result = (a != b);
@@ -221,33 +251,39 @@ int control_functions(tf_ctx *ctx, char *name) {
     } else if (strcmp(name, "if") == 0) {
         if (stack_len(ctx) < 2) return TF_ERR;
         tf_obj *body = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
-        tf_obj *cond = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+        tf_obj *cond = stack_pop(ctx);
         if (!body || !cond) {
             if (body) release_obj(body);
             if (cond) release_obj(cond);
             return TF_ERR;
         }
 
-        // Exec condition
-        if (exec(ctx, cond) == TF_ERR) {
-            release_obj(body);
-            release_obj(cond);
-            return TF_ERR;
-        }
-
-        tf_obj *res = stack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
-        if (!res) {
+        bool cond_val = false;
+        if (cond->type == TF_OBJ_TYPE_BOOL) {
+            cond_val = cond->b;
+        } else if (cond->type == TF_OBJ_TYPE_LIST) {
+            if (exec(ctx, cond) == TF_ERR) {
+                release_obj(body);
+                release_obj(cond);
+                return TF_ERR;
+            }
+            tf_obj *res = stack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
+            if (!res) {
+                release_obj(body);
+                release_obj(cond);
+                return TF_ERR;
+            }
+            cond_val = res->b;
+            release_obj(res);
+        } else {
             release_obj(body);
             release_obj(cond);
             return TF_ERR;
         }
 
         int final_res = TF_OK;
-        if (res->b) {
-            final_res = exec(ctx, body);
-        }
+        if (cond_val) { final_res = exec(ctx, body); }
 
-        release_obj(res);
         release_obj(body);
         release_obj(cond);
         return final_res;
@@ -255,7 +291,7 @@ int control_functions(tf_ctx *ctx, char *name) {
         if (stack_len(ctx) < 3) return TF_ERR;
         tf_obj *else_b = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
         tf_obj *then_b = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
-        tf_obj *cond = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+        tf_obj *cond = stack_pop(ctx);
 
         if (!else_b || !then_b || !cond) {
             if (else_b) release_obj(else_b);
@@ -264,15 +300,26 @@ int control_functions(tf_ctx *ctx, char *name) {
             return TF_ERR;
         }
 
-        if (exec(ctx, cond) == TF_ERR) {
-            release_obj(else_b);
-            release_obj(then_b);
-            release_obj(cond);
-            return TF_ERR;
-        }
-
-        tf_obj *res = stack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
-        if (!res) {
+        bool cond_val = false;
+        if (cond->type == TF_OBJ_TYPE_BOOL) {
+            cond_val = cond->b;
+        } else if (cond->type == TF_OBJ_TYPE_LIST) {
+            if (exec(ctx, cond) == TF_ERR) {
+                release_obj(else_b);
+                release_obj(then_b);
+                release_obj(cond);
+                return TF_ERR;
+            }
+            tf_obj *res = stack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
+            if (!res) {
+                release_obj(else_b);
+                release_obj(then_b);
+                release_obj(cond);
+                return TF_ERR;
+            }
+            cond_val = res->b;
+            release_obj(res);
+        } else {
             release_obj(else_b);
             release_obj(then_b);
             release_obj(cond);
@@ -280,17 +327,57 @@ int control_functions(tf_ctx *ctx, char *name) {
         }
 
         int final_res = TF_OK;
-        if (res->b) {
+        if (cond_val) {
             final_res = exec(ctx, then_b);
         } else {
             final_res = exec(ctx, else_b);
         }
 
-        release_obj(res);
         release_obj(else_b);
         release_obj(then_b);
         release_obj(cond);
         return final_res;
+    } else if (strcmp(name, "times") == 0) {
+        if (stack_len(ctx) < 2) return TF_ERR;
+        tf_obj *body = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+        tf_obj *n_obj = stack_pop_type(ctx, TF_OBJ_TYPE_INT);
+        if (!body || !n_obj) {
+            if (body) release_obj(body);
+            if (n_obj) release_obj(n_obj);
+            return TF_ERR;
+        }
+
+        int n = n_obj->i;
+        int res = TF_OK;
+        for (int i = 0; i < n; i++) {
+            res = exec(ctx, body);
+            if (res == TF_ERR) break;
+        }
+
+        release_obj(body);
+        release_obj(n_obj);
+        return res;
+    } else if (strcmp(name, "each") == 0) {
+        if (stack_len(ctx) < 2) return TF_ERR;
+        tf_obj *body = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+        tf_obj *data = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+        if (!body || !data) {
+            if (body) release_obj(body);
+            if (data) release_obj(data);
+            return TF_ERR;
+        }
+
+        int res = TF_OK;
+        for (size_t i = 0; i < data->list.len; i++) {
+            stack_push(ctx, data->list.elem[i]);
+            retain_obj(data->list.elem[i]);
+            res = exec(ctx, body);
+            if (res == TF_ERR) break;
+        }
+
+        release_obj(body);
+        release_obj(data);
+        return res;
     } else if (strcmp(name, "while") == 0) {
         if (stack_len(ctx) < 2) return TF_ERR;
         tf_obj *body = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
@@ -339,25 +426,25 @@ int control_functions(tf_ctx *ctx, char *name) {
 int definition_functions(tf_ctx *ctx, char *name) {
     if (strcmp(name, ":") == 0) {
         // 1. Get name (next token)
-        ctx->curr_ip++;
-        if (ctx->curr_ip >= ctx->curr_prg->list.len) return TF_ERR;
-        tf_obj *func_name = ctx->curr_prg->list.elem[ctx->curr_ip];
+        ctx->curr_pc++;
+        if (ctx->curr_pc >= ctx->curr_prg->list.len) return TF_ERR;
+        tf_obj *func_name = ctx->curr_prg->list.elem[ctx->curr_pc];
         if (func_name->type != TF_OBJ_TYPE_SYMBOL) return TF_ERR;
 
         // 2. Collect body until ";"
         tf_obj *body = init_list_obj();
-        ctx->curr_ip++;
-        while (ctx->curr_ip < ctx->curr_prg->list.len) {
-            tf_obj *o = ctx->curr_prg->list.elem[ctx->curr_ip];
+        ctx->curr_pc++;
+        while (ctx->curr_pc < ctx->curr_prg->list.len) {
+            tf_obj *o = ctx->curr_prg->list.elem[ctx->curr_pc];
             if (o->type == TF_OBJ_TYPE_SYMBOL && strcmp(o->str.ptr, ";") == 0) {
                 break;
             }
             push_obj(body, o);
             retain_obj(o);
-            ctx->curr_ip++;
+            ctx->curr_pc++;
         }
 
-        if (ctx->curr_ip >= ctx->curr_prg->list.len) {
+        if (ctx->curr_pc >= ctx->curr_prg->list.len) {
             release_obj(body);
             return TF_ERR;  // ";" not found
         }
@@ -368,7 +455,7 @@ int definition_functions(tf_ctx *ctx, char *name) {
         return TF_OK;
     } else if (strcmp(name, "def") == 0) {
         if (stack_len(ctx) < 2) return TF_ERR;
-        
+
         tf_obj *body = stack_pop_type(ctx, TF_OBJ_TYPE_LIST);
         tf_obj *func_name = stack_pop_type(ctx, TF_OBJ_TYPE_SYMBOL);
 
@@ -379,7 +466,7 @@ int definition_functions(tf_ctx *ctx, char *name) {
         }
 
         set_user_func(ctx, func_name, body);
-        
+
         release_obj(body);
         release_obj(func_name);
         return TF_OK;

@@ -1,2 +1,2 @@
 'plus [ + ]
-print print
+println println

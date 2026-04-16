@@ -130,7 +130,8 @@ void free_obj(tf_obj *o) {
 }
 
 // Print the object with type information (for debugging)
-void print_obj(tf_obj *o) {
+void print_obj(tf_obj *o, size_t *count) {
+	(*count)++;
     switch (o->type) {
     case TF_OBJ_TYPE_INT:
         printf("{int:%d}", o->i);
@@ -148,10 +149,16 @@ void print_obj(tf_obj *o) {
         printf("{bool:%d}", o->b);
         break;
     case TF_OBJ_TYPE_LIST:
+        (*count)--;
         printf("[");
         for (size_t i = 0; i < o->list.len; i++) {
-            print_obj(o->list.elem[i]);
-            if (i != o->list.len - 1) printf(" ");
+            print_obj(o->list.elem[i], count);
+            if (i != o->list.len - 1) {
+                if (*count % 6 == 0)
+                    printf("\n");
+                else
+                    printf(" ");
+            }
         }
         printf("]");
         break;

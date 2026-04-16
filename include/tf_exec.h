@@ -28,7 +28,7 @@ struct ctx {
     tf_func **functions;
     size_t funcount;
     tf_obj *curr_prg;  // current program list being executed
-    size_t curr_ip;    // current instruction pointer
+    size_t curr_pc;    // program counter (index into the curr_prg array)
 };
 
 size_t stack_len(tf_ctx *ctx);

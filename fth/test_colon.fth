@@ -1,4 +1,4 @@
 : square dup * ;
-5 square print
+5 square println
 : cube dup square * ;
-3 cube print
+3 cube println

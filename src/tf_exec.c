@@ -27,12 +27,17 @@ tf_ctx *init_ctx(void) {
     ctx->functions = NULL;
     ctx->funcount = 0;
     ctx->curr_prg = NULL;
-    ctx->curr_ip = 0;
+    ctx->curr_pc = 0;
 
     set_native_func(ctx, "+", math_functions);
     set_native_func(ctx, "-", math_functions);
     set_native_func(ctx, "*", math_functions);
     set_native_func(ctx, "/", math_functions);
+    set_native_func(ctx, "%", math_functions);
+    set_native_func(ctx, "mod", math_functions);
+    set_native_func(ctx, "abs", math_functions);
+    set_native_func(ctx, "max", math_functions);
+    set_native_func(ctx, "min", math_functions);
 
     set_native_func(ctx, "dup", stack_functions);
     set_native_func(ctx, "drop", stack_functions);
@@ -41,6 +46,9 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "rot", stack_functions);
 
     set_native_func(ctx, "print", io_functions);
+    set_native_func(ctx, "println", io_functions);
+    set_native_func(ctx, ".", io_functions);
+    set_native_func(ctx, ".s", io_functions);
 
     set_native_func(ctx, "==", compare_functions);
     set_native_func(ctx, "!=", compare_functions);
@@ -52,6 +60,8 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "exec", control_functions);
     set_native_func(ctx, "if", control_functions);
     set_native_func(ctx, "ifelse", control_functions);
+    set_native_func(ctx, "times", control_functions);
+    set_native_func(ctx, "each", control_functions);
     set_native_func(ctx, "while", control_functions);
 
     set_native_func(ctx, ":", definition_functions);
@@ -112,11 +122,11 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
     if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
 
     tf_obj *old_prg = ctx->curr_prg;
-    size_t old_ip = ctx->curr_ip;
+    size_t old_pc = ctx->curr_pc;
 
     ctx->curr_prg = prg;
-    for (ctx->curr_ip = 0; ctx->curr_ip < prg->list.len; ctx->curr_ip++) {
-        tf_obj *o = prg->list.elem[ctx->curr_ip];
+    for (ctx->curr_pc = 0; ctx->curr_pc < prg->list.len; ctx->curr_pc++) {
+        tf_obj *o = prg->list.elem[ctx->curr_pc];
         switch (o->type) {
         case TF_OBJ_TYPE_SYMBOL:
             if (o->str.quoted) {
@@ -135,7 +145,7 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
     }
 
     ctx->curr_prg = old_prg;
-    ctx->curr_ip = old_ip;
+    ctx->curr_pc = old_pc;
     return TF_OK;
 }
 
