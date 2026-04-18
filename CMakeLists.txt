@@ -24,7 +24,7 @@ else()
         -Wall 
         -Wextra 
         -Wpedantic
-        -O2
+        -O3
     )
     # Add debug symbols if specifically asked for Debug build
     target_compile_options(toy_forth PRIVATE $<$<CONFIG:Debug>:-g -O0>)

@@ -36,9 +36,7 @@ typedef struct {
 
 struct ctx {
     tf_obj *stack;  // forth program stack
-    // tf_func_table functions;
-    tf_func **functions;
-    size_t funcount;
+    tf_func_table functions;
     tf_obj *curr_prg;  // current program list being executed
     size_t curr_pc;    // program counter (index into the curr_prg array)
 };

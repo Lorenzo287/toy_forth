@@ -86,7 +86,7 @@ Run Forth programs by passing the file path:
 
 ### Phase 3: Architectural Refactoring (In Progress)
 - [ ] **Iterative Interpreter & Return Stack**: Move away from C recursion. Implement an explicit return stack of `(program, ip)` frames to make the interpreter fully iterative and safer.
-- [ ] **Hash Table Dictionary**: Replace the linear scan in `get_func` with a hash table (e.g., djb2 hash with linear probing) for O(1) word lookups.
+- [x] **Hash Table Dictionary**: Replace the linear scan in `get_func` with a hash table (e.g., djb2 hash with linear probing) for O(1) word lookups.
 - [x] **Refined Native Callbacks**: Simplify the native function interface by removing the `name` parameter and providing dedicated C functions for each Forth word, eliminating redundant internal dispatch.
 
 ### Phase 4: System Enhancements

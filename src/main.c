@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
     free_ctx(ctx);
 
 #ifdef STB_LEAKCHECK
+    printf("\n=== stb_leakcheck_dumpmem output ===\n");
     stb_leakcheck_dumpmem();
 #endif
     return result;

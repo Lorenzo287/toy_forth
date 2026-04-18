@@ -20,13 +20,47 @@ void stack_push(tf_ctx *ctx, tf_obj *o) {
     push_obj(ctx->stack, o);
 }
 
+/* === Function Table Helpers === */
+
+static unsigned long tf_hash(tf_obj *o) {
+    unsigned long hash = 5381;
+    char *ptr = o->str.ptr;
+    size_t len = o->str.len;
+    for (size_t i = 0; i < len; i++) {
+        hash = ((hash << 5) + hash) + ptr[i];
+    }
+    return hash;
+}
+
+static void tf_table_resize(tf_ctx *ctx) {
+    size_t old_cap = ctx->functions.capacity;
+    tf_func **old_buckets = ctx->functions.buckets;
+
+    ctx->functions.capacity *= 2;
+    ctx->functions.buckets = xcalloc(ctx->functions.capacity, sizeof(tf_func *));
+
+    for (size_t i = 0; i < old_cap; i++) {
+        tf_func *f = old_buckets[i];
+        if (f) {
+            unsigned long h = tf_hash(f->name);
+            size_t idx = h % ctx->functions.capacity;
+            while (ctx->functions.buckets[idx]) {
+                idx = (idx + 1) % ctx->functions.capacity;
+            }
+            ctx->functions.buckets[idx] = f;
+        }
+    }
+    free(old_buckets);
+}
+
 /* === Context Initialization === */
 
 tf_ctx *init_ctx(void) {
     tf_ctx *ctx = xmalloc(sizeof(tf_ctx));
     ctx->stack = init_list_obj();
-    ctx->functions = NULL;
-    ctx->funcount = 0;
+    ctx->functions.capacity = 16;
+    ctx->functions.count = 0;
+    ctx->functions.buckets = xcalloc(ctx->functions.capacity, sizeof(tf_func *));
     ctx->curr_prg = NULL;
     ctx->curr_pc = 0;
 
@@ -73,27 +107,38 @@ tf_ctx *init_ctx(void) {
 
 void free_ctx(tf_ctx *ctx) {
     release_obj(ctx->stack);
-    for (size_t i = 0; i < ctx->funcount; i++) {
-        tf_func *f = ctx->functions[i];
-        release_obj(f->name); 
-        if (f->type == TF_FUNC_TYPE_USER) {
-            release_obj(f->user_impl);
+    for (size_t i = 0; i < ctx->functions.capacity; i++) {
+        tf_func *f = ctx->functions.buckets[i];
+        if (f) {
+            release_obj(f->name);
+            if (f->type == TF_FUNC_TYPE_USER) {
+                release_obj(f->user_impl);
+            }
+            free(f);
         }
-        free(f);
     }
-    free(ctx->functions);
+    free(ctx->functions.buckets);
     free(ctx);
 }
 
 tf_func *init_func(tf_ctx *ctx, tf_obj *name) {
-    ctx->functions =
-        xrealloc(ctx->functions, sizeof(tf_func *) * (ctx->funcount + 1));
+    if (ctx->functions.count >= ctx->functions.capacity * 0.7) {
+        tf_table_resize(ctx);
+    }
+
+    unsigned long h = tf_hash(name);
+    size_t idx = h % ctx->functions.capacity;
+    while (ctx->functions.buckets[idx]) {
+        idx = (idx + 1) % ctx->functions.capacity;
+    }
+
     tf_func *f = xmalloc(sizeof(tf_func));
     f->name = name;
     retain_obj(name);
     f->type = TF_FUNC_TYPE_NATIVE;
     f->native_impl = NULL;
-    ctx->functions[ctx->funcount++] = f;
+    ctx->functions.buckets[idx] = f;
+    ctx->functions.count++;
     return f;
 }
 
@@ -122,11 +167,16 @@ void set_user_func(tf_ctx *ctx, tf_obj *name, tf_obj *uf) {
     retain_obj(uf);
 }
 
-// FIX: O(n) scan to find function, could implement with hash map?
 tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
-    for (size_t i = 0; i < ctx->funcount; i++) {
-        tf_func *f = ctx->functions[i];
-        if (compare_string_obj(f->name, name) == 0) return f;
+    if (ctx->functions.capacity == 0) return NULL;
+    unsigned long h = tf_hash(name);
+    size_t idx = h % ctx->functions.capacity;
+	// linear probing
+    while (ctx->functions.buckets[idx]) {
+        if (compare_string_obj(ctx->functions.buckets[idx]->name, name) == 0) {
+            return ctx->functions.buckets[idx];
+        }
+        idx = (idx + 1) % ctx->functions.capacity;
     }
     return NULL;
 }
