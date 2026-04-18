@@ -112,11 +112,11 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, ">=", tf_ge);
 
     set_native_func(ctx, "exec", tf_exec);
-    set_native_func(ctx, "if", tf_if);
-    set_native_func(ctx, "ifelse", tf_ifelse);
-    set_native_func(ctx, "times", tf_times);
-    set_native_func(ctx, "each", tf_each);
-    set_native_func(ctx, "while", tf_while);
+    set_native_func(ctx, "if", tf_if_r);
+    set_native_func(ctx, "ifelse", tf_ifelse_r);
+    set_native_func(ctx, "times", tf_times_r);
+    set_native_func(ctx, "each", tf_each_r);
+    set_native_func(ctx, "while", tf_while_r);
 
     set_native_func(ctx, ":", tf_colon);
     set_native_func(ctx, "def", tf_def);
@@ -204,6 +204,11 @@ tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
 
 /* === Execution === */
 
+/* 
+ * The main iterative execution engine. 
+ * Instead of recursive C calls, it uses an explicit `call_stack` of frames.
+ * This ensures deep user-defined word recursion does not overflow the C stack.
+ */
 int exec(tf_ctx *ctx, tf_obj *prg) {
     if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
 
@@ -244,12 +249,16 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
     return TF_OK;
 }
 
+/* 
+ * Hybrid symbol dispatcher:
+ * - User-defined words are pushed to the call_stack to continue iteration.
+ * - Native words are called directly (recursive C call), which is safe 
+ *   as native words do not create deep call chains.
+ */
 int call_symbol(tf_ctx *ctx, tf_obj *symb) {
     tf_func *f = get_func(ctx, symb);
     if (!f) return TF_ERR;
     if (f->type == TF_FUNC_TYPE_USER) {
-        /* Instead of calling exec() recursively, we just push a new frame
-         * and return. The main loop in exec() will handle it. */
         cstack_push(ctx, f->user_impl);
         return TF_OK;
     } else {

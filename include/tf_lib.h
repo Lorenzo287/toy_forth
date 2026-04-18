@@ -36,11 +36,11 @@ int tf_ge(tf_ctx *ctx);
 
 // Control operations
 int tf_exec(tf_ctx *ctx);
-int tf_if(tf_ctx *ctx);
-int tf_ifelse(tf_ctx *ctx);
-int tf_times(tf_ctx *ctx);
-int tf_each(tf_ctx *ctx);
-int tf_while(tf_ctx *ctx);
+int tf_if_r(tf_ctx *ctx);
+int tf_ifelse_r(tf_ctx *ctx);
+int tf_times_r(tf_ctx *ctx);
+int tf_each_r(tf_ctx *ctx);
+int tf_while_r(tf_ctx *ctx);
 
 // Definition operations
 int tf_colon(tf_ctx *ctx);

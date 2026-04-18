@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
         return TF_ERR;
     }
 
-    // execute with context (stack and functions)
+    // execute with context (forth stack, call stack and functions)
     int result = TF_OK;
     tf_ctx *ctx = init_ctx();
     if (!ctx || exec(ctx, prg) != TF_OK) {

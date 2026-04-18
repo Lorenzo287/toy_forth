@@ -84,7 +84,7 @@ Toy Forth comes with a set of built-in words:
 
 - **The Lexer**: A recursive-descent tokenizer that handles nested blocks, strings, quoted symbols, and different comment styles.
 - **The Context (`tf_ctx`)**: Maintains the data stack and the global function table.
-- **The Engine**: An iterative execution loop that resolves symbols and dispatches to either native C functions or user-defined Forth blocks.
+- **The Engine**: An iterative execution engine that uses an explicit call stack for user-defined words to prevent C stack overflows, while utilizing a pragmatic hybrid approach for native control flow words.
 - **Memory**: Every object is a tagged union with an internal reference count. The system is designed to be leak-free (verifiable with `stb_leakcheck`).
 
 ## Getting Started
