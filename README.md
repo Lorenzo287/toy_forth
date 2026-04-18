@@ -1,99 +1,111 @@
-# Toy Forth Interpreter
+# Toy Forth
 
-A minimalist, stack-based Forth-like interpreter written in C, based on the **[Toy Forth](https://github.com/antirez/toyforth)** project by **Salvatore Sanfilippo (antirez)**.
+A minimalist, stack-based interpreter written in C. While it follows the Forth tradition of a data stack and a dictionary of words, it incorporates modern "high-level" features like a dynamic object system, quotations, and automatic memory management.
 
-## Features
+Based on the original [Toy Forth](https://github.com/antirez/toyforth) project by **Salvatore Sanfilippo (antirez)**.
 
-- **Stack-based architecture**: All operations perform their logic on a central data stack.
-- **Dynamic Object System**: Support for Integers, Floats, Booleans, Strings, Symbols, and Lists.
-- **Floating Point Support**: Math operations support mixed-type arithmetic with automatic type promotion (INT + FLOAT = FLOAT).
-- **Memory Management**: Automatic reference counting for all objects.
-- **Core Operations**: Basic arithmetic, comparison, and stack manipulation.
+## Key Features
 
-## Getting Started
+- **Dynamic Object System**: Every item on the stack is a `tf_obj`. The interpreter natively supports **Integers, Floats, Booleans, Strings, Symbols,** and **Lists**.
+- **Quotations & Blocks**: Code is data. Use `[ ... ]` to push a block of tokens, or `'symbol` to push a symbol to the stack without immediately executing it.
+- **Polymorphic Control Flow**: Words like `if`, `ifelse`, `while`, `times`, and `each` consume blocks from the stack, enabling both traditional and functional logic.
+- **Automatic Memory Management**: A uniform reference counting model (`retain_obj`/`release_obj`) handles all heap-allocated objects, including strings, symbols, and nested lists.
+- **Type Promotion**: Mixed-type arithmetic is handled automatically (e.g., `1 2.5 +` results in a Float `3.5`).
+- **$O(1)$ Word Lookup**: A hash table dictionary (djb2 hash with linear probing) ensures fast dispatch for both native C callbacks and user-defined words.
 
-The project uses CMake as its unified build system. To avoid artifact corruption between Windows and WSL, separate build directories are recommended.
+## Showcase
 
-### Building for Windows
-```powershell
-mkdir build; cd build
-cmake ..
-cmake --build .
-```
+### Deferred Execution (Quoted Symbols & Blocks)
 
-### Building for Linux / WSL (with Debug symbols)
-```bash
-mkdir build-linux; cd build-linux
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-make
-```
+You can defer execution by "quoting" a symbol or wrapping code in a block:
 
-## Usage
-
-Run Forth programs by passing the file path:
-```bash
-# Windows
-.\build\toy_forth.exe fth\program.fth
-
-# Linux / WSL
-./build-linux/toy_forth fth/program.fth
-
-# Enable debug mode (prints tokenized program and final stack)
-.\build\toy_forth.exe --debug fth\program.fth
-```
-
-### Example (`fth/program.fth`)
 ```forth
-\ Single line comment
-( Multi-line or inline
-  comment style )
+'dup          \ Pushes the symbol 'dup' to the stack instead of running it
+[ 1 2 + ]     \ Pushes a list containing 1, 2, and +
+exec          \ Now execute the block on the stack -> 3
+```
 
+### Definitions
+
+Define new words using the classic colon syntax or by binding blocks to symbols:
+
+```forth
+\ Classic colon definition
 : square dup * ;
-5 square println
-6 square . "\n" . ( . Alias for print )
 
 \ Functional style definition
 'cube [ dup square * ] def
-3 cube .s ( Show stack )
+
+5 square println  \ 25
+3 cube println    \ 27
+```
+
+### Iteration
+
+Blocks allow for concise and expressive loops:
+
+```forth
+\ Execute a block 5 times
+5 [ "Hello! " print ] times
+
+\ Iterate over a list
+[ 1 2 3 4 5 ] [ . " " . ] each
+
+\ While loop: [ condition ] [ body ] while
+10 [ dup 0 > ] [ dup . " " . 1 - ] while
+```
+
+### Flexible Conditions
+
+Control flow words make no distinction between a value and a block that produces a value, allowing for immediate or lazy evaluation:
+
+```forth
+\ Option 1: Immediate Boolean (calculated BEFORE 'if')
+1 2 < [ "True!" println ] if
+
+\ Option 2: Deferred Block (calculated BY 'if')
+[ 1 2 < ] [ "True!" println ] if
 ```
 
 ## Architecture
 
-- **Lexer**: Tokenizes source text into a list of objects. Supports `\` and `(...)` comments.
-- **Context**: Maintains the data stack and a dictionary of "Native" (C-based) and "User" (Forth-based) functions.
-- **Execution Engine**: Processes tokens, resolving symbols and executing functions using a tagged-union dispatch system.
-- **Core Library**: Implements primitive words:
-    - **Math**: `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min`.
-    - **Stack**: `dup`, `drop`, `swap`, `over`, `rot`.
-    - **I/O**: `println`, `print`, `.`, `.s`.
-    - **Logic**: `==`, `!=`, `<`, `>`, `<=`, `>=`.
-    - **Control**: `if`, `ifelse`, `while`, `exec`.
+- **The Lexer**: A recursive-descent tokenizer that handles nested blocks, strings, quoted symbols, and different comment styles.
+- **The Context (`tf_ctx`)**: Maintains the data stack and the global function table.
+- **The Engine**: An iterative execution loop that resolves symbols and dispatches to either native C functions or user-defined Forth blocks.
+- **Memory**: Every object is a tagged union with an internal reference count. The system is designed to be leak-free (verifiable with `stb_leakcheck`).
 
-## Future Improvements (Roadmap)
+## Getting Started
 
-### Phase 1: Core Functionality (Completed)
-- [x] **Standard Forth Words**: Implement essential stack manipulation words: `dup`, `drop`, `swap`, `over`, `rot`.
-- [x] **Solid Math Core**: Added support for Floating Point numbers, type promotion, and safety checks (division by zero).
-- [x] **I/O & Control**: Added `print`, `if`, `ifelse`, `while` (block-based) and more. Supports direct boolean conditions.
-- [x] **Debug Mode**: Added `--debug` flag for inspection.
+### Build
 
-### Phase 2: Advanced Features (Antirez Proposals) (In Progress)
-- [ ] **Variable Capturing**: Implement the `(a b)` syntax to capture stack values into local variables, and `$a`, `$b` to retrieve them.
-- [x] **Quoted Symbols**: Support `'symbol` syntax to push a symbol to the stack without immediate execution.
-- [x] **Quotations (Blocks)**: Support `[ ... ]` syntax to push a block of code (list of tokens) to the stack.
-- [x] **User-Defined Functions**: Implement colon definitions `: name ... ;` and functional `def`.
-- [x] **Block Execution**: Implement `exec` or similar to run a block of code pushed to the stack.
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
 
-### Phase 3: Architectural Refactoring (In Progress)
-- [ ] **Iterative Interpreter & Return Stack**: Move away from C recursion. Implement an explicit return stack of `(program, ip)` frames to make the interpreter fully iterative and safer.
-- [x] **Hash Table Dictionary**: Replace the linear scan in `get_func` with a hash table (e.g., djb2 hash with linear probing) for O(1) word lookups.
-- [x] **Refined Native Callbacks**: Simplify the native function interface by removing the `name` parameter and providing dedicated C functions for each Forth word, eliminating redundant internal dispatch.
+### Usage
 
-### Phase 4: System Enhancements
-- [ ] **Memory Management**: Refine reference counting to handle potential cycles if recursive lists/blocks are added.
-- [ ] **Variables & Constants**: Support for global variables and constants.
+```bash
+# Basic run
+./toy_forth fth/program.fth
+
+# Debug mode (prints tokenized program and final stack state)
+./toy_forth --debug fth/program.fth
+```
+
+## Roadmap
+
+- [x] **Stack Ops**: `dup`, `drop`, `swap`, `over`, `rot`.
+- [x] **Math Core**: Floating point support with type promotion.
+- [x] **Quotations**: First-class block `[ ... ]` and quoted symbol `'symb` support.
+- [x] **Word Definitions**: Both `: name ... ;` and `'name [ ... ] def`.
+- [x] **Control Flow**: `if`, `ifelse`, `while`, `times`, `each`.
+- [x] **Hash Table Dictionary**: $O(1)$ word lookups.
+- [x] **Refcount System**: Automatic memory management.
+- [ ] **Iterative Execution**: Moving to an explicit return stack of frames to eliminate C recursion.
+- [ ] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
 
 ## License
 
-This project is licensed under the **MIT License** (see the [LICENSE](LICENSE) file for details).
-
+MIT
