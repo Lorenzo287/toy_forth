@@ -89,7 +89,7 @@ Toy Forth comes with a set of built-in words:
 
 ## Getting Started
 
-### Build
+### Build (see [BUILD](BUILD.md))
 
 ```bash
 mkdir build && cd build
