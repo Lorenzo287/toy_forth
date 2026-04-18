@@ -1,6 +1,11 @@
-#include "tf_alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef STB_LEAKCHECK
+#define STB_LEAKCHECK_IMPLEMENTATION
+#endif
+
+#include "tf_alloc.h"
 #include "tf_obj.h"
 
 void *xmalloc(size_t size) {

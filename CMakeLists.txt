@@ -12,6 +12,11 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.c")
 
 add_executable(toy_forth ${SOURCES})
 
+option(ENABLE_LEAKCHECK "Enable memory leak detection with stb_leakcheck" OFF)
+if(ENABLE_LEAKCHECK)
+    target_compile_definitions(toy_forth PRIVATE STB_LEAKCHECK)
+endif()
+
 if(MSVC)
     target_compile_options(toy_forth PRIVATE /W4)
 else()

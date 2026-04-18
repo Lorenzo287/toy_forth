@@ -53,19 +53,24 @@ int main(int argc, char **argv) {
     }
 
     // execute with context (stack and functions)
+    int result = TF_OK;
     tf_ctx *ctx = init_ctx();
-    if (ctx && exec(ctx, prg) == TF_OK) {
-        if (config.debug) {
-            printf("\n=== Stack content after execution ===\n");
-            size_t count = 0;
-            print_obj(ctx->stack, &count);
-            printf("\n");
-        }
-    } else {
+    if (!ctx || exec(ctx, prg) != TF_OK) {
         fprintf(stderr, "Failed to execute the program\n");
-        return TF_ERR;
+        result = TF_ERR;
+    } else if (config.debug) {
+        printf("\n=== Stack content after execution ===\n");
+        size_t count = 0;
+        print_obj(ctx->stack, &count);
+        printf("\n");
     }
-    return TF_OK;
+    release_obj(prg);
+    free_ctx(ctx);
+
+#ifdef STB_LEAKCHECK
+    stb_leakcheck_dumpmem();
+#endif
+    return result;
 }
 
 int parse_args(int argc, char **argv, config *config) {

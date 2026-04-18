@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef STB_LEAKCHECK
+#include "stb_leakcheck.h"
+#endif
+
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 

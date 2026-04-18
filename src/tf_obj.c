@@ -118,6 +118,7 @@ void free_obj(tf_obj *o) {
     switch (o->type) {
     case TF_OBJ_TYPE_LIST:
         for (size_t i = 0; i < o->list.len; i++) release_obj(o->list.elem[i]);
+        free(o->list.elem);
         break;
     case TF_OBJ_TYPE_SYMBOL:
     case TF_OBJ_TYPE_STR:

@@ -1,6 +1,7 @@
 #include "tf_exec.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "tf_alloc.h"
 #include "tf_lib.h"
 
@@ -29,45 +30,59 @@ tf_ctx *init_ctx(void) {
     ctx->curr_prg = NULL;
     ctx->curr_pc = 0;
 
-    set_native_func(ctx, "+", math_functions);
-    set_native_func(ctx, "-", math_functions);
-    set_native_func(ctx, "*", math_functions);
-    set_native_func(ctx, "/", math_functions);
-    set_native_func(ctx, "%", math_functions);
-    set_native_func(ctx, "mod", math_functions);
-    set_native_func(ctx, "abs", math_functions);
-    set_native_func(ctx, "max", math_functions);
-    set_native_func(ctx, "min", math_functions);
+    set_native_func(ctx, "+", tf_add);
+    set_native_func(ctx, "-", tf_sub);
+    set_native_func(ctx, "*", tf_mul);
+    set_native_func(ctx, "/", tf_div);
+    set_native_func(ctx, "%", tf_mod);
+    set_native_func(ctx, "mod", tf_mod);
+    set_native_func(ctx, "abs", tf_abs);
+    set_native_func(ctx, "max", tf_max);
+    set_native_func(ctx, "min", tf_min);
 
-    set_native_func(ctx, "dup", stack_functions);
-    set_native_func(ctx, "drop", stack_functions);
-    set_native_func(ctx, "swap", stack_functions);
-    set_native_func(ctx, "over", stack_functions);
-    set_native_func(ctx, "rot", stack_functions);
+    set_native_func(ctx, "dup", tf_dup);
+    set_native_func(ctx, "drop", tf_drop);
+    set_native_func(ctx, "swap", tf_swap);
+    set_native_func(ctx, "over", tf_over);
+    set_native_func(ctx, "rot", tf_rot);
 
-    set_native_func(ctx, "print", io_functions);
-    set_native_func(ctx, "println", io_functions);
-    set_native_func(ctx, ".", io_functions);
-    set_native_func(ctx, ".s", io_functions);
+    set_native_func(ctx, "print", tf_print);
+    set_native_func(ctx, "println", tf_println);
+    set_native_func(ctx, ".", tf_dot);
+    set_native_func(ctx, ".s", tf_stack);
 
-    set_native_func(ctx, "==", compare_functions);
-    set_native_func(ctx, "!=", compare_functions);
-    set_native_func(ctx, "<", compare_functions);
-    set_native_func(ctx, ">", compare_functions);
-    set_native_func(ctx, "<=", compare_functions);
-    set_native_func(ctx, ">=", compare_functions);
+    set_native_func(ctx, "==", tf_eq);
+    set_native_func(ctx, "!=", tf_ne);
+    set_native_func(ctx, "<", tf_lt);
+    set_native_func(ctx, ">", tf_gt);
+    set_native_func(ctx, "<=", tf_le);
+    set_native_func(ctx, ">=", tf_ge);
 
-    set_native_func(ctx, "exec", control_functions);
-    set_native_func(ctx, "if", control_functions);
-    set_native_func(ctx, "ifelse", control_functions);
-    set_native_func(ctx, "times", control_functions);
-    set_native_func(ctx, "each", control_functions);
-    set_native_func(ctx, "while", control_functions);
+    set_native_func(ctx, "exec", tf_exec);
+    set_native_func(ctx, "if", tf_if);
+    set_native_func(ctx, "ifelse", tf_ifelse);
+    set_native_func(ctx, "times", tf_times);
+    set_native_func(ctx, "each", tf_each);
+    set_native_func(ctx, "while", tf_while);
 
-    set_native_func(ctx, ":", definition_functions);
-    set_native_func(ctx, "def", definition_functions);
+    set_native_func(ctx, ":", tf_colon);
+    set_native_func(ctx, "def", tf_def);
 
     return ctx;
+}
+
+void free_ctx(tf_ctx *ctx) {
+    release_obj(ctx->stack);
+    for (size_t i = 0; i < ctx->funcount; i++) {
+        tf_func *f = ctx->functions[i];
+        release_obj(f->name); 
+        if (f->type == TF_FUNC_TYPE_USER) {
+            release_obj(f->user_impl);
+        }
+        free(f);
+    }
+    free(ctx->functions);
+    free(ctx);
 }
 
 tf_func *init_func(tf_ctx *ctx, tf_obj *name) {
@@ -155,6 +170,6 @@ int call_symbol(tf_ctx *ctx, tf_obj *symb) {
     if (f->type == TF_FUNC_TYPE_USER) {
         return exec(ctx, f->user_impl);
     } else {
-        return f->native_impl(ctx, f->name->str.ptr);
+        return f->native_impl(ctx);
     }
 }

@@ -1,5 +1,7 @@
 # Build directories
 build/
+build-linux/
+build-leak/
 bin/
 obj/
 
