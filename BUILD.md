@@ -3,7 +3,9 @@
 ## Environments
 
 All builds are configured using `-DCMAKE_BUILD_TYPE=<Profile>`.
+
 It's possible to override the default compiler using `-DCMAKE_C_COMPILER=<Compiler>`.
+
 Can use "Unix Makefiles" if you don't have "Ninja" installed, on Windows it selects MinGW
 
 ### 1. Release (Optimized)
@@ -30,6 +32,7 @@ cmake --build build-leak
 ### 3. Profile
 
 Development build for profiling symbols (uses `-O2`).
+
 _Note: On Windows, use MSVC or Clang. GCC/MinGW is not supported for this mode._
 
 ```bash
