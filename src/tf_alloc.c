@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 #ifdef STB_LEAKCHECK
-#define STB_LEAKCHECK_IMPLEMENTATION
-#include <string.h>
+    #define STB_LEAKCHECK_IMPLEMENTATION
+    #include <string.h>
 #endif
 
 #include "tf_alloc.h"

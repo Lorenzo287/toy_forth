@@ -42,11 +42,11 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
         }
         if (lexer->pos[0] == '(') {
             while (lexer->pos[0] != ')' && lexer->pos[0] != 0) lexer->pos++;
-			lexer->pos++;
+            lexer->pos++;
             continue;
         }
 
-		// BASE CASE, we reached ']' terminator
+        // BASE CASE, we reached ']' terminator
         if (terminator && *lexer->pos == terminator) {
             lexer->pos++;
             return prg;
@@ -62,9 +62,7 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
         } else if (lexer->pos[0] == '\'') {
             lexer->pos++;
             o = tokenize_symbol(lexer);
-            if (o && o->type == TF_OBJ_TYPE_SYMBOL) {
-                o->str.quoted = true;
-            }
+            if (o && o->type == TF_OBJ_TYPE_SYMBOL) { o->str.quoted = true; }
         } else if (is_sym_char(lexer->pos[0])) {
             o = tokenize_symbol(lexer);
         } else if (lexer->pos[0] == '"' && lexer->pos[1] != 0) {
@@ -128,7 +126,7 @@ tf_obj *tokenize_symbol(tf_lexer *lexer) {
 }
 
 tf_obj *tokenize_string(tf_lexer *lexer) {
-    lexer->pos++; // skip opening "
+    lexer->pos++;  // skip opening "
     size_t cap = 64;
     size_t len = 0;
     char *buf = xmalloc(cap);
@@ -143,12 +141,24 @@ tf_obj *tokenize_string(tf_lexer *lexer) {
             lexer->pos++;
             if (lexer->pos[0] == 0) break;
             switch (lexer->pos[0]) {
-            case 'n': buf[len++] = '\n'; break;
-            case 'r': buf[len++] = '\r'; break;
-            case 't': buf[len++] = '\t'; break;
-            case '"': buf[len++] = '"'; break;
-            case '\\': buf[len++] = '\\'; break;
-            default: buf[len++] = lexer->pos[0]; break;
+            case 'n':
+                buf[len++] = '\n';
+                break;
+            case 'r':
+                buf[len++] = '\r';
+                break;
+            case 't':
+                buf[len++] = '\t';
+                break;
+            case '"':
+                buf[len++] = '"';
+                break;
+            case '\\':
+                buf[len++] = '\\';
+                break;
+            default:
+                buf[len++] = lexer->pos[0];
+                break;
             }
         } else {
             buf[len++] = lexer->pos[0];
@@ -160,7 +170,7 @@ tf_obj *tokenize_string(tf_lexer *lexer) {
         free(buf);
         return NULL;
     }
-    lexer->pos++; // skip closing "
+    lexer->pos++;  // skip closing "
 
     tf_obj *o = create_string_obj(buf, len);
     free(buf);

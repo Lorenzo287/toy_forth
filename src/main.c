@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     } else if (config.debug) {
         printf("\n=== Stack content after execution ===\n");
         size_t count = 0;
-        print_obj(ctx->stack, &count);
+        print_obj(ctx->forth_stack, &count);
         printf("\n");
     }
     release_obj(prg);

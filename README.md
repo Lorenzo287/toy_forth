@@ -116,7 +116,7 @@ cmake --build .
 - [x] **Control Flow**: `if`, `ifelse`, `while`, `times`, `each`.
 - [x] **Hash Table Dictionary**: $O(1)$ word lookups.
 - [x] **Refcount System**: Automatic memory management.
-- [ ] **Iterative Execution**: Moving to an explicit return stack of frames to eliminate C recursion.
+- [x] **Iterative Execution**: Moving to an explicit return stack of frames to eliminate C recursion.
 - [ ] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
 
 ## License

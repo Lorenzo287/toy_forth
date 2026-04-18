@@ -34,17 +34,25 @@ typedef struct {
     size_t count;
 } tf_func_table;
 
+typedef struct {
+    tf_obj *prg;
+    size_t pc;  // program counter
+} tf_frame;
+
 struct ctx {
-    tf_obj *stack;  // forth program stack
+    tf_obj *forth_stack;  // forth program stack
     tf_func_table functions;
-    tf_obj *curr_prg;  // current program list being executed
-    size_t curr_pc;    // program counter (index into the curr_prg array)
+    tf_frame *call_stack;  // funtions call stack
+    size_t cstack_len;
 };
 
-size_t stack_len(tf_ctx *ctx);
-tf_obj *stack_pop(tf_ctx *ctx);
-tf_obj *stack_pop_type(tf_ctx *ctx, tf_type type);
-void stack_push(tf_ctx *ctx, tf_obj *o);
+size_t fstack_len(tf_ctx *ctx);
+void fstack_push(tf_ctx *ctx, tf_obj *o);
+tf_obj *fstack_pop(tf_ctx *ctx);
+tf_obj *fstack_pop_type(tf_ctx *ctx, tf_type type);
+
+void cstack_push(tf_ctx *ctx, tf_obj *prg);
+void cstack_pop(tf_ctx *ctx);
 
 tf_ctx *init_ctx(void);
 void free_ctx(tf_ctx *ctx);

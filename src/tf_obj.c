@@ -132,7 +132,7 @@ void free_obj(tf_obj *o) {
 
 // Print the object with type information (for debugging)
 void print_obj(tf_obj *o, size_t *count) {
-	(*count)++;
+    (*count)++;
     switch (o->type) {
     case TF_OBJ_TYPE_INT:
         printf("{int:%d}", o->i);

@@ -5,19 +5,38 @@
 #include "tf_alloc.h"
 #include "tf_lib.h"
 
-/* wrappers for managing the context stack, based on less abstract object
+/* === Context Manipulation Helpers === */
+
+/* wrappers for managing the context forth stack, based on less abstract object
    manipulation functions defined in tf_obj */
-size_t stack_len(tf_ctx *ctx) {
-    return ctx->stack->list.len;
+size_t fstack_len(tf_ctx *ctx) {
+    return ctx->forth_stack->list.len;
 }
-tf_obj *stack_pop(tf_ctx *ctx) {
-    return pop_obj(ctx->stack);
+void fstack_push(tf_ctx *ctx, tf_obj *o) {
+    push_obj(ctx->forth_stack, o);
 }
-tf_obj *stack_pop_type(tf_ctx *ctx, tf_type type) {
-    return pop_obj_type(ctx->stack, type);
+tf_obj *fstack_pop(tf_ctx *ctx) {
+    return pop_obj(ctx->forth_stack);
 }
-void stack_push(tf_ctx *ctx, tf_obj *o) {
-    push_obj(ctx->stack, o);
+tf_obj *fstack_pop_type(tf_ctx *ctx, tf_type type) {
+    return pop_obj_type(ctx->forth_stack, type);
+}
+
+/* helpers for managing the context call stack */
+void cstack_push(tf_ctx *ctx, tf_obj *prg) {
+    ctx->call_stack =
+        xrealloc(ctx->call_stack, sizeof(tf_frame) * (ctx->cstack_len + 1));
+    ctx->call_stack[ctx->cstack_len].prg = prg;
+    ctx->call_stack[ctx->cstack_len].pc = 0;
+    retain_obj(prg);
+    ctx->cstack_len++;
+}
+
+void cstack_pop(tf_ctx *ctx) {
+    if (ctx->cstack_len == 0) return;
+    tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
+    release_obj(f->prg);
+    ctx->cstack_len--;
 }
 
 /* === Function Table Helpers === */
@@ -26,9 +45,7 @@ static unsigned long tf_hash(tf_obj *o) {
     unsigned long hash = 5381;
     char *ptr = o->str.ptr;
     size_t len = o->str.len;
-    for (size_t i = 0; i < len; i++) {
-        hash = ((hash << 5) + hash) + ptr[i];
-    }
+    for (size_t i = 0; i < len; i++) { hash = ((hash << 5) + hash) + ptr[i]; }
     return hash;
 }
 
@@ -37,7 +54,8 @@ static void tf_table_resize(tf_ctx *ctx) {
     tf_func **old_buckets = ctx->functions.buckets;
 
     ctx->functions.capacity *= 2;
-    ctx->functions.buckets = xcalloc(ctx->functions.capacity, sizeof(tf_func *));
+    ctx->functions.buckets =
+        xcalloc(ctx->functions.capacity, sizeof(tf_func *));
 
     for (size_t i = 0; i < old_cap; i++) {
         tf_func *f = old_buckets[i];
@@ -57,12 +75,13 @@ static void tf_table_resize(tf_ctx *ctx) {
 
 tf_ctx *init_ctx(void) {
     tf_ctx *ctx = xmalloc(sizeof(tf_ctx));
-    ctx->stack = init_list_obj();
+    ctx->forth_stack = init_list_obj();
     ctx->functions.capacity = 16;
     ctx->functions.count = 0;
-    ctx->functions.buckets = xcalloc(ctx->functions.capacity, sizeof(tf_func *));
-    ctx->curr_prg = NULL;
-    ctx->curr_pc = 0;
+    ctx->functions.buckets =
+        xcalloc(ctx->functions.capacity, sizeof(tf_func *));
+    ctx->call_stack = NULL;
+    ctx->cstack_len = 0;
 
     set_native_func(ctx, "+", tf_add);
     set_native_func(ctx, "-", tf_sub);
@@ -106,18 +125,20 @@ tf_ctx *init_ctx(void) {
 }
 
 void free_ctx(tf_ctx *ctx) {
-    release_obj(ctx->stack);
+    release_obj(ctx->forth_stack);
     for (size_t i = 0; i < ctx->functions.capacity; i++) {
         tf_func *f = ctx->functions.buckets[i];
         if (f) {
             release_obj(f->name);
-            if (f->type == TF_FUNC_TYPE_USER) {
-                release_obj(f->user_impl);
-            }
+            if (f->type == TF_FUNC_TYPE_USER) { release_obj(f->user_impl); }
             free(f);
         }
     }
     free(ctx->functions.buckets);
+    for (size_t i = 0; i < ctx->cstack_len; i++) {
+        release_obj(ctx->call_stack[i].prg);
+    }
+    free(ctx->call_stack);
     free(ctx);
 }
 
@@ -171,7 +192,7 @@ tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
     if (ctx->functions.capacity == 0) return NULL;
     unsigned long h = tf_hash(name);
     size_t idx = h % ctx->functions.capacity;
-	// linear probing
+    // linear probing
     while (ctx->functions.buckets[idx]) {
         if (compare_string_obj(ctx->functions.buckets[idx]->name, name) == 0) {
             return ctx->functions.buckets[idx];
@@ -186,31 +207,40 @@ tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
 int exec(tf_ctx *ctx, tf_obj *prg) {
     if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
 
-    tf_obj *old_prg = ctx->curr_prg;
-    size_t old_pc = ctx->curr_pc;
+    // push frame to the call stack
+    cstack_push(ctx, prg);
 
-    ctx->curr_prg = prg;
-    for (ctx->curr_pc = 0; ctx->curr_pc < prg->list.len; ctx->curr_pc++) {
-        tf_obj *o = prg->list.elem[ctx->curr_pc];
+    /* If this is a nested call to exec, we must continue to run until the
+     * pushed frame is popped, to maintain the blocking semantics expected
+     * by native words like 'if', 'while' etc. */
+    size_t target_depth = ctx->cstack_len - 1;
+
+    while (ctx->cstack_len > target_depth) {
+        tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
+        if (f->pc >= f->prg->list.len) {
+            cstack_pop(ctx);
+            continue;
+        }
+
+        tf_obj *o = f->prg->list.elem[f->pc++];
         switch (o->type) {
         case TF_OBJ_TYPE_SYMBOL:
             if (o->str.quoted) {
-                stack_push(ctx, o);
+                fstack_push(ctx, o);
                 retain_obj(o);
             } else if (call_symbol(ctx, o) == TF_ERR) {
                 printf("Run time error\n");
+                // unwind remaining frames
+                while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                 return TF_ERR;
             }
             break;
         default:
-            stack_push(ctx, o);
+            fstack_push(ctx, o);
             retain_obj(o);
             break;
         }
     }
-
-    ctx->curr_prg = old_prg;
-    ctx->curr_pc = old_pc;
     return TF_OK;
 }
 
@@ -218,7 +248,10 @@ int call_symbol(tf_ctx *ctx, tf_obj *symb) {
     tf_func *f = get_func(ctx, symb);
     if (!f) return TF_ERR;
     if (f->type == TF_FUNC_TYPE_USER) {
-        return exec(ctx, f->user_impl);
+        /* Instead of calling exec() recursively, we just push a new frame
+         * and return. The main loop in exec() will handle it. */
+        cstack_push(ctx, f->user_impl);
+        return TF_OK;
     } else {
         return f->native_impl(ctx);
     }
