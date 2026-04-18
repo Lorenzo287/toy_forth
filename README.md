@@ -57,7 +57,7 @@ Blocks allow for concise and expressive loops:
 
 ### Flexible Conditions
 
-Control flow words make no distinction between a value and a block that produces a value, allowing for immediate or lazy evaluation:
+For conditional logic (`if` and `ifelse`), the interpreter makes no distinction between a value and a block that produces a value, allowing for immediate or lazy evaluation:
 
 ```forth
 \ Option 1: Immediate Boolean (calculated BEFORE 'if')
@@ -66,6 +66,19 @@ Control flow words make no distinction between a value and a block that produces
 \ Option 2: Deferred Block (calculated BY 'if')
 [ 1 2 < ] [ "True!" println ] if
 ```
+
+## Standard Library
+
+Toy Forth comes with a set of built-in words:
+
+| Category | Words |
+| --- | --- |
+| **Stack** | `dup`, `drop`, `swap`, `over`, `rot` |
+| **Math** | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min` |
+| **Comparison** | `==`, `!=`, `<`, `>`, `<=`, `>=` |
+| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec` |
+| **I/O** | `print`, `println`, `.`, `.s` (show stack) |
+| **Definition** | `:`, `def` |
 
 ## Architecture
 
