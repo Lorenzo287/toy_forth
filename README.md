@@ -6,18 +6,42 @@ Based on the original [Toy Forth](https://github.com/antirez/toyforth) project b
 
 ## Key Features
 
-- **Dynamic Object System**: Every item on the stack is a `tf_obj`. The interpreter natively supports **Integers, Floats, Booleans, Strings, Symbols,** and **Lists**.
-- **Quotations & Blocks**: Code is data. Use `[ ... ]` to push a block of tokens, or `'symbol` to push a symbol to the stack without immediately executing it.
-- **Polymorphic Control Flow**: Words like `if`, `ifelse`, `while`, `times`, and `each` consume blocks from the stack, enabling both traditional and functional logic.
-- **Automatic Memory Management**: A uniform reference counting model (`retain_obj`/`release_obj`) handles all heap-allocated objects, including strings, symbols, and nested lists.
-- **Type Promotion**: Mixed-type arithmetic is handled automatically (e.g., `1 2.5 +` results in a Float `3.5`).
-- **$O(1)$ Word Lookup**: A hash table dictionary (djb2 hash with linear probing) ensures fast dispatch for both native C callbacks and user-defined words.
+### Language Features
+- **Dynamic Object System**: Native support for **Integers, Floats, Booleans, Strings, Symbols,** and **Lists**.
+- **Quotations & Blocks**: First-class code blocks `[ ... ]` and quoted symbols `'symb` allow for deferred execution.
+- **Variable Capturing**: Named local variables with dynamic scoping using `( a b )` and `$a` syntax.
+- **First-class Control Flow**: Branches (`if`) and loops (`while`, `each`) are simple words that consume code blocks from the stack.
+
+### Engine & Performance
+- **Iterative Execution**: An explicit return stack of frames eliminates C recursion for user-defined words, preventing stack overflows.
+- **Automatic Memory Management**: A uniform reference counting model (`retain_obj`/`release_obj`) handles all heap-allocated objects.
+- **$O(1)$ Word Lookup**: A high-performance hash table dictionary ensures fast dispatch.
+- **Type Promotion**: Automatic mixed-type arithmetic (e.g., `1 2.5 +` -> `3.5`).
 
 ## Showcase
 
-### Deferred Execution (Quoted Symbols & Blocks)
+### Definitions & Variables
 
-You can defer execution by "quoting" a symbol or wrapping code in a block:
+Define new words using the classic colon syntax or by binding blocks to symbols. Use variable capturing to avoid complex stack manipulation:
+
+```forth
+\ Classic colon definition with local variables
+: square ( n ) $n $n * ;
+
+\ Functional style definition using 'def'
+'cube [ ( n ) $n square $n * ] def
+
+5 square println  \ 25
+3 cube println    \ 27
+
+\ Captured variables are visible to inner blocks (Dynamic Scoping)
+10 (x)
+[ $x 5 + println ] exec \ 15
+```
+
+### Deferred Execution (Quotations)
+
+Code is data. You can defer execution by "quoting" a symbol or wrapping code in a block:
 
 ```forth
 'dup          \ Pushes the symbol 'dup' to the stack instead of running it
@@ -25,26 +49,17 @@ You can defer execution by "quoting" a symbol or wrapping code in a block:
 exec          \ Now execute the block on the stack -> 3
 ```
 
-### Definitions
+### Iteration & Control Flow
 
-Define new words using the classic colon syntax or by binding blocks to symbols:
-
-```forth
-\ Classic colon definition
-: square dup * ;
-
-\ Functional style definition
-'cube [ dup square * ] def
-
-5 square println  \ 25
-3 cube println    \ 27
-```
-
-### Iteration
-
-Blocks allow for concise and expressive loops:
+Blocks allow for concise and expressive loops. For conditional logic (`if` and `ifelse`), the interpreter makes no distinction between a value and a block that produces a value, allowing for immediate or lazy evaluation:
 
 ```forth
+\ Option 1: Immediate Boolean (calculated BEFORE 'if')
+1 2 < [ "True!" println ] if
+
+\ Option 2: Deferred Block (calculated BY 'if')
+[ 1 2 < ] [ "True!" println ] if
+
 \ Execute a block 5 times
 5 [ "Hello! " print ] times
 
@@ -55,35 +70,9 @@ Blocks allow for concise and expressive loops:
 10 [ dup 0 > ] [ dup . " " . 1 - ] while
 ```
 
-### Flexible Conditions
-
-For conditional logic (`if` and `ifelse`), the interpreter makes no distinction between a value and a block that produces a value, allowing for immediate or lazy evaluation:
-
-```forth
-\ Option 1: Immediate Boolean (calculated BEFORE 'if')
-1 2 < [ "True!" println ] if
-
-\ Option 2: Deferred Block (calculated BY 'if')
-[ 1 2 < ] [ "True!" println ] if
-```
-
-### Variable Capturing (Local Variables)
-
-Named local variables can be "captured" from the stack using `( ... )` and retrieved using `$`. Toy Forth uses **dynamic scoping**, meaning that inner blocks or called words can access variables defined in the caller's frame.
-
-```forth
-\ Define a word using local variables
-: my-swap ( a b ) $b $a ;
-1 2 my-swap println println \ prints 1 then 2
-
-\ Dynamic Scoping: blocks can access variables from outer scopes
-10 (x)
-[ $x 5 + println ] exec \ prints 15
-```
-
 ## Standard Library
 
-Toy Forth comes with a set of built-in words:
+Toy Forth comes with a robust set of built-in words:
 
 | Category          | Words                                               |
 | ----------------- | --------------------------------------------------- |
@@ -96,9 +85,9 @@ Toy Forth comes with a set of built-in words:
 
 ## Architecture
 
-- **The Lexer**: A recursive-descent tokenizer that handles nested blocks, strings, quoted symbols, and different comment styles (`\` for line comments, `/* ... */` for multiline).
-- **The Context (`tf_ctx`)**: Maintains the data stack and the global function table.
-- **The Engine**: An iterative execution engine that uses an explicit call stack for user-defined words to prevent C stack overflows, while utilizing a pragmatic hybrid approach for native control flow words.
+- **Lexer**: A recursive-descent tokenizer that supports nested blocks, strings, quoted symbols, and multiple comment styles (`\` and `/* ... */`).
+- **Engine**: An iterative execution engine using a frame-based call stack. This hybrid approach ensures that user-defined word recursion is safe from C stack limits.
+- **Context**: Maintains the data stack, the global function hash table, and the active execution frames.
 - **Memory**: Every object is a tagged union with an internal reference count. The system is designed to be leak-free (verifiable with `stb_leakcheck`).
 
 ## Getting Started
@@ -130,7 +119,7 @@ cmake --build .
 - [x] **Control Flow**: `if`, `ifelse`, `while`, `times`, `each`.
 - [x] **Hash Table Dictionary**: $O(1)$ word lookups.
 - [x] **Refcount System**: Automatic memory management.
-- [x] **Iterative Execution**: Moving to an explicit return stack of frames to eliminate C recursion.
+- [x] **Iterative Execution**: Explicit return stack of frames.
 - [x] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
 
 ## License
