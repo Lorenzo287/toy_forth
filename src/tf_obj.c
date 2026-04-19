@@ -116,10 +116,12 @@ void release_obj(tf_obj *o) {
 
 void free_obj(tf_obj *o) {
     switch (o->type) {
+    case TF_OBJ_TYPE_VARLIST:
     case TF_OBJ_TYPE_LIST:
         for (size_t i = 0; i < o->list.len; i++) release_obj(o->list.elem[i]);
         free(o->list.elem);
         break;
+    case TF_OBJ_TYPE_VARFETCH:
     case TF_OBJ_TYPE_SYMBOL:
     case TF_OBJ_TYPE_STR:
         free(o->str.ptr);
@@ -148,6 +150,18 @@ void print_obj(tf_obj *o, size_t *count) {
         break;
     case TF_OBJ_TYPE_BOOL:
         printf("{bool:%d}", o->b);
+        break;
+    case TF_OBJ_TYPE_VARFETCH:
+        printf("{fetch:$%s}", o->str.ptr);
+        break;
+    case TF_OBJ_TYPE_VARLIST:
+        (*count)--;
+        printf("(");
+        for (size_t i = 0; i < o->list.len; i++) {
+            print_obj(o->list.elem[i], count);
+            if (i != o->list.len - 1) printf(" ");
+        }
+        printf(")");
         break;
     case TF_OBJ_TYPE_LIST:
         (*count)--;
@@ -185,6 +199,17 @@ void print_value(tf_obj *o) {
         break;
     case TF_OBJ_TYPE_BOOL:
         printf("%s", o->b ? "true" : "false");
+        break;
+    case TF_OBJ_TYPE_VARFETCH:
+        printf("$%s", o->str.ptr);
+        break;
+    case TF_OBJ_TYPE_VARLIST:
+        printf("(");
+        for (size_t i = 0; i < o->list.len; i++) {
+            print_value(o->list.elem[i]);
+            if (i != o->list.len - 1) printf(" ");
+        }
+        printf(")");
         break;
     case TF_OBJ_TYPE_LIST:
         printf("[");

@@ -28,6 +28,9 @@ void cstack_push(tf_ctx *ctx, tf_obj *prg) {
         xrealloc(ctx->call_stack, sizeof(tf_frame) * (ctx->cstack_len + 1));
     ctx->call_stack[ctx->cstack_len].prg = prg;
     ctx->call_stack[ctx->cstack_len].pc = 0;
+    ctx->call_stack[ctx->cstack_len].vars.vars = NULL;
+    ctx->call_stack[ctx->cstack_len].vars.len = 0;
+    ctx->call_stack[ctx->cstack_len].vars.cap = 0;
     retain_obj(prg);
     ctx->cstack_len++;
 }
@@ -35,6 +38,13 @@ void cstack_push(tf_ctx *ctx, tf_obj *prg) {
 void cstack_pop(tf_ctx *ctx) {
     if (ctx->cstack_len == 0) return;
     tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
+    
+    for (size_t i = 0; i < f->vars.len; i++) {
+        release_obj(f->vars.vars[i].name);
+        release_obj(f->vars.vars[i].val);
+    }
+    free(f->vars.vars);
+
     release_obj(f->prg);
     ctx->cstack_len--;
 }
@@ -202,7 +212,36 @@ tf_func *get_func(tf_ctx *ctx, tf_obj *name) {
     return NULL;
 }
 
-/* === Execution === */
+/* === Variable Helpers === */
+
+static void tf_var_bind(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
+    if (ctx->cstack_len == 0) return;
+    tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
+
+    if (f->vars.len >= f->vars.cap) {
+        f->vars.cap = f->vars.cap == 0 ? 4 : f->vars.cap * 2;
+        f->vars.vars = xrealloc(f->vars.vars, sizeof(tf_var) * f->vars.cap);
+    }
+    f->vars.vars[f->vars.len].name = name;
+    f->vars.vars[f->vars.len].val = val;
+    retain_obj(name);
+    retain_obj(val);
+    f->vars.len++;
+}
+
+static tf_obj *tf_var_fetch(tf_ctx *ctx, tf_obj *name) {
+    for (int i = (int)ctx->cstack_len - 1; i >= 0; i--) {
+        tf_frame *f = &ctx->call_stack[i];
+        for (int j = (int)f->vars.len - 1; j >= 0; j--) {
+            if (compare_string_obj(f->vars.vars[j].name, name) == 0) {
+                return f->vars.vars[j].val;
+            }
+        }
+    }
+    return NULL;
+}
+
+
 
 /* 
  * The main iterative execution engine. 
@@ -233,13 +272,43 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             if (o->str.quoted) {
                 fstack_push(ctx, o);
                 retain_obj(o);
-            } else if (call_symbol(ctx, o) == TF_ERR) {
-                printf("Run time error\n");
-                // unwind remaining frames
+            } else {
+                tf_func *func = get_func(ctx, o);
+                if (!func) {
+                    printf("Run time error: undefined word '%s'\n", o->str.ptr);
+                    while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
+                    return TF_ERR;
+                }
+                if (call_symbol(ctx, o) == TF_ERR) {
+                    // unwind remaining frames
+                    while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
+                    return TF_ERR;
+                }
+            }
+            break;
+        case TF_OBJ_TYPE_VARLIST:
+            for (int i = (int)o->list.len - 1; i >= 0; i--) {
+                tf_obj *val = fstack_pop(ctx);
+                if (!val) {
+                    printf("Run time error: stack underflow during variable binding\n");
+                    while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
+                    return TF_ERR;
+                }
+                tf_var_bind(ctx, o->list.elem[i], val);
+                release_obj(val);
+            }
+            break;
+        case TF_OBJ_TYPE_VARFETCH: {
+            tf_obj *val = tf_var_fetch(ctx, o);
+            if (!val) {
+                printf("Run time error: undefined variable '$%s'\n", o->str.ptr);
                 while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                 return TF_ERR;
             }
+            fstack_push(ctx, val);
+            retain_obj(val);
             break;
+        }
         default:
             fstack_push(ctx, o);
             retain_obj(o);

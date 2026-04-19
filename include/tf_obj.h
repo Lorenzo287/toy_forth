@@ -14,7 +14,9 @@ typedef enum {
     TF_OBJ_TYPE_FLOAT,
     TF_OBJ_TYPE_STR,
     TF_OBJ_TYPE_SYMBOL,
-    TF_OBJ_TYPE_LIST
+    TF_OBJ_TYPE_LIST,
+    TF_OBJ_TYPE_VARLIST,
+    TF_OBJ_TYPE_VARFETCH
 } tf_type;
 
 /* === Object Definition === */

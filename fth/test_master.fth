@@ -38,3 +38,10 @@
 "Define: functional (cube 3 = 27)" println
 'cube [ dup square * ] def
 3 cube println
+
+"Vars: capture and fetch (10 (x) $x $x + = 20)" println
+10 (x) $x $x + println
+
+"Vars: dynamic scoping (100 (y) [ $y ] exec = 100)" println
+100 (y) [ $y println ] exec
+

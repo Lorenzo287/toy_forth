@@ -35,8 +35,20 @@ typedef struct {
 } tf_func_table;
 
 typedef struct {
+    tf_obj *name;
+    tf_obj *val;
+} tf_var;
+
+typedef struct {
+    tf_var *vars;
+    size_t len;
+    size_t cap;
+} tf_var_table;
+
+typedef struct {
     tf_obj *prg;
     size_t pc;  // program counter
+    tf_var_table vars;
 } tf_frame;
 
 struct ctx {

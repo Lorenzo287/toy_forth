@@ -67,22 +67,36 @@ For conditional logic (`if` and `ifelse`), the interpreter makes no distinction 
 [ 1 2 < ] [ "True!" println ] if
 ```
 
+### Variable Capturing (Local Variables)
+
+Named local variables can be "captured" from the stack using `( ... )` and retrieved using `$`. Toy Forth uses **dynamic scoping**, meaning that inner blocks or called words can access variables defined in the caller's frame.
+
+```forth
+\ Define a word using local variables
+: my-swap ( a b ) $b $a ;
+1 2 my-swap println println \ prints 1 then 2
+
+\ Dynamic Scoping: blocks can access variables from outer scopes
+10 (x)
+[ $x 5 + println ] exec \ prints 15
+```
+
 ## Standard Library
 
 Toy Forth comes with a set of built-in words:
 
-| Category | Words |
-| --- | --- |
-| **Stack** | `dup`, `drop`, `swap`, `over`, `rot` |
-| **Math** | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min` |
-| **Comparison** | `==`, `!=`, `<`, `>`, `<=`, `>=` |
-| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec` |
-| **I/O** | `print`, `println`, `.`, `.s` (show stack) |
-| **Definition** | `:`, `def` |
+| Category          | Words                                               |
+| ----------------- | --------------------------------------------------- |
+| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                |
+| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min` |
+| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                    |
+| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`    |
+| **I/O**           | `print`, `println`, `.`, `.s` (show stack)          |
+| **Definition**    | `:`, `def`                                          |
 
 ## Architecture
 
-- **The Lexer**: A recursive-descent tokenizer that handles nested blocks, strings, quoted symbols, and different comment styles.
+- **The Lexer**: A recursive-descent tokenizer that handles nested blocks, strings, quoted symbols, and different comment styles (`\` for line comments, `/* ... */` for multiline).
 - **The Context (`tf_ctx`)**: Maintains the data stack and the global function table.
 - **The Engine**: An iterative execution engine that uses an explicit call stack for user-defined words to prevent C stack overflows, while utilizing a pragmatic hybrid approach for native control flow words.
 - **Memory**: Every object is a tagged union with an internal reference count. The system is designed to be leak-free (verifiable with `stb_leakcheck`).
@@ -117,7 +131,7 @@ cmake --build .
 - [x] **Hash Table Dictionary**: $O(1)$ word lookups.
 - [x] **Refcount System**: Automatic memory management.
 - [x] **Iterative Execution**: Moving to an explicit return stack of frames to eliminate C recursion.
-- [ ] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
+- [x] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
 
 ## License
 
