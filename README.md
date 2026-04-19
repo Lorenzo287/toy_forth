@@ -32,11 +32,11 @@ Define new words using the classic colon syntax or by binding blocks to symbols.
 'cube [ ( n ) $n square $n * ] def
 
 5 square print  \ 25
-3 cube print    \ 27
+3 cube .        \ 27
 
 \ Captured variables are visible to inner blocks (Dynamic Scoping)
 10 (x)
-[ $x 5 + print ] exec \ 15
+[ $x 5 + . ] exec \ 15
 ```
 
 ### Deferred Execution (Quotations)
