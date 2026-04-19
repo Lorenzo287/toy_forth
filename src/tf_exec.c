@@ -109,8 +109,8 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "over", tf_over);
     set_native_func(ctx, "rot", tf_rot);
 
+    set_native_func(ctx, "printf", tf_printf);
     set_native_func(ctx, "print", tf_print);
-    set_native_func(ctx, "println", tf_println);
     set_native_func(ctx, ".", tf_dot);
     set_native_func(ctx, ".s", tf_stack);
 

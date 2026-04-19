@@ -21,8 +21,8 @@ int tf_over(tf_ctx *ctx);
 int tf_rot(tf_ctx *ctx);
 
 // I/O operations
+int tf_printf(tf_ctx *ctx);
 int tf_print(tf_ctx *ctx);
-int tf_println(tf_ctx *ctx);
 int tf_dot(tf_ctx *ctx);
 int tf_stack(tf_ctx *ctx);
 

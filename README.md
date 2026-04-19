@@ -31,12 +31,12 @@ Define new words using the classic colon syntax or by binding blocks to symbols.
 \ Functional style definition using 'def'
 'cube [ ( n ) $n square $n * ] def
 
-5 square println  \ 25
-3 cube println    \ 27
+5 square print  \ 25
+3 cube print    \ 27
 
 \ Captured variables are visible to inner blocks (Dynamic Scoping)
 10 (x)
-[ $x 5 + println ] exec \ 15
+[ $x 5 + print ] exec \ 15
 ```
 
 ### Deferred Execution (Quotations)
@@ -55,19 +55,19 @@ Blocks allow for concise and expressive loops. For conditional logic (`if` and `
 
 ```forth
 \ Option 1: Immediate Boolean (calculated BEFORE 'if')
-1 2 < [ "True!" println ] if
+1 2 < [ "True!" print ] if
 
 \ Option 2: Deferred Block (calculated BY 'if')
-[ 1 2 < ] [ "True!" println ] if
+[ 1 2 < ] [ "True!" print ] if
 
 \ Execute a block 5 times
-5 [ "Hello! " print ] times
+5 [ "Hello! " printf ] times
 
 \ Iterate over a list
-[ 1 2 3 4 5 ] [ . " " . ] each
+[ 1 2 3 4 5 ] [ printf " " printf ] each
 
 \ While loop: [ condition ] [ body ] while
-10 [ dup 0 > ] [ dup . " " . 1 - ] while
+10 [ dup 0 > ] [ dup printf " " printf 1 - ] while
 ```
 
 ## Standard Library
@@ -80,7 +80,7 @@ Toy Forth comes with a robust set of built-in words:
 | **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min` |
 | **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                    |
 | **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`    |
-| **I/O**           | `print`, `println`, `.`, `.s` (show stack)          |
+| **I/O**           | `print`, `printf`, `.`, `.s` (show stack)           |
 | **Definition**    | `:`, `def`                                          |
 
 ## Architecture

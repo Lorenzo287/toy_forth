@@ -1,2 +1,1 @@
-5 [ dup 0 > ] [ dup println 1 - ] while
-drop
+5 [ dup 0 > ] [ dup print 1 - ] while

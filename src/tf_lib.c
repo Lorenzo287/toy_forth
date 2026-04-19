@@ -145,7 +145,7 @@ int tf_rot(tf_ctx *ctx) {
     return TF_OK;
 }
 
-int tf_print(tf_ctx *ctx) {
+int tf_printf(tf_ctx *ctx) {
     if (fstack_len(ctx) < 1) return TF_ERR;
     tf_obj *o = fstack_pop(ctx);
     print_value(o);
@@ -153,7 +153,7 @@ int tf_print(tf_ctx *ctx) {
     return TF_OK;
 }
 
-int tf_println(tf_ctx *ctx) {
+int tf_print(tf_ctx *ctx) {
     if (fstack_len(ctx) < 1) return TF_ERR;
     tf_obj *o = fstack_pop(ctx);
     print_value(o);
