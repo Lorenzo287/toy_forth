@@ -7,12 +7,14 @@ Based on the original [Toy Forth](https://github.com/antirez/toyforth) project b
 ## Key Features
 
 ### Language Features
+
 - **Dynamic Object System**: Native support for **Integers, Floats, Booleans, Strings, Symbols,** and **Lists**.
 - **Quotations & Blocks**: First-class code blocks `[ ... ]` and quoted symbols `'symb` allow for deferred execution.
 - **Variable Capturing**: Named local variables with dynamic scoping using `{ a b }` and `$a` syntax.
 - **First-class Control Flow**: Branches (`if`) and loops (`while`, `each`) are simple words that consume code blocks from the stack.
 
 ### Engine & Performance
+
 - **Iterative Execution**: An explicit return stack of frames eliminates C recursion for user-defined words, preventing stack overflows.
 - **Automatic Memory Management**: A uniform reference counting model (`retain_obj`/`release_obj`) handles all heap-allocated objects.
 - **$O(1)$ Word Lookup**: A high-performance hash table dictionary ensures fast dispatch.
@@ -74,14 +76,14 @@ Blocks allow for concise and expressive loops. For conditional logic (`if` and `
 
 Toy Forth comes with a robust set of built-in words:
 
-| Category          | Words                                               |
-| ----------------- | --------------------------------------------------- |
-| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                |
-| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `max`, `min` |
-| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                    |
-| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`    |
-| **I/O**           | `print`, `printf`, `.`, `.s` (show stack)           |
-| **Definition**    | `:`, `def`                                          |
+| Category          | Words                                                      |
+| ----------------- | ---------------------------------------------------------- |
+| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                       |
+| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min` |
+| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                           |
+| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`           |
+| **I/O**           | `print`, `printf`, `.`, `.s` (show stack)                  |
+| **Definition**    | `:`, `def`                                                 |
 
 ## Architecture
 
