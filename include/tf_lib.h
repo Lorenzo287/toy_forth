@@ -53,6 +53,7 @@ int tf_def(tf_ctx *ctx);
 // Extended library
 int tf_geth(tf_ctx *ctx);
 int tf_seth(tf_ctx *ctx);
+int tf_len(tf_ctx *ctx);
 int tf_rand(tf_ctx *ctx);
 int tf_sleep(tf_ctx *ctx);
 

@@ -1,8 +1,8 @@
 1 2 + 3 == [ "int ok" printf ] [ "int fail" printf ] ifelse "\n" printf
 1.5 2.0 + 3.5 == [ "float ok" printf ] [ "float fail" printf ] ifelse "\n" printf
 
--5 abs 5 == [ "abs int ok" print ] [ "abs int fail" print ] ifelse
--5.5 abs 5.5 == [ "abs float ok" print ] [ "abs float fail" print ] ifelse
+5 neg abs 5 == [ "abs int ok" print ] [ "abs int fail" print ] ifelse
+5.5 neg abs 5.5 == [ "abs float ok" print ] [ "abs float fail" print ] ifelse
 0 abs 0 == [ "abs zero ok" print ] [ "abs zero fail" print ] ifelse
 
 10 20 max 20 == [ "max int ok" print ] [ "max int fail" print ] ifelse

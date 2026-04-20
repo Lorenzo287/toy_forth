@@ -318,11 +318,21 @@ int tf_ge(tf_ctx *ctx) {
 
 int tf_exec(tf_ctx *ctx) {
     if (fstack_len(ctx) < 1) return TF_ERR;
-    tf_obj *code = fstack_pop_type(ctx, TF_OBJ_TYPE_LIST);
-    if (!code) return TF_ERR;
-    cstack_push(ctx, code);
-    release_obj(code);
-    return TF_OK;
+    tf_obj *o = fstack_pop(ctx);
+    if (!o) return TF_ERR;
+
+    if (o->type == TF_OBJ_TYPE_LIST) {
+        cstack_push(ctx, o);
+        release_obj(o);
+        return TF_OK;
+    } else if (o->type == TF_OBJ_TYPE_SYMBOL) {
+        int res = call_symbol(ctx, o);
+        release_obj(o);
+        return res;
+    }
+
+    release_obj(o);
+    return TF_ERR;
 }
 
 int tf_if_r(tf_ctx *ctx) {
@@ -609,6 +619,18 @@ int tf_seth(tf_ctx *ctx) {
     list_obj->list.elem[idx] = val;
     release_obj(idx_obj);
     release_obj(list_obj);
+    return TF_OK;
+}
+
+int tf_len(tf_ctx *ctx) {
+    if (fstack_len(ctx) < 1) return TF_ERR;
+    tf_obj *o = fstack_pop(ctx);
+    if (o->type != TF_OBJ_TYPE_LIST) {
+        release_obj(o);
+        return TF_ERR;
+    }
+    fstack_push(ctx, create_int_obj((int)o->list.len));
+    release_obj(o);
     return TF_OK;
 }
 
