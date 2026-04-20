@@ -26,6 +26,9 @@ int tf_printf(tf_ctx *ctx);
 int tf_print(tf_ctx *ctx);
 int tf_dot(tf_ctx *ctx);
 int tf_stack(tf_ctx *ctx);
+int tf_key(tf_ctx *ctx);
+int tf_time(tf_ctx *ctx);
+int tf_exit(tf_ctx *ctx);
 
 // Comparison operations
 int tf_eq(tf_ctx *ctx);
@@ -46,5 +49,11 @@ int tf_while_r(tf_ctx *ctx);
 // Definition operations
 int tf_colon(tf_ctx *ctx);
 int tf_def(tf_ctx *ctx);
+
+// Extended library
+int tf_geth(tf_ctx *ctx);
+int tf_seth(tf_ctx *ctx);
+int tf_rand(tf_ctx *ctx);
+int tf_sleep(tf_ctx *ctx);
 
 #endif  // TF_LIB_H

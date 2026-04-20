@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "tf_alloc.h"
 #include "tf_lib.h"
 
@@ -84,6 +85,7 @@ static void tf_table_resize(tf_ctx *ctx) {
 /* === Context Initialization === */
 
 tf_ctx *init_ctx(void) {
+	srand(time(NULL));
     tf_ctx *ctx = xmalloc(sizeof(tf_ctx));
     ctx->forth_stack = init_list_obj();
     ctx->functions.capacity = 16;
@@ -131,6 +133,14 @@ tf_ctx *init_ctx(void) {
 
     set_native_func(ctx, ":", tf_colon);
     set_native_func(ctx, "def", tf_def);
+
+    set_native_func(ctx, "geth", tf_geth);
+    set_native_func(ctx, "seth", tf_seth);
+    set_native_func(ctx, "rand", tf_rand);
+    set_native_func(ctx, "sleep", tf_sleep);
+    set_native_func(ctx, "key", tf_key);
+    set_native_func(ctx, "time", tf_time);
+    set_native_func(ctx, "exit", tf_exit);
 
     return ctx;
 }

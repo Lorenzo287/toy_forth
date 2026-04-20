@@ -163,6 +163,15 @@ tf_obj *tokenize_string(tf_lexer *lexer) {
             case 't':
                 buf[len++] = '\t';
                 break;
+            case '0': {
+                if (lexer->pos[1] == '3' && lexer->pos[2] == '3') {
+                    buf[len++] = '\033';
+                    lexer->pos += 2;
+                } else {
+                    buf[len++] = '0';
+                }
+                break;
+            }
             case '"':
                 buf[len++] = '"';
                 break;

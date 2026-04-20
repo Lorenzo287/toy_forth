@@ -1,6 +1,9 @@
 #include "tf_lib.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <time.h>
 #include "tf_obj.h"
 
 /* Helper for binary math operations */
@@ -553,5 +556,93 @@ int tf_def(tf_ctx *ctx) {
 
     release_obj(body);
     release_obj(func_name);
+    return TF_OK;
+}
+
+int tf_geth(tf_ctx *ctx) {
+    tf_obj *idx_obj = fstack_pop_type(ctx, TF_OBJ_TYPE_INT);
+    tf_obj *list_obj = fstack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+    if (!idx_obj || !list_obj) return TF_ERR;
+
+    int idx = idx_obj->i;
+    if (idx < 0 || idx >= (int)list_obj->list.len) {
+        release_obj(idx_obj);
+        release_obj(list_obj);
+        return TF_ERR;
+    }
+
+    tf_obj *result = list_obj->list.elem[idx];
+    retain_obj(result);
+    fstack_push(ctx, result);
+
+    release_obj(idx_obj);
+    release_obj(list_obj);
+    return TF_OK;
+}
+
+int tf_seth(tf_ctx *ctx) {
+    if (fstack_len(ctx) < 3) return TF_ERR;
+
+    tf_obj *val = fstack_pop(ctx);
+    tf_obj *idx_obj = fstack_pop_type(ctx, TF_OBJ_TYPE_INT);
+    if (!idx_obj) {
+        release_obj(val);
+        return TF_ERR;
+    }
+
+    tf_obj *list_obj = fstack_pop_type(ctx, TF_OBJ_TYPE_LIST);
+    if (!list_obj) {
+        release_obj(val);
+        release_obj(idx_obj);
+        return TF_ERR;
+    }
+
+    int idx = idx_obj->i;
+    if (idx < 0 || idx >= (int)list_obj->list.len) {
+        release_obj(val);
+        release_obj(idx_obj);
+        release_obj(list_obj);
+        return TF_ERR;
+    }
+
+    release_obj(list_obj->list.elem[idx]);
+    list_obj->list.elem[idx] = val;
+    release_obj(idx_obj);
+    release_obj(list_obj);
+    return TF_OK;
+}
+
+int tf_rand(tf_ctx *ctx) {
+    fstack_push(ctx, create_int_obj(rand()));
+    return TF_OK;
+}
+
+int tf_sleep(tf_ctx *ctx) {
+    tf_obj *ms_obj = fstack_pop_type(ctx, TF_OBJ_TYPE_INT);
+    if (!ms_obj) return TF_ERR;
+#ifdef _WIN32
+    Sleep(ms_obj->i);
+#else
+    usleep(ms_obj->i * 1000);
+#endif
+    release_obj(ms_obj);
+    return TF_OK;
+}
+
+int tf_key(tf_ctx *ctx) {
+    int c = getchar();
+    if (c == EOF) return TF_ERR;
+    fstack_push(ctx, create_int_obj(c));
+    return TF_OK;
+}
+
+int tf_time(tf_ctx *ctx) {
+    fstack_push(ctx, create_int_obj((int)clock()));
+    return TF_OK;
+}
+
+int tf_exit(tf_ctx *ctx) {
+    (void)ctx;
+    exit(0);
     return TF_OK;
 }
