@@ -16,7 +16,6 @@ tf_obj *init_obj(int type) {
 
 tf_obj *init_list_obj(void) {
     tf_obj *o = init_obj(TF_OBJ_TYPE_LIST);
-    o->list.elem = NULL;
     o->list.len = 0;
     o->list.cap = 1;
     o->list.elem = xmalloc(sizeof(tf_obj *) * o->list.cap);
@@ -73,7 +72,6 @@ int compare_string_obj(tf_obj *a, tf_obj *b) {
         if (cmp < 0) return -1;
         return 1;
     }
-    return 0;
 }
 
 void push_obj(tf_obj *l, tf_obj *elem) {
@@ -97,7 +95,7 @@ tf_obj *pop_obj(tf_obj *l) {
     tf_obj *o = l->list.elem[l->list.len - 1];
 
     l->list.len--;
-    if (l->list.len < l->list.cap / 2 && l->list.cap > 1) {
+    if (l->list.len < l->list.cap / 4 && l->list.cap > 1) {
         l->list.cap /= 2;
         l->list.elem = xrealloc(l->list.elem, sizeof(tf_obj *) * l->list.cap);
     }

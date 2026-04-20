@@ -38,7 +38,7 @@ void cstack_push(tf_ctx *ctx, tf_obj *prg) {
 void cstack_pop(tf_ctx *ctx) {
     if (ctx->cstack_len == 0) return;
     tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
-    
+
     for (size_t i = 0; i < f->vars.len; i++) {
         release_obj(f->vars.vars[i].name);
         release_obj(f->vars.vars[i].val);
@@ -98,6 +98,7 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "*", tf_mul);
     set_native_func(ctx, "/", tf_div);
     set_native_func(ctx, "%", tf_mod);
+    set_native_func(ctx, "neg", tf_neg);
     set_native_func(ctx, "mod", tf_mod);
     set_native_func(ctx, "abs", tf_abs);
     set_native_func(ctx, "max", tf_max);
@@ -145,9 +146,7 @@ void free_ctx(tf_ctx *ctx) {
         }
     }
     free(ctx->functions.buckets);
-    for (size_t i = 0; i < ctx->cstack_len; i++) {
-        release_obj(ctx->call_stack[i].prg);
-    }
+    while (ctx->cstack_len > 0) { cstack_pop(ctx); }
     free(ctx->call_stack);
     free(ctx);
 }
@@ -218,6 +217,17 @@ static void tf_var_bind(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
     if (ctx->cstack_len == 0) return;
     tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
 
+    // check if variable already exists in current frame and update it
+    for (int i = (int)f->vars.len - 1; i >= 0; i--) {
+        if (compare_string_obj(f->vars.vars[i].name, name) == 0) {
+            release_obj(f->vars.vars[i].val);
+            f->vars.vars[i].val = val;
+            retain_obj(val);
+            return;
+        }
+    }
+
+    // otherwise append new binding
     if (f->vars.len >= f->vars.cap) {
         f->vars.cap = f->vars.cap == 0 ? 4 : f->vars.cap * 2;
         f->vars.vars = xrealloc(f->vars.vars, sizeof(tf_var) * f->vars.cap);
@@ -241,10 +251,8 @@ static tf_obj *tf_var_fetch(tf_ctx *ctx, tf_obj *name) {
     return NULL;
 }
 
-
-
-/* 
- * The main iterative execution engine. 
+/*
+ * The main iterative execution engine.
  * Instead of recursive C calls, it uses an explicit `call_stack` of frames.
  * This ensures deep user-defined word recursion does not overflow the C stack.
  */
@@ -290,7 +298,9 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             for (int i = (int)o->list.len - 1; i >= 0; i--) {
                 tf_obj *val = fstack_pop(ctx);
                 if (!val) {
-                    printf("Run time error: stack underflow during variable binding\n");
+                    printf(
+                        "Run time error: stack underflow during variable "
+                        "binding\n");
                     while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                     return TF_ERR;
                 }
@@ -301,7 +311,8 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
         case TF_OBJ_TYPE_VARFETCH: {
             tf_obj *val = tf_var_fetch(ctx, o);
             if (!val) {
-                printf("Run time error: undefined variable '$%s'\n", o->str.ptr);
+                printf("Run time error: undefined variable '$%s'\n",
+                       o->str.ptr);
                 while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                 return TF_ERR;
             }
@@ -318,10 +329,10 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
     return TF_OK;
 }
 
-/* 
+/*
  * Hybrid symbol dispatcher:
  * - User-defined words are pushed to the call_stack to continue iteration.
- * - Native words are called directly (recursive C call), which is safe 
+ * - Native words are called directly (recursive C call), which is safe
  *   as native words do not create deep call chains.
  */
 int call_symbol(tf_ctx *ctx, tf_obj *symb) {

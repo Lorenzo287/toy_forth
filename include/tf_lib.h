@@ -9,6 +9,7 @@ int tf_sub(tf_ctx *ctx);
 int tf_mul(tf_ctx *ctx);
 int tf_div(tf_ctx *ctx);
 int tf_mod(tf_ctx *ctx);
+int tf_neg(tf_ctx *ctx);
 int tf_abs(tf_ctx *ctx);
 int tf_max(tf_ctx *ctx);
 int tf_min(tf_ctx *ctx);
