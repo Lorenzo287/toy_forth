@@ -9,7 +9,7 @@ Based on the original [Toy Forth](https://github.com/antirez/toyforth) project b
 ### Language Features
 - **Dynamic Object System**: Native support for **Integers, Floats, Booleans, Strings, Symbols,** and **Lists**.
 - **Quotations & Blocks**: First-class code blocks `[ ... ]` and quoted symbols `'symb` allow for deferred execution.
-- **Variable Capturing**: Named local variables with dynamic scoping using `( a b )` and `$a` syntax.
+- **Variable Capturing**: Named local variables with dynamic scoping using `{ a b }` and `$a` syntax.
 - **First-class Control Flow**: Branches (`if`) and loops (`while`, `each`) are simple words that consume code blocks from the stack.
 
 ### Engine & Performance
@@ -26,16 +26,16 @@ Define new words using the classic colon syntax or by binding blocks to symbols.
 
 ```forth
 \ Classic colon definition with local variables
-: square ( n ) $n $n * ;
+: square ( n -- n*n ) { n } $n $n * ;
 
 \ Functional style definition using 'def'
-'cube [ ( n ) $n square $n * ] def
+'cube [ { n } $n square $n * ] def
 
 5 square print  \ 25
 3 cube .        \ 27
 
 \ Captured variables are visible to inner blocks (Dynamic Scoping)
-10 (x)
+10 {x}
 [ $x 5 + . ] exec \ 15
 ```
 
@@ -85,7 +85,7 @@ Toy Forth comes with a robust set of built-in words:
 
 ## Architecture
 
-- **Lexer**: A recursive-descent tokenizer that supports nested blocks, strings, quoted symbols, and multiple comment styles (`\` and `/* ... */`).
+- **Lexer**: A recursive-descent tokenizer that supports nested blocks, strings, quoted symbols, and multiple comment styles (`\` and `(...)`).
 - **Engine**: An iterative execution engine using a frame-based call stack. This hybrid approach ensures that user-defined word recursion is safe from C stack limits.
 - **Context**: Maintains the data stack, the global function hash table, and the active execution frames.
 - **Memory**: Every object is a tagged union with an internal reference count. The system is designed to be leak-free (verifiable with `stb_leakcheck`).
@@ -120,7 +120,7 @@ cmake --build .
 - [x] **Hash Table Dictionary**: $O(1)$ word lookups.
 - [x] **Refcount System**: Automatic memory management.
 - [x] **Iterative Execution**: Explicit return stack of frames.
-- [x] **Variable Capturing**: Syntax for local variable binding `(a b) ... $a $b`.
+- [x] **Variable Capturing**: Syntax for local variable binding `{a b} ... $a $b`.
 
 ## License
 

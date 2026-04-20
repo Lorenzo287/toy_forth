@@ -156,12 +156,12 @@ void print_obj(tf_obj *o, size_t *count) {
         break;
     case TF_OBJ_TYPE_VARLIST:
         (*count)--;
-        printf("(");
+        printf("{");
         for (size_t i = 0; i < o->list.len; i++) {
             print_obj(o->list.elem[i], count);
             if (i != o->list.len - 1) printf(" ");
         }
-        printf(")");
+        printf("}");
         break;
     case TF_OBJ_TYPE_LIST:
         (*count)--;
@@ -204,12 +204,12 @@ void print_value(tf_obj *o) {
         printf("$%s", o->str.ptr);
         break;
     case TF_OBJ_TYPE_VARLIST:
-        printf("(");
+        printf("{");
         for (size_t i = 0; i < o->list.len; i++) {
             print_value(o->list.elem[i]);
             if (i != o->list.len - 1) printf(" ");
         }
-        printf(")");
+        printf("}");
         break;
     case TF_OBJ_TYPE_LIST:
         printf("[");

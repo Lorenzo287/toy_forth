@@ -39,8 +39,8 @@
 'cube [ dup square * ] def
 3 cube .
 
-"Vars: capture and fetch (10 (x) $x $x + = 20)" .
-10 (x) $x $x + .
+"Vars: capture and fetch (10 {x} $x $x + = 20)" .
+10 {x} $x $x + .
 
-"Vars: dynamic scoping (100 (y) [ $y ] exec = 100)" .
-100 (y) [ $y . ] exec
+"Vars: dynamic scoping (100 {y} [ $y ] exec = 100)" .
+100 {y} [ $y . ] exec

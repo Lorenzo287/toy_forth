@@ -40,13 +40,12 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
             while (lexer->pos[0] != '\n' && lexer->pos[0] != 0) lexer->pos++;
             continue;
         }
-        if (lexer->pos[0] == '/' && lexer->pos[1] == '*') {
-            lexer->pos += 2;
-            while (lexer->pos[0] != 0 &&
-                   !(lexer->pos[0] == '*' && lexer->pos[1] == '/')) {
+        if (lexer->pos[0] == '(') {
+            lexer->pos++;
+            while (lexer->pos[0] != 0 && lexer->pos[0] != ')') {
                 lexer->pos++;
             }
-            if (lexer->pos[0] != 0) lexer->pos += 2;
+            if (lexer->pos[0] != 0) lexer->pos++;
             continue;
         }
 
@@ -63,9 +62,9 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
         } else if (lexer->pos[0] == '[') {
             lexer->pos++;
             o = tokenize_until(lexer, ']');
-        } else if (lexer->pos[0] == '(') {
+        } else if (lexer->pos[0] == '{') {
             lexer->pos++;
-            o = tokenize_until(lexer, ')');
+            o = tokenize_until(lexer, '}');
             if (o) o->type = TF_OBJ_TYPE_VARLIST;
         } else if (lexer->pos[0] == '$') {
             lexer->pos++;
