@@ -28,10 +28,10 @@ Define new words using the classic colon syntax or by binding blocks to symbols.
 
 ```forth
 \ Classic colon definition with local variables
-: square ( n -- n*n ) { n } $n $n * ;
+: square ( n -- n*n ) {n} $n $n * ;
 
 \ Functional style definition using 'def'
-'cube [ { n } $n square $n * ] def
+'cube [ {n} $n square $n * ] def
 
 5 square print  \ 25
 3 cube .        \ 27
