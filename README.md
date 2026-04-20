@@ -72,36 +72,37 @@ Blocks allow for concise and expressive loops. For conditional logic (`if` and `
 10 [ dup 0 > ] [ dup printf " " printf 1 - ] while
 ```
 
-## Standard Library
+## System & Utility Words
 
-Toy Forth comes with a robust set of built-in words:
+Beyond basic stack operations, Toy Forth provides utilities for data manipulation and interaction:
 
-| Category          | Words                                                                 |
-| ----------------- | --------------------------------------------------------------------- |
-| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                                  |
-| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min`            |
-| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                                      |
-| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`                      |
-| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`                      |
-| **System/Utils**  | `geth`, `seth`, `rand`, `sleep`, `time`, `exit`                       |
-| **Definition**    | `:`, `def`                                                            |
+- **List access**: `geth` and `seth` allow for $O(1)$ indexed access to lists.
+- **System interaction**: `rand` for randomness, `sleep` for pausing, `time` for clock access, and `exit` for termination.
 
-## Extended Primitives
+_Example: Updating a list_
 
-Toy Forth includes high-performance primitives for building complex applications like simulations:
-
-- **Data Access**: `geth` and `seth` provide $O(1)$ access and modification for list elements.
-- **Randomness**: `rand` generates random integers, ideal for procedural generation.
-- **Timing**: `time` provides access to the system clock for performance measurement, and `sleep` allows for precise frame pacing.
-
-### Example: Procedural List Update
 ```forth
 [ 1 2 3 ] {list}
-$list 0 rand 100 % seth  \ Replace index 0 with a random number
+$list 0 rand 100 % seth  \ Sets index 0 of $list to a random number
 $list print
 ```
 
+## Standard Library
+
+Toy Forth includes a robust set of built-in words:
+
+| Category          | Words                                                      |
+| ----------------- | ---------------------------------------------------------- |
+| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                       |
+| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min` |
+| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                           |
+| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`           |
+| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`           |
+| **System/Utils**  | `geth`, `seth`, `rand`, `sleep`, `time`, `exit`            |
+| **Definition**    | `:`, `def`                                                 |
+
 ---
+
 ## Architecture
 
 - **Lexer**: A recursive-descent tokenizer that supports nested blocks, strings, quoted symbols, and multiple comment styles (`\` and `(...)`).
