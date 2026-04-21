@@ -141,6 +141,7 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "rand", tf_rand);
     set_native_func(ctx, "sleep", tf_sleep);
     set_native_func(ctx, "key", tf_key);
+    set_native_func(ctx, "input", tf_input);
     set_native_func(ctx, "time", tf_time);
     set_native_func(ctx, "exit", tf_exit);
 

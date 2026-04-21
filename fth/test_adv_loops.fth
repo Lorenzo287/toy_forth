@@ -41,9 +41,3 @@ drop
 "}" .
 
 drop
-
-0 
-[ dup $list len != ]
-[
-	.s
-] while

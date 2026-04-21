@@ -97,7 +97,7 @@ Toy Forth includes a robust set of built-in words:
 | **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min` |
 | **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                           |
 | **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`           |
-| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`           |
+| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`, `input`  |
 | **System/Utils**  | `geth`, `seth`, `len`, `rand`, `sleep`, `time`, `exit`     |
 | **Definition**    | `:`, `def`                                                 |
 

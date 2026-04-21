@@ -27,6 +27,7 @@ int tf_print(tf_ctx *ctx);
 int tf_dot(tf_ctx *ctx);
 int tf_stack(tf_ctx *ctx);
 int tf_key(tf_ctx *ctx);
+int tf_input(tf_ctx *ctx);
 int tf_time(tf_ctx *ctx);
 int tf_exit(tf_ctx *ctx);
 

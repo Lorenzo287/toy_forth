@@ -658,6 +658,15 @@ int tf_key(tf_ctx *ctx) {
     return TF_OK;
 }
 
+#define MAX_BUF_LEN 1023
+int tf_input(tf_ctx *ctx) {
+    char buf[MAX_BUF_LEN + 1];
+    if (!fgets(buf, sizeof buf, stdin)) return TF_ERR;
+    buf[strcspn(buf, "\n")] = '\0';
+    fstack_push(ctx, create_string_obj(buf, strlen(buf)));
+    return TF_OK;
+}
+
 int tf_time(tf_ctx *ctx) {
     fstack_push(ctx, create_int_obj((int)clock()));
     return TF_OK;
