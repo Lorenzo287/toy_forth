@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include "tf_alloc.h"
 #include "tf_exec.h"
 #include "tf_lexer.h"
@@ -10,9 +11,11 @@ typedef struct {
     bool debug;
 } config;
 
+extern void handle_sigint(int sig);
 int parse_args(int argc, char **argv, config *config);
 
 int main(int argc, char **argv) {
+    signal(SIGINT, handle_sigint);
     config config = {NULL, false};
     tf_ret ret = parse_args(argc, argv, &config);
     if (ret == TF_ERR) {

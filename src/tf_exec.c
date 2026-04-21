@@ -5,6 +5,7 @@
 #include <time.h>
 #include "tf_alloc.h"
 #include "tf_lib.h"
+#include <signal.h>
 
 /* === Context Manipulation Helpers === */
 
@@ -85,7 +86,7 @@ static void tf_table_resize(tf_ctx *ctx) {
 /* === Context Initialization === */
 
 tf_ctx *init_ctx(void) {
-	srand(time(NULL));
+    srand(time(NULL));
     tf_ctx *ctx = xmalloc(sizeof(tf_ctx));
     ctx->forth_stack = init_list_obj();
     ctx->functions.capacity = 16;
@@ -262,13 +263,22 @@ static tf_obj *tf_var_fetch(tf_ctx *ctx, tf_obj *name) {
     return NULL;
 }
 
+static volatile sig_atomic_t interrupted = 0;
+void handle_sigint(int sig) {
+    (void)sig;
+    interrupted = 1;
+}
+
 /*
  * The main iterative execution engine.
  * Instead of recursive C calls, it uses an explicit `call_stack` of frames.
  * This ensures deep user-defined word recursion does not overflow the C stack.
  */
 int exec(tf_ctx *ctx, tf_obj *prg) {
-    if (prg->type != TF_OBJ_TYPE_LIST) return TF_ERR;
+    if (prg->type != TF_OBJ_TYPE_LIST) {
+        printf("Run time error: Attempted to execute non-block object\n");
+        return TF_ERR;
+    }
 
     // push frame to the call stack
     cstack_push(ctx, prg);
@@ -279,6 +289,13 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
     size_t target_depth = ctx->cstack_len - 1;
 
     while (ctx->cstack_len > target_depth) {
+        if (interrupted) {
+            printf("\nExecution interrupted.\n");
+            while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
+            interrupted = 0;  // reset for next run
+            return TF_ERR;
+        }
+
         tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
         if (f->pc >= f->prg->list.len) {
             cstack_pop(ctx);
@@ -299,6 +316,7 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
                     return TF_ERR;
                 }
                 if (call_symbol(ctx, o) == TF_ERR) {
+                    printf("Run time error: Execution of word '%s' failed\n", o->str.ptr);
                     // unwind remaining frames
                     while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                     return TF_ERR;
