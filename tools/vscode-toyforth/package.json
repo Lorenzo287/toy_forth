@@ -1,0 +1,36 @@
+{
+    "name": "vscode-toyforth",
+    "displayName": "Toy Forth Support",
+    "description": "Tree-sitter based syntax highlighting for Toy Forth",
+    "version": "0.1.0",
+    "publisher": "Lorenzo287",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "toyforth",
+                "aliases": [
+                    "Toy Forth",
+                    "toyforth"
+                ],
+                "extensions": [
+                    ".tf",
+                    ".fth"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "toyforth",
+                "scopeName": "source.toyforth",
+                "path": "./syntaxes/toyforth.tmLanguage.json"
+            }
+        ]
+    }
+}

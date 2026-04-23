@@ -1,0 +1,89 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Toy Forth",
+    "scopeName": "source.toyforth",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#functions" },
+        { "include": "#keywords" },
+        { "include": "#numbers" },
+        { "include": "#words" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.backslash.toyforth",
+                    "match": "\\\\.*$"
+                },
+                {
+                    "name": "comment.block.parenthesis.toyforth",
+                    "begin": "\\(",
+                    "end": "\\)"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.toyforth",
+                    "begin": "\"",
+                    "end": "\""
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.toyforth",
+                    "match": "'\\S+"
+                },
+                {
+                    "name": "entity.name.function.toyforth",
+                    "match": "(?<=:\\s+)(\\S+)"
+                },
+                {
+                    "name": "entity.name.function.toyforth",
+                    "match": "\\b(dup|drop|swap|over|rot|abs|neg|max|min|print|printf|key|input|geth|seth|len|rand|sleep|time|exit|stack|dot|dot_s)\\b|\\b(\\.|\\.s)\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.toyforth",
+                    "match": "\\b(if|ifelse|else|then|while|repeat|do|loop|begin|until|again|times|each|exec)\\b"
+                },
+                {
+                    "name": "storage.type.toyforth",
+                    "match": "\\b(:|def|{)\\b"
+                },
+                {
+                    "name": "keyword.operator.toyforth",
+                    "match": "\\b(\\+|\\-|\\*|/|%|==|!=|<|>|<=|>=|mod)\\b"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.toyforth",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+        "words": {
+            "patterns": [
+                {
+                    "name": "constant.language.toyforth",
+                    "match": "\\b(nil|true|false)\\b"
+                },
+                {
+                    "name": "variable.other.toyforth",
+                    "match": "\\b\\w+\\b"
+                }
+            ]
+        }
+    }
+}
