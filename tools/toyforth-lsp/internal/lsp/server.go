@@ -73,7 +73,7 @@ func (s *Server) handle(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	case "exit":
 		return nil
@@ -112,7 +112,7 @@ func (s *Server) handleInitialize(w io.Writer, req request) error {
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result: initializeResult{
+		Result: newResult(initializeResult{
 			Capabilities: serverCapabilities{
 				PositionEncoding:       "utf-16",
 				TextDocumentSync:       1,
@@ -126,7 +126,7 @@ func (s *Server) handleInitialize(w io.Writer, req request) error {
 				Name:    "toyforth-lsp",
 				Version: "0.1.0",
 			},
-		},
+		}),
 	})
 }
 
@@ -183,7 +183,7 @@ func (s *Server) handleDocumentSymbol(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  []documentSymbol{},
+			Result:  newResult([]documentSymbol{}),
 		})
 	}
 
@@ -222,7 +222,7 @@ func (s *Server) handleDocumentSymbol(w io.Writer, req request) error {
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result:  symbols,
+		Result:  newResult(symbols),
 	})
 }
 
@@ -237,7 +237,7 @@ func (s *Server) handleDefinition(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
@@ -249,14 +249,14 @@ func (s *Server) handleDefinition(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result: location{
+		Result: newResult(location{
 			URI: params.TextDocument.URI,
 			Range: lspRange{
 				Start: lspPosition{
@@ -268,7 +268,7 @@ func (s *Server) handleDefinition(w io.Writer, req request) error {
 					Character: sym.SelectionRange.End.Character,
 				},
 			},
-		},
+		}),
 	})
 }
 
@@ -283,7 +283,7 @@ func (s *Server) handleHover(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
@@ -295,14 +295,14 @@ func (s *Server) handleHover(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result: hover{
+		Result: newResult(hover{
 			Contents: markupContent{
 				Kind:  "markdown",
 				Value: info.Contents,
@@ -317,7 +317,7 @@ func (s *Server) handleHover(w io.Writer, req request) error {
 					Character: info.Range.End.Character,
 				},
 			},
-		},
+		}),
 	})
 }
 
@@ -332,7 +332,7 @@ func (s *Server) handleReferences(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  []location{},
+			Result:  newResult([]location{}),
 		})
 	}
 
@@ -360,7 +360,7 @@ func (s *Server) handleReferences(w io.Writer, req request) error {
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result:  locations,
+		Result:  newResult(locations),
 	})
 }
 
@@ -375,7 +375,7 @@ func (s *Server) handleRename(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
@@ -387,7 +387,7 @@ func (s *Server) handleRename(w io.Writer, req request) error {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),
-			Result:  nil,
+			Result:  newResult(nil),
 		})
 	}
 
@@ -411,11 +411,11 @@ func (s *Server) handleRename(w io.Writer, req request) error {
 	return writeResponse(w, response{
 		JSONRPC: "2.0",
 		ID:      decodeID(req.ID),
-		Result: workspaceEdit{
+		Result: newResult(workspaceEdit{
 			Changes: map[string][]textEdit{
 				params.TextDocument.URI: edits,
 			},
-		},
+		}),
 	})
 }
 
