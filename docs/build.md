@@ -1,6 +1,6 @@
 # Build Instructions for Toy Forth
 
-## Environments
+## Build Profiles
 
 Builds are configured using default cmake profiles `-DCMAKE_BUILD_TYPE=<Profile>`
 and with custom build modes `-DBUILD_MODE=<Mode>`.
@@ -30,7 +30,7 @@ cmake -S . -B build-leak -G "Unix Makefiles" -DBUILD_MODE=LeakCheck
 cmake --build build-leak
 ```
 
-### 3. Profile
+### 3. Profiling
 
 Development build for profiling symbols (uses `-O2`).
 

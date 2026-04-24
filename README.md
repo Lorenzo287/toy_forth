@@ -101,8 +101,6 @@ Toy Forth includes a robust set of built-in words:
 | **System/Utils**  | `geth`, `seth`, `len`, `rand`, `sleep`, `time`, `exit`     |
 | **Definition**    | `:`, `def`                                                 |
 
----
-
 ## Ecosystem & Tooling
 
 Toy Forth comes with a suite of tools to provide a modern development experience:
@@ -110,8 +108,6 @@ Toy Forth comes with a suite of tools to provide a modern development experience
 - [**Tree-sitter Grammar**](./docs/tree-sitter.md): High-performance incremental parser for syntax highlighting, indentation, and folding.
 - [**Language Server (LSP)**](./docs/lsp.md): A standalone server written in Go that provides go-to-definition, hover documentation, and renaming.
 - [**VS Code Extension**](./docs/vscode.md): Official VS Code support integrating the TextMate grammar and LSP client.
-
----
 
 ## Architecture
 
@@ -122,7 +118,7 @@ Toy Forth comes with a suite of tools to provide a modern development experience
 
 ## Getting Started
 
-### Build (see [BUILD](./docs/build.md))
+### Build (see [Build Instructions](./docs/build.md))
 
 ```bash
 mkdir build && cd build
@@ -139,18 +135,6 @@ cmake --build .
 # Debug mode (prints tokenized program and final stack state)
 ./toy_forth --debug fth/program.fth
 ```
-
-## Roadmap
-
-- [x] **Stack Ops**: `dup`, `drop`, `swap`, `over`, `rot`.
-- [x] **Math Core**: Floating point support with type promotion.
-- [x] **Quotations**: First-class block `[ ... ]` and quoted symbol `'symb` support.
-- [x] **Word Definitions**: Both `: name ... ;` and `'name [ ... ] def`.
-- [x] **Control Flow**: `if`, `ifelse`, `while`, `times`, `each`.
-- [x] **Hash Table Dictionary**: $O(1)$ word lookups.
-- [x] **Refcount System**: Automatic memory management.
-- [x] **Iterative Execution**: Explicit return stack of frames.
-- [x] **Variable Capturing**: Syntax for local variable binding `{a b} ... $a $b`.
 
 ## License
 
