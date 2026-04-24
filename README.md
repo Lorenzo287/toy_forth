@@ -72,14 +72,12 @@ Blocks allow for concise and expressive loops. For conditional logic (`if` and `
 10 [ dup 0 > ] [ dup printf " " printf 1 - ] while
 ```
 
-## System & Utility Words
+### System & Utility Words
 
 Beyond basic stack operations, Toy Forth provides utilities for data manipulation and interaction:
 
 - **List access**: `geth` and `seth` allow for $O(1)$ indexed access to lists.
-- **System interaction**: `rand` for randomness, `sleep` for pausing, `time` for clock access, and `exit` for termination.
-
-_Example: Updating a list_
+- **System interaction**: `rand`, `sleep`, `time`, and `exit`.
 
 ```forth
 [ 1 2 3 ] {list}
