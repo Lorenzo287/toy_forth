@@ -34,7 +34,6 @@ toy_forth.out
 *.swp
 *.swo
 .DS_Store
-AGENTS.md
 GEMINI.md
 CLAUDE.md
 .claude/
