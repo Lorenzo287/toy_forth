@@ -26,7 +26,7 @@ _deps/
 toy_forth
 toy_forth.out
 
-# IDEs and Editors
+# Editors and AI 
 .cache/
 .vscode/
 .idea/
@@ -36,6 +36,8 @@ toy_forth.out
 .DS_Store
 AGENTS.md
 GEMINI.md
+CLAUDE.md
+.claude/
 
 # Local tools
 Makefile
