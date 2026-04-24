@@ -41,9 +41,14 @@ vim.filetype.add({
 
 After adding the configuration, run `:TSInstall toyforth` inside Neovim.
 
+> [!NOTE]
+> The configuration above uses a local path and requires that you have already generated the parser code. Run `tree-sitter generate` inside the `tools/tree-sitter-toyforth` directory before installing.
+>
+> Alternatively, you can configure `nvim-treesitter` to fetch and build the parser automatically from a remote GitHub repository. For details on advanced setup without local cloning, refer to the [nvim-treesitter documentation](https://github.com/nvim-treesitter/nvim-treesitter).
+
 ## Development
 
-Requires the [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter).
+Requires the [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/README.md).
 
 ### Build & Test
 

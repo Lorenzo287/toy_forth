@@ -19,6 +19,9 @@ Minimal standalone Language Server Protocol implementation for Toy Forth, writte
 
 ## Getting Started
 
+> [!IMPORTANT]
+> The LSP relies on the Tree-sitter parser for code analysis. You **must** generate the parser in `tools/tree-sitter-toyforth` by running `tree-sitter generate` before running or building the LSP. Without the generated `parser.c`, the Go Tree-sitter bindings will fail to compile or function.
+
 ### Run from Source
 
 From `tools/toyforth-lsp`:
