@@ -29,6 +29,8 @@ go run ./cmd/toyforth-lsp
 
 ### Build Executable
 
+From `tools/toyforth-lsp`:
+
 ```powershell
 go build -o toyforth-lsp.exe ./cmd/toyforth-lsp
 ./toyforth-lsp.exe
@@ -60,6 +62,8 @@ vim.lsp.enable('toyforth_lsp')
 
 ### Verification
 
+From `tools/toyforth-lsp`:
+
 ```powershell
 gofmt -w .
 go test ./...
@@ -67,4 +71,4 @@ go test ./...
 
 ### Example Fixture
 
-The sample file in `testdata/symbols.fth` exercises the current server behavior.
+The sample file in `tools/toyforth-lsp/testdata/symbols.fth` exercises the current server behavior.

@@ -103,6 +103,16 @@ Toy Forth includes a robust set of built-in words:
 
 ---
 
+## Ecosystem & Tooling
+
+Toy Forth comes with a suite of tools to provide a modern development experience:
+
+- [**Tree-sitter Grammar**](./docs/tree-sitter.md): High-performance incremental parser for syntax highlighting, indentation, and folding.
+- [**Language Server (LSP)**](./docs/lsp.md): A standalone server written in Go that provides go-to-definition, hover documentation, and renaming.
+- [**VS Code Extension**](./docs/vscode.md): Official VS Code support integrating the TextMate grammar and LSP client.
+
+---
+
 ## Architecture
 
 - **Lexer**: A recursive-descent tokenizer that supports nested blocks, strings, quoted symbols, and multiple comment styles (`\` and `(...)`).
@@ -112,7 +122,7 @@ Toy Forth includes a robust set of built-in words:
 
 ## Getting Started
 
-### Build (see [BUILD](BUILD.md))
+### Build (see [BUILD](./docs/build.md))
 
 ```bash
 mkdir build && cd build

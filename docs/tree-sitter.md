@@ -43,9 +43,11 @@ After adding the configuration, run `:TSInstall toyforth` inside Neovim.
 
 ## Development
 
-Requires the [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/tree/master/cli).
+Requires the [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter).
 
 ### Build & Test
+
+From `tools/tree-sitter-toyforth`:
 
 ```powershell
 # Generate the parser from grammar.js

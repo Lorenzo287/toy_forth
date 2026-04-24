@@ -24,7 +24,9 @@ Visual Studio Code extension for Toy Forth, providing syntax highlighting and in
 
 ## Development
 
-The extension source is in `extension.js`. It expects the LSP executable to be located in a `bin/` subdirectory within the extension folder.
+The extension source is in `tools/vscode-toyforth/extension.js`. It expects the LSP executable to be located in a `bin/` subdirectory within the extension folder.
+
+From `tools/vscode-toyforth`:
 
 ```powershell
 # Install dependencies
