@@ -2,7 +2,7 @@
 
 A minimalist, stack-based interpreter written in C. While it follows the Forth tradition of a data stack and a dictionary of words, it incorporates modern "high-level" features like a dynamic object system, quotations, and automatic memory management.
 
-Based on the original [Toy Forth](https://github.com/antirez/toyforth) project by **Salvatore Sanfilippo (antirez)**.
+Based on the original [toyforth](https://github.com/antirez/toyforth) project by **Salvatore Sanfilippo (antirez)**.
 
 ## Key Features
 
