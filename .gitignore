@@ -45,6 +45,7 @@ Makefile
 # Tools
 node_modules/
 *.vsix
+tools/tree-sitter-toyforth/src
 tools/tree-sitter-toyforth/src/parser.c
 tools/tree-sitter-toyforth/src/grammar.json
 tools/tree-sitter-toyforth/src/node-types.json
