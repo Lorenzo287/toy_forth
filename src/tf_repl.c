@@ -30,7 +30,9 @@ typedef struct {
 
 static int run_source_mode(tf_ctx *ctx, char *source, bool debug,
                            bool interactive);
+#ifdef _WIN32
 static char *read_line(FILE *fp);
+#endif
 static char *read_repl_line(bool complete);
 static bool append_text(char **buf, size_t *len, size_t *cap, const char *text);
 static void reset_state(tf_repl_state *state);
@@ -164,9 +166,7 @@ static int run_source_mode(tf_ctx *ctx, char *source, bool debug,
     }
 
     if (result != TF_OK) {
-        if (!interactive) {
-            tf_console_contextf("file execution failed\n");
-        }
+        if (!interactive) tf_console_contextf("file execution failed\n");
         release_obj(prg);
         return TF_ERR;
     }
@@ -225,6 +225,7 @@ static void tf_repl_completion(const char *buf, linenoiseCompletions *lc) {
 }
 #endif
 
+#ifdef _WIN32
 static char *read_line(FILE *fp) {
     size_t cap = 128;
     size_t len = 0;
@@ -253,11 +254,12 @@ static char *read_line(FILE *fp) {
     buf[len] = '\0';
     return buf;
 }
+#endif
 
 static char *read_repl_line(bool complete) {
 #ifdef _WIN32
-    printf("%s%s%s", tf_console_clr(TF_CLR_PROMPT),
-           complete ? "tf> " : "..> ", tf_console_clr(TF_CLR_RESET));
+    printf("%s%s%s", tf_console_clr(TF_CLR_PROMPT), complete ? "tf> " : "..> ",
+           tf_console_clr(TF_CLR_RESET));
     fflush(stdout);
     return read_line(stdin);
 #else

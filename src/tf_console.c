@@ -3,9 +3,9 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-#include <windows.h>
+    #include <windows.h>
 #else
-#include <unistd.h>
+    #include <unistd.h>
 #endif
 
 static bool tf_console_color_enabled = false;

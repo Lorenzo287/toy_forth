@@ -647,7 +647,9 @@ int tf_sleep(tf_ctx *ctx) {
 #ifdef _WIN32
     Sleep(ms_obj->i);
 #else
-    usleep(ms_obj->i * 1000);
+    struct timespec req = {.tv_sec = ms_obj->i / 1000,
+                           .tv_nsec = (long)(ms_obj->i % 1000) * 1000000L};
+    nanosleep(&req, NULL);
 #endif
     release_obj(ms_obj);
     return TF_OK;
