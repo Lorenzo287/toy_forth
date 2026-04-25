@@ -3,6 +3,7 @@
 A minimalist, stack-based interpreter written in C. While it follows the Forth tradition of a data stack and a dictionary of words, it incorporates modern "high-level" features like a dynamic object system, quotations, and automatic memory management.
 
 Based on the original [toyforth](https://github.com/antirez/toyforth) project by **Salvatore Sanfilippo (antirez)**.
+This version includes an interactive REPL, using **antirez**'s `linenoise` library for history and tab completion on Unix-like systems and WSL, along with a Tree-sitter grammar, a standalone language server written in Go, and a VS Code extension.
 
 ## Key Features
 
