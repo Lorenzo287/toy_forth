@@ -81,7 +81,8 @@ On Unix-like systems and WSL, the REPL uses vendored `linenoise`:
 - tab completion for known words
 
 On native Windows, the REPL currently uses a basic line reader instead of
-`linenoise`, so editing features are more limited.
+`linenoise`, so editing features are more limited. `Ctrl-L` still clears the
+screen while entering REPL input.
 
 ## Colors and Status
 
@@ -96,7 +97,7 @@ The REPL uses colored output to distinguish the main categories:
 ## Exiting
 
 - Unix-like systems / WSL: `Ctrl-D`
-- Windows console: `Ctrl-Z`, then Enter
+- Windows console: `Ctrl-Z`
 - Portable explicit exit: `bye`
 
 ## Interrupting Execution

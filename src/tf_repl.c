@@ -6,9 +6,12 @@
 #include "tf_alloc.h"
 #include "tf_console.h"
 #include "tf_lexer.h"
+#include "tf_lib.h"
 #include "tf_obj.h"
 
 #ifdef _WIN32
+    #include <conio.h>
+    #include <io.h>
     #include <windows.h>
 #else
     #include <errno.h>
@@ -28,10 +31,10 @@ typedef struct {
     size_t token_len;
 } tf_repl_state;
 
-static int run_source_mode(tf_ctx *ctx, char *source, bool debug,
-                           bool interactive);
+static int run_source(tf_ctx *ctx, char *source, bool debug);
 #ifdef _WIN32
-static char *read_line(FILE *fp);
+static char *read_line(FILE *fp, const char *prompt);
+static char *read_console_line(const char *prompt);
 #endif
 static char *read_repl_line(bool complete);
 static bool append_text(char **buf, size_t *len, size_t *cap, const char *text);
@@ -66,7 +69,7 @@ int run_file(tf_ctx *ctx, const char *filename, bool debug) {
     prg_text[n_read] = '\0';
     fclose(fp);
 
-    int result = run_source_mode(ctx, prg_text, debug, false);
+    int result = run_source(ctx, prg_text, debug);
     free(prg_text);
     return result;
 }
@@ -82,7 +85,7 @@ int run_repl(tf_ctx *ctx, bool debug) {
     printf("%s=== Toy Forth REPL ===%s\n", tf_console_clr(TF_CLR_PROMPT),
            tf_console_clr(TF_CLR_RESET));
 #ifdef _WIN32
-    printf("%sPress Ctrl-Z then Enter to exit.%s\n",
+    printf("%sPress Ctrl-Z to exit.%s\n",
            tf_console_clr(TF_CLR_INFO), tf_console_clr(TF_CLR_RESET));
 #else
     printf("%sPress Ctrl-D to exit.%s\n", tf_console_clr(TF_CLR_INFO),
@@ -124,7 +127,7 @@ int run_repl(tf_ctx *ctx, bool debug) {
 
         if (!input_complete(&state)) { continue; }
 
-        int result = run_source_mode(ctx, source, debug, true);
+        int result = run_source(ctx, source, debug);
         if (result == TF_ERR) {
             printf("%snot ok%s\n", tf_console_clr(TF_CLR_ERR),
                    tf_console_clr(TF_CLR_RESET));
@@ -146,8 +149,7 @@ int run_repl(tf_ctx *ctx, bool debug) {
     return TF_OK;
 }
 
-static int run_source_mode(tf_ctx *ctx, char *source, bool debug,
-                           bool interactive) {
+static int run_source(tf_ctx *ctx, char *source, bool debug) {
     tf_obj *prg = lexer(source);
     if (!prg) return TF_ERR;
 
@@ -166,7 +168,6 @@ static int run_source_mode(tf_ctx *ctx, char *source, bool debug,
     }
 
     if (result != TF_OK) {
-        if (!interactive) tf_console_contextf("file execution failed\n");
         release_obj(prg);
         return TF_ERR;
     }
@@ -226,7 +227,9 @@ static void tf_repl_completion(const char *buf, linenoiseCompletions *lc) {
 #endif
 
 #ifdef _WIN32
-static char *read_line(FILE *fp) {
+static char *read_line(FILE *fp, const char *prompt) {
+    if (_isatty(_fileno(fp))) return read_console_line(prompt);
+
     size_t cap = 128;
     size_t len = 0;
     char *buf = xmalloc(cap);
@@ -254,14 +257,67 @@ static char *read_line(FILE *fp) {
     buf[len] = '\0';
     return buf;
 }
+
+static char *read_console_line(const char *prompt) {
+    size_t cap = 128;
+    size_t len = 0;
+    char *buf = xmalloc(cap);
+
+    while (1) {
+        int c = _getwch();
+
+        if (c == 0 || c == 0xE0) {
+            (void)_getwch();
+            continue;
+        }
+
+        if (c == 26 && len == 0) {
+            free(buf);
+            return NULL;
+        }
+        if (c == '\r') {
+            putchar('\n');
+            break;
+        }
+        if (c == '\b') {
+            if (len > 0) {
+                len--;
+                fputs("\b \b", stdout);
+                fflush(stdout);
+            }
+            continue;
+        }
+        if (c == '\f') {
+            tf_clear(NULL);
+            printf("%s%s%s", tf_console_clr(TF_CLR_PROMPT), prompt,
+                   tf_console_clr(TF_CLR_RESET));
+            if (len > 0) { printf("%.*s", (int)len, buf); }
+            fflush(stdout);
+            continue;
+        }
+        if (c < 32 || c > 126) { continue; }
+
+        if (len + 1 >= cap) {
+            cap *= 2;
+            buf = xrealloc(buf, cap);
+        }
+        buf[len++] = (char)c;
+        putchar(c);
+        fflush(stdout);
+    }
+
+    buf[len] = '\0';
+    return buf;
+}
 #endif
 
 static char *read_repl_line(bool complete) {
 #ifdef _WIN32
-    printf("%s%s%s", tf_console_clr(TF_CLR_PROMPT), complete ? "tf> " : "..> ",
+    const char *prompt = complete ? "tf> " : "..> ";
+    printf("%s%s%s", tf_console_clr(TF_CLR_PROMPT), prompt,
            tf_console_clr(TF_CLR_RESET));
     fflush(stdout);
-    return read_line(stdin);
+    return read_line(stdin, prompt);
 #else
     return linenoise(complete ? TF_CLR_PROMPT "tf> " TF_CLR_RESET
                               : TF_CLR_PROMPT "..> " TF_CLR_RESET);
