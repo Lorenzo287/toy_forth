@@ -1,14 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include "tf_alloc.h"
+#include "tf_console.h"
 #include "tf_exec.h"
-#include "tf_lexer.h"
+#include "tf_repl.h"
 
 typedef struct {
     const char *filename;
-    bool debug;
+    bool debug, help, interactive;
 } config;
 
 extern void handle_sigint(int sig);
@@ -16,58 +16,26 @@ int parse_args(int argc, char **argv, config *config);
 
 int main(int argc, char **argv) {
     signal(SIGINT, handle_sigint);
-    config config = {NULL, false};
+    tf_console_init();
+
+    config config = {NULL, false, false, false};
     tf_ret ret = parse_args(argc, argv, &config);
-    if (ret == TF_ERR) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+    if (ret == TF_ERR || config.help) {
+        fprintf(stderr, "=== Toy Forth Interpreter ===\n");
+        fprintf(stderr, "Usage: %s [--debug|-d] [filename]\n", argv[0]);
+        fprintf(stderr, "Running without filename starts the REPL\n");
         return ret;
     }
 
-    FILE *fp = fopen(config.filename, "r");
-    if (!fp) {
-        perror("Failed to open program");
-        return TF_ERR;
-    }
-
-    // get size of file (bytes)
-    fseek(fp, 0, SEEK_END);
-    size_t size = ftell(fp);
-    rewind(fp);
-
-    // read file
-    char *prg_text = xmalloc(size + 1);
-    size_t n_read = fread(prg_text, 1, size, fp);
-    prg_text[n_read] = 0;  // add terminator
-    fclose(fp);
-
-    // tokenize into program
-    tf_obj *prg = lexer(prg_text);
-    free(prg_text);
-    if (prg) {
-        if (config.debug) {
-            printf("=== Tokenized program ===\n");
-            size_t count = 0;
-            print_obj(prg, &count);
-            printf("\n\n");
-        }
-    } else {
-        fprintf(stderr, "Failed to tokenize the program\n");
-        return TF_ERR;
-    }
-
-    // execute with context (forth stack, call stack and functions)
-    int result = TF_OK;
     tf_ctx *ctx = init_ctx();
-    if (!ctx || exec(ctx, prg) != TF_OK) {
-        fprintf(stderr, "Failed to execute the program\n");
-        result = TF_ERR;
-    } else if (config.debug) {
-        printf("\n=== Stack content after execution ===\n");
-        size_t count = 0;
-        print_obj(ctx->forth_stack, &count);
-        printf("\n");
+    if (!ctx) { return TF_ERR; }
+
+    tf_ret result = TF_OK;
+    if (config.interactive) {
+        result = run_repl(ctx, config.debug);
+    } else {
+        result = run_file(ctx, config.filename, config.debug);
     }
-    release_obj(prg);
     free_ctx(ctx);
 
 #ifdef STB_LEAKCHECK
@@ -78,15 +46,18 @@ int main(int argc, char **argv) {
 }
 
 int parse_args(int argc, char **argv, config *config) {
-    if (argc < 2) { return TF_ERR; }
-
-    int i;
-    for (i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--debug") == 0 || strcmp(argv[i], "-d") == 0) {
             config->debug = true;
-            break;
+        } else if (strcmp(argv[i], "--help") == 0 ||
+                   strcmp(argv[i], "-h") == 0) {
+            config->help = true;
+        } else if (config->filename == NULL) {
+            config->filename = argv[i];
+        } else {
+            return TF_ERR;
         }
-
-    config->filename = config->debug ? (i == 1 ? argv[2] : argv[1]) : argv[1];
+    }
+    config->interactive = (config->filename == NULL);
     return TF_OK;
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "tf_alloc.h"
+#include "tf_console.h"
 #include "tf_lib.h"
 #include <signal.h>
 
@@ -115,7 +116,7 @@ tf_ctx *init_ctx(void) {
 
     set_native_func(ctx, "printf", tf_printf);
     set_native_func(ctx, "print", tf_print);
-    set_native_func(ctx, ".", tf_dot);
+    set_native_func(ctx, ".", tf_print);
     set_native_func(ctx, ".s", tf_stack);
 
     set_native_func(ctx, "==", tf_eq);
@@ -143,6 +144,8 @@ tf_ctx *init_ctx(void) {
     set_native_func(ctx, "key", tf_key);
     set_native_func(ctx, "input", tf_input);
     set_native_func(ctx, "time", tf_time);
+    set_native_func(ctx, "clear", tf_clear);
+    set_native_func(ctx, "bye", tf_exit);
     set_native_func(ctx, "exit", tf_exit);
 
     return ctx;
@@ -277,7 +280,7 @@ void handle_sigint(int sig) {
  */
 int exec(tf_ctx *ctx, tf_obj *prg) {
     if (prg->type != TF_OBJ_TYPE_LIST) {
-        printf("Run time error: Attempted to execute non-block object\n");
+        tf_console_runtime_errorf("attempted to execute non-block object\n");
         return TF_ERR;
     }
 
@@ -291,10 +294,9 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
 
     while (ctx->cstack_len > target_depth) {
         if (interrupted) {
-            printf("\nExecution interrupted.\n");
             while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
             interrupted = 0;  // reset for next run
-            return TF_ERR;
+            return TF_INTERRUPTED;
         }
 
         tf_frame *f = &ctx->call_stack[ctx->cstack_len - 1];
@@ -312,12 +314,19 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             } else {
                 tf_func *func = get_func(ctx, o);
                 if (!func) {
-                    printf("Run time error: undefined word '%s'\n", o->str.ptr);
+                    tf_console_runtime_errorf("undefined word '%s'\n",
+                                              o->str.ptr);
                     while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                     return TF_ERR;
                 }
-                if (call_symbol(ctx, o) == TF_ERR) {
-                    printf("Run time error: Execution of word '%s' failed\n", o->str.ptr);
+                int call_res = call_symbol(ctx, o);
+                if (call_res == TF_INTERRUPTED) {
+                    while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
+                    return TF_INTERRUPTED;
+                }
+                if (call_res == TF_ERR) {
+                    tf_console_runtime_errorf("execution of word '%s' failed\n",
+                                              o->str.ptr);
                     // unwind remaining frames
                     while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                     return TF_ERR;
@@ -328,9 +337,8 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
             for (int i = (int)o->list.len - 1; i >= 0; i--) {
                 tf_obj *val = fstack_pop(ctx);
                 if (!val) {
-                    printf(
-                        "Run time error: stack underflow during variable "
-                        "binding\n");
+                    tf_console_runtime_errorf(
+                        "stack underflow during variable binding\n");
                     while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                     return TF_ERR;
                 }
@@ -341,8 +349,8 @@ int exec(tf_ctx *ctx, tf_obj *prg) {
         case TF_OBJ_TYPE_VARFETCH: {
             tf_obj *val = tf_var_fetch(ctx, o);
             if (!val) {
-                printf("Run time error: undefined variable '$%s'\n",
-                       o->str.ptr);
+                tf_console_runtime_errorf("undefined variable '$%s'\n",
+                                          o->str.ptr);
                 while (ctx->cstack_len > target_depth) { cstack_pop(ctx); }
                 return TF_ERR;
             }

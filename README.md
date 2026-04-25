@@ -89,15 +89,15 @@ $list print
 
 Toy Forth includes a robust set of built-in words:
 
-| Category          | Words                                                      |
-| ----------------- | ---------------------------------------------------------- |
-| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                       |
-| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min` |
-| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                           |
-| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`           |
-| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`, `input`  |
-| **System/Utils**  | `geth`, `seth`, `len`, `rand`, `sleep`, `time`, `exit`     |
-| **Definition**    | `:`, `def`                                                 |
+| Category          | Words                                                              |
+| ----------------- | ------------------------------------------------------------------ |
+| **Stack**         | `dup`, `drop`, `swap`, `over`, `rot`                               |
+| **Math**          | `+`, `-`, `*`, `/`, `%`, `mod`, `abs`, `neg`, `max`, `min`         |
+| **Comparison**    | `==`, `!=`, `<`, `>`, `<=`, `>=`                                   |
+| **Logic/Control** | `if`, `ifelse`, `while`, `times`, `each`, `exec`                   |
+| **I/O**           | `print`, `printf`, `.`, `.s` (show stack), `key`, `input`, `clear` |
+| **System/Utils**  | `geth`, `seth`, `len`, `rand`, `sleep`, `time`, `bye`, `exit`      |
+| **Definition**    | `:`, `def`                                                         |
 
 ## Ecosystem & Tooling
 
@@ -106,6 +106,7 @@ Toy Forth comes with a suite of tools to provide a modern development experience
 - [**Tree-sitter Grammar**](./docs/tree-sitter.md): High-performance incremental parser for syntax highlighting, indentation, and folding.
 - [**Language Server (LSP)**](./docs/lsp.md): A standalone server written in Go that provides go-to-definition, hover documentation, and renaming.
 - [**VS Code Extension**](./docs/vscode.md): Official VS Code support integrating the TextMate grammar and LSP client.
+- [**REPL Guide**](./docs/repl.md): Interactive usage, multiline input, history/completion, interrupts, and REPL-specific behavior.
 
 ## Architecture
 
@@ -127,6 +128,9 @@ cmake --build .
 ### Usage
 
 ```bash
+# Start the interactive REPL
+./toy_forth
+
 # Basic run
 ./toy_forth fth/program.fth
 

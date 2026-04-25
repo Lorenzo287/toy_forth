@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <windows.h>
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 #include <time.h>
 #include "tf_obj.h"
 
@@ -216,10 +218,6 @@ int tf_print(tf_ctx *ctx) {
     return TF_OK;
 }
 
-int tf_dot(tf_ctx *ctx) {
-    return tf_print(ctx);
-}
-
 int tf_stack(tf_ctx *ctx) {
     size_t len = fstack_len(ctx);
     printf("<%zu> ", len);
@@ -350,19 +348,20 @@ int tf_if_r(tf_ctx *ctx) {
     if (cond->type == TF_OBJ_TYPE_BOOL) {
         cond_val = cond->b;
     } else if (cond->type == TF_OBJ_TYPE_LIST) {
-        if (exec(ctx, cond) == TF_ERR) {
+        int exec_res = exec(ctx, cond);
+        if (exec_res != TF_OK) {
+            release_obj(body);
+            release_obj(cond);
+            return exec_res;
+        }
+        tf_obj *bool_res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
+        if (!bool_res) {
             release_obj(body);
             release_obj(cond);
             return TF_ERR;
         }
-        tf_obj *res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
-        if (!res) {
-            release_obj(body);
-            release_obj(cond);
-            return TF_ERR;
-        }
-        cond_val = res->b;
-        release_obj(res);
+        cond_val = bool_res->b;
+        release_obj(bool_res);
     } else {
         release_obj(body);
         release_obj(cond);
@@ -399,21 +398,22 @@ int tf_ifelse_r(tf_ctx *ctx) {
     if (cond->type == TF_OBJ_TYPE_BOOL) {
         cond_val = cond->b;
     } else if (cond->type == TF_OBJ_TYPE_LIST) {
-        if (exec(ctx, cond) == TF_ERR) {
+        int exec_res = exec(ctx, cond);
+        if (exec_res != TF_OK) {
+            release_obj(else_b);
+            release_obj(then_b);
+            release_obj(cond);
+            return exec_res;
+        }
+        tf_obj *bool_res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
+        if (!bool_res) {
             release_obj(else_b);
             release_obj(then_b);
             release_obj(cond);
             return TF_ERR;
         }
-        tf_obj *res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
-        if (!res) {
-            release_obj(else_b);
-            release_obj(then_b);
-            release_obj(cond);
-            return TF_ERR;
-        }
-        cond_val = res->b;
-        release_obj(res);
+        cond_val = bool_res->b;
+        release_obj(bool_res);
     } else {
         release_obj(else_b);
         release_obj(then_b);
@@ -448,7 +448,7 @@ int tf_times_r(tf_ctx *ctx) {
     int res = TF_OK;
     for (int i = 0; i < n; i++) {
         res = exec(ctx, body);
-        if (res == TF_ERR) break;
+        if (res != TF_OK) break;
     }
 
     release_obj(body);
@@ -471,7 +471,7 @@ int tf_each_r(tf_ctx *ctx) {
         fstack_push(ctx, data->list.elem[i]);
         retain_obj(data->list.elem[i]);
         res = exec(ctx, body);
-        if (res == TF_ERR) break;
+        if (res != TF_OK) break;
     }
 
     release_obj(body);
@@ -492,24 +492,26 @@ int tf_while_r(tf_ctx *ctx) {
 
     int final_res = TF_OK;
     while (1) {
-        if (exec(ctx, cond) == TF_ERR) {
+        int exec_res = exec(ctx, cond);
+        if (exec_res != TF_OK) {
+            final_res = exec_res;
+            break;
+        }
+
+        tf_obj *bool_res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
+        if (!bool_res) {
             final_res = TF_ERR;
             break;
         }
 
-        tf_obj *res = fstack_pop_type(ctx, TF_OBJ_TYPE_BOOL);
-        if (!res) {
-            final_res = TF_ERR;
-            break;
-        }
-
-        bool continue_loop = res->b;
-        release_obj(res);
+        bool continue_loop = bool_res->b;
+        release_obj(bool_res);
 
         if (!continue_loop) break;
 
-        if (exec(ctx, body) == TF_ERR) {
-            final_res = TF_ERR;
+        exec_res = exec(ctx, body);
+        if (exec_res != TF_OK) {
+            final_res = exec_res;
             break;
         }
     }
@@ -669,6 +671,30 @@ int tf_input(tf_ctx *ctx) {
 
 int tf_time(tf_ctx *ctx) {
     fstack_push(ctx, create_int_obj((int)clock()));
+    return TF_OK;
+}
+
+int tf_clear(tf_ctx *ctx) {
+    (void)ctx;
+#ifdef _WIN32
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (out != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(out, &info)) {
+        DWORD cell_count = (DWORD)info.dwSize.X * (DWORD)info.dwSize.Y;
+        COORD home = {0, 0};
+        DWORD written = 0;
+
+        if (FillConsoleOutputCharacterA(out, ' ', cell_count, home, &written) &&
+            FillConsoleOutputAttribute(out, info.wAttributes, cell_count, home,
+                                       &written) &&
+            SetConsoleCursorPosition(out, home)) {
+            return TF_OK;
+        }
+    }
+#endif
+
+    printf("\x1b[H\x1b[2J");
+    fflush(stdout);
     return TF_OK;
 }
 

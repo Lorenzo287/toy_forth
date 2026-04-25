@@ -8,9 +8,14 @@ set(BUILD_MODE "None" CACHE STRING "None | LeakCheck | Profile")
 set_property(CACHE BUILD_MODE PROPERTY STRINGS None LeakCheck Profile)
 message(STATUS "Build mode: ${BUILD_MODE}")
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
-file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.c")
+file(GLOB SOURCES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*.c")
 add_executable(toy_forth ${SOURCES})
+target_include_directories(toy_forth PRIVATE ${PROJECT_SOURCE_DIR}/include)
+
+if(NOT WIN32)
+    target_sources(toy_forth PRIVATE ${PROJECT_SOURCE_DIR}/deps/linenoise/linenoise.c)
+    target_include_directories(toy_forth PRIVATE ${PROJECT_SOURCE_DIR}/deps/linenoise)
+endif()
 
 # ── Baseline warnings ─────────────────────────────────────────────────────────
 
@@ -30,6 +35,7 @@ if(BUILD_MODE STREQUAL "LeakCheck")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
     if(WIN32)
         target_compile_definitions(toy_forth PRIVATE STB_LEAKCHECK)
+        target_include_directories(toy_forth PRIVATE ${PROJECT_SOURCE_DIR}/deps)
     else()
         target_compile_options(toy_forth PRIVATE -fsanitize=leak -fno-omit-frame-pointer)
         target_link_options(toy_forth PRIVATE -fsanitize=leak)

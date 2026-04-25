@@ -17,7 +17,7 @@
 (block_comment) @comment
 
 (number) @number
-(boolean) @constant.builtin
+(boolean) @boolean
 (string) @string
 (escape_sequence) @string.escape
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tf_alloc.h"
+#include "tf_console.h"
 
 // private helper
 static void skip_spaces(tf_lexer *lexer) {
@@ -12,7 +13,11 @@ static void skip_spaces(tf_lexer *lexer) {
 
 // private helper
 static int is_sym_char(int c) {
-    const char *sym_chars = "+-*/%<>=!:;.";
+    // NOTE: the lexer is intentionally mostly whitespace-delimited. We only
+    // split punctuation into standalone tokens when it has structural meaning
+    // in the grammar (currently ':' and ';'). Other punctuation can still be
+    // part of ordinary word names such as '.s' or '<='.
+    const char *sym_chars = "+-*/%<>=!.";
     return isalpha(c) || isdigit(c) || c == '_' || strchr(sym_chars, c) != NULL;
 }
 
@@ -78,6 +83,12 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
             lexer->pos++;
             o = tokenize_symbol(lexer);
             if (o && o->type == TF_OBJ_TYPE_SYMBOL) { o->str.quoted = true; }
+        } else if (lexer->pos[0] == ':') {
+            o = create_symbol_obj(lexer->pos, 1);
+            lexer->pos++;
+        } else if (lexer->pos[0] == ';') {
+            o = create_symbol_obj(lexer->pos, 1);
+            lexer->pos++;
         } else if (is_sym_char(lexer->pos[0])) {
             o = tokenize_symbol(lexer);
         } else if (lexer->pos[0] == '"' && lexer->pos[1] != 0) {
@@ -86,8 +97,8 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
 
         if (o == NULL) {
             release_obj(prg);
-            fprintf(stderr, "Syntax error at character %zu: ... %.16s ...\n",
-                    lexer->pos - lexer->start, lexer->pos);
+            tf_console_lexer_errorf("syntax at character %zu: ... %.16s ...\n",
+                                    lexer->pos - lexer->start, lexer->pos);
             return NULL;
         }
         push_obj(prg, o);
@@ -95,9 +106,8 @@ tf_obj *tokenize_until(tf_lexer *lexer, int terminator) {
 
     if (terminator != 0) {
         release_obj(prg);
-        fprintf(stderr,
-                "Syntax error: expected '%c' but reached end of program\n",
-                terminator);
+        tf_console_lexer_errorf("expected '%c' but reached end of program\n",
+                                terminator);
         return NULL;
     }
 

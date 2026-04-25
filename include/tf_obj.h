@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef enum { TF_OK, TF_ERR } tf_ret;
+typedef enum { TF_OK, TF_ERR, TF_INTERRUPTED } tf_ret;
 
 /* === Types Definition === */
 
