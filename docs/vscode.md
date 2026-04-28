@@ -10,11 +10,22 @@ Visual Studio Code extension for Toy Forth, providing syntax highlighting and in
 
 ## Setup & Installation
 
+> [!IMPORTANT]
+> Although the VS Code extension uses TextMate for highlighting, the underlying **LSP depends on Tree-sitter** for code analysis. You must ensure `tools/tree-sitter-toyforth/src/parser.c` is generated (via `tree-sitter generate`) before building the LSP binary, or the compilation will fail.
+
 The extension expects the LSP executable to be located in a `bin/` subdirectory within the extension folder (`tools/vscode-toyforth/bin/`).
 
 ### 1. Prepare the LSP Binary
-From `tools/toyforth-lsp`, build the LSP and copy it to the extension's `bin` folder:
+First, ensure the Tree-sitter parser is generated in `tools/tree-sitter-toyforth`:
 ```powershell
+cd tools/tree-sitter-toyforth
+tree-sitter generate
+cd ../..
+```
+
+Then, build the LSP and copy it to the extension's `bin` folder:
+```powershell
+cd tools/toyforth-lsp
 go build -o ../vscode-toyforth/bin/toyforth-lsp.exe ./cmd/toyforth-lsp
 ```
 

@@ -43,17 +43,18 @@ go build -o toyforth-lsp.exe ./cmd/toyforth-lsp
 
 ### Neovim
 
-Register the LSP in your configuration:
+You can use the automated installation script to build the LSP and generate the Tree-sitter parser, installing them to a central location:
+
+- **Windows**: `.\tools\install-nvim.ps1`
+- **Linux/macOS**: `bash tools/install-nvim.sh`
+
+Follow the instructions printed by the script to update your `init.lua`.
+
+Alternatively, register the LSP manually:
 
 ```lua
 vim.lsp.config('toyforth_lsp', {
-  cmd = {
-    'go',
-    '-C',
-    'C:\\path\\to\\toy_forth\\tools\\toyforth-lsp',
-    'run',
-    '.\\cmd\\toyforth-lsp',
-  },
+  cmd = { 'path/to/toyforth-lsp.exe' },
   filetypes = { 'toyforth' },
   root_markers = { '.git', 'README.md' },
 })

@@ -12,7 +12,14 @@ Tree-sitter grammar for Toy Forth. It provides a robust, incremental parser that
 
 ### Neovim
 
-To use this parser in Neovim, you need to register it manually in your configuration (adjust the `path` to where you cloned the repo):
+The easiest way to set up Tree-sitter and the LSP in Neovim is to use the automated script:
+
+- **Windows**: `.\tools\install-nvim.ps1`
+- **Linux/macOS**: `bash tools/install-nvim.sh`
+
+Follow the printed instructions to update your `init.lua`.
+
+Alternatively, you can register the parser manually:
 
 ```lua
 local toyforth_path = "~/path/to/toy_forth/tools/tree-sitter-toyforth"
