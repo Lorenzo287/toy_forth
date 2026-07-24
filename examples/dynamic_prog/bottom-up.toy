@@ -6,7 +6,8 @@
 	drop
 ] def
 
-\ Tabulation can also be done with a vector but requires more code.
+\ Tabulation can also be done with a vector but requires more code
+\ (can be useful if you need the entire table).
 'fib-bottom-table-while [ | n |
 	[ 0 1 ]
 	2 [ $n <= ] [ | j |
