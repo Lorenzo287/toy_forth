@@ -3,7 +3,7 @@
     "displayName": "Toy Support",
     "description": "Tree-sitter based syntax highlighting and LSP for Toy",
     "version": "0.2.0",
-    "publisher": "Lorenzo287",
+    "publisher": "lorenzotumini",
     "engines": {
         "vscode": "^1.75.0"
     },

@@ -64,7 +64,7 @@ The commands below use `nob` as the executable name; use its actual path or
 platform suffix when needed.
 
 ```console
-git clone https://github.com/Lorenzo287/toy.git
+git clone https://github.com/lorenzotumini/toy.git
 cd toy
 
 cc nob.c -o nob

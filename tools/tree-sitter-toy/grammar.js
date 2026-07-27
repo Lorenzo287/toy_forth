@@ -1,6 +1,6 @@
 /**
  * @file Toy grammar for tree-sitter
- * @author Lorenzo287
+ * @author lorenzotumini
  * @license MIT
  */
 

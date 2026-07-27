@@ -6,7 +6,7 @@
  *
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2026, Lorenzo Tumini (Lorenzo287)
+ * Copyright (c) 2026, Lorenzo Tumini (lorenzotumini)
  * Derived from linenoise.c:
  * Copyright (c) 2010-2023, Salvatore Sanfilippo <antirez at gmail dot com>
  * Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>
