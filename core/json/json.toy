@@ -60,33 +60,30 @@
 ] def
 'read-hex4 private
 
-'append-codepoint [ | bytes code |
-    [
-        [ [ $code 128 < ] [
-                $bytes $code >char push-back
-            ] ]
-        [ [ $code 2048 < ] [
-                $bytes
-                192 $code 64 / + >char push-back
-                128 $code 64 % + >char push-back
-            ] ]
-        [ [ $code 65536 < ] [
-                $bytes
-                224 $code 4096 / + >char push-back
-                128 $code 64 / 64 % + >char push-back
-                128 $code 64 % + >char push-back
-            ] ]
-        [ [ $code 1114112 < ] [
-                $bytes
-                240 $code 262144 / + >char push-back
-                128 $code 4096 / 64 % + >char push-back
-                128 $code 64 / 64 % + >char push-back
-                128 $code 64 % + >char push-back
-            ] ]
-        [ [ true ] [ "JSON code point is out of range" error ] ]
-    ] cond
+'codepoint-string [ | code |
+    [] [
+        [
+            [ [ $code 128 < ] [ $code >char ] ]
+            [ [ $code 2048 < ] [
+                    192 $code 64 / + >char
+                    128 $code 64 % + >char
+                ] ]
+            [ [ $code 65536 < ] [
+                    224 $code 4096 / + >char
+                    128 $code 64 / 64 % + >char
+                    128 $code 64 % + >char
+                ] ]
+            [ [ $code 1114112 < ] [
+                    240 $code 262144 / + >char
+                    128 $code 4096 / 64 % + >char
+                    128 $code 64 / 64 % + >char
+                    128 $code 64 % + >char
+                ] ]
+            [ [ true ] [ "JSON code point is out of range" error ] ]
+        ] cond
+    ] infra >string
 ] def
-'append-codepoint private
+'codepoint-string private
 
 'byte-in-range? [ | text index low high |
     $index $text len < [
@@ -98,14 +95,12 @@
 ] def
 'byte-in-range? private
 
-'copy-utf8 [ | text index bytes |
+'copy-utf8 [ | text index |
     $text $index at char-code | first |
     [
         [ [ $first 194 >= $first 223 <= and ] [
                 $text $index 1 + 128 191 byte-in-range? not
                 [ $index "invalid UTF-8 sequence" fail-at ] if
-                $bytes $text $index at push-back
-                $text $index 1 + at push-back
                 $index 2 +
             ] ]
         [ [ $first 224 >= $first 239 <= and ] [
@@ -114,9 +109,6 @@
                 $text $index 1 + $second-low $second-high byte-in-range? not
                 $text $index 2 + 128 191 byte-in-range? not or
                 [ $index "invalid UTF-8 sequence" fail-at ] if
-                $bytes $text $index at push-back
-                $text $index 1 + at push-back
-                $text $index 2 + at push-back
                 $index 3 +
             ] ]
         [ [ $first 240 >= $first 244 <= and ] [
@@ -126,40 +118,41 @@
                 $text $index 2 + 128 191 byte-in-range? not or
                 $text $index 3 + 128 191 byte-in-range? not or
                 [ $index "invalid UTF-8 sequence" fail-at ] if
-                $bytes $text $index at push-back
-                $text $index 1 + at push-back
-                $text $index 2 + at push-back
-                $text $index 3 + at push-back
                 $index 4 +
             ] ]
         [ [ true ] [ $index "invalid UTF-8 sequence" fail-at ] ]
-    ] cond
+    ] cond | next-index |
+    $text $index $next-index slice $next-index
 ] def
 'copy-utf8 private
 
-'parse-string-tail [ | text index bytes |
+'parse-string-tail [ | text index chunks |
     $index $text len >= [ $index "unterminated string" fail-at ] if
     $text $index at | char |
     [
-        [ [ $char "\"" == ] [ $bytes >string $index 1 + ] ]
+        [ [ $char "\"" == ] [
+                $chunks reverse "" join $index 1 +
+            ] ]
         [ [ $char "\\" == ] [
-                $text $index 1 + $bytes parse-escape
+                $text $index 1 + $chunks parse-escape
             ] ]
         [ [ true ] [
                 $char char-code 32 <
                 [ $index "unescaped control byte in string" fail-at ] if
                 $char char-code 128 < [
-                    $text $index 1 + $bytes $char push-back parse-string-tail
+                    $char $chunks cons | chunks |
+                    $text $index 1 + $chunks parse-string-tail
                 ] [
-                    $text $index $bytes copy-utf8 | next-bytes next-index |
-                    $text $next-index $next-bytes parse-string-tail
+                    $text $index copy-utf8 | chunk next-index |
+                    $chunk $chunks cons | chunks |
+                    $text $next-index $chunks parse-string-tail
                 ] ifelse
             ] ]
     ] cond
 ] def
 'parse-string-tail private
 
-'parse-escape [ | text index bytes |
+'parse-escape [ | text index chunks |
     $index $text len >= [ $index "incomplete string escape" fail-at ] if
     $text $index at | escape |
     $escape "u" == [
@@ -178,8 +171,9 @@
         ] ifelse | code next-index |
         $code 56320 >= $code 57343 <= and
         [ $index "unexpected low surrogate" fail-at ] if
-        $bytes $code append-codepoint | bytes |
-        $text $next-index $bytes parse-string-tail
+        $code codepoint-string | decoded |
+        $decoded $chunks cons | chunks |
+        $text $next-index $chunks parse-string-tail
     ] [
         [
             [ [ $escape "\"" == ] [ "\"" ] ]
@@ -192,7 +186,8 @@
             [ [ $escape "t" == ] [ "\t" ] ]
             [ [ true ] [ $index "invalid string escape" fail-at ] ]
         ] cond | decoded |
-        $text $index 1 + $bytes $decoded push-back parse-string-tail
+        $decoded $chunks cons | chunks |
+        $text $index 1 + $chunks parse-string-tail
     ] ifelse
 ] def
 'parse-escape private
@@ -200,7 +195,7 @@
 'parse-string [ | text index |
     $text $index "\"" char-at? not
     [ $index "expected a string" fail-at ] if
-    $text $index 1 + [] parse-string-tail
+    $text $index 1 + () parse-string-tail
 ] def
 'parse-string private
 
@@ -255,32 +250,32 @@
 ] def
 'parse-number private
 
-'parse-array-tail [ | text index values |
+'parse-array-tail [ | text index |
     $text $index skip-space | index |
     $text $index "]" char-at? [
-        $values $index 1 +
+        $index 1 +
     ] [
         $text $index parse-value | value next-index |
-        $values $value push-back | values |
+        $value push-back
         $text $next-index skip-space | next-index |
         $text $next-index "]" char-at? [
-            $values $next-index 1 +
+            $next-index 1 +
         ] [
             $text $next-index "," char-at? not
             [ $next-index "expected ',' or ']'" fail-at ] if
             $text $next-index 1 + skip-space | next-index |
             $text $next-index "]" char-at?
             [ $next-index "trailing comma in array" fail-at ] if
-            $text $next-index $values parse-array-tail
+            $text $next-index parse-array-tail
         ] ifelse
     ] ifelse
 ] def
 'parse-array-tail private
 
-'parse-object-tail [ | text index object |
+'parse-object-tail [ | text index |
     $text $index skip-space | index |
     $text $index "}" char-at? [
-        $object $index 1 +
+        $index 1 +
     ] [
         $text $index parse-string | key next-index |
         $text $next-index skip-space | next-index |
@@ -288,19 +283,19 @@
         [ $next-index "expected ':' after object key" fail-at ] if
         $text $next-index 1 + skip-space | next-index |
         $text $next-index parse-value | value next-index |
-        $object $key has?
+        dup $key has?
         [ $index "duplicate object key" fail-at ] if
-        $object $key $value assoc | object |
+        $key $value assoc
         $text $next-index skip-space | next-index |
         $text $next-index "}" char-at? [
-            $object $next-index 1 +
+            $next-index 1 +
         ] [
             $text $next-index "," char-at? not
             [ $next-index "expected ',' or '}'" fail-at ] if
             $text $next-index 1 + skip-space | next-index |
             $text $next-index "}" char-at?
             [ $next-index "trailing comma in object" fail-at ] if
-            $text $next-index $object parse-object-tail
+            $text $next-index parse-object-tail
         ] ifelse
     ] ifelse
 ] def
@@ -312,8 +307,8 @@
     $text $index at | first |
     [
         [ [ $first "\"" == ] [ $text $index parse-string ] ]
-        [ [ $first "[" == ] [ $text $index 1 + [] parse-array-tail ] ]
-        [ [ $first "{" == ] [ $text $index 1 + {} parse-object-tail ] ]
+        [ [ $first "[" == ] [ [] $text $index 1 + parse-array-tail ] ]
+        [ [ $first "{" == ] [ {} $text $index 1 + parse-object-tail ] ]
         [ [ $first "t" == ] [ $text $index "true" true match-token ] ]
         [ [ $first "f" == ] [ $text $index "false" false match-token ] ]
         [ [ $first "n" == ] [
@@ -335,119 +330,88 @@
     $value
 ] def
 
-'one-chunk [
-    [] swap push-back
+'escape-ascii [ | char code |
+    [
+        [ [ $char "\"" == ] [ "\\\"" ] ]
+        [ [ $char "\\" == ] [ "\\\\" ] ]
+        [ [ $code 8 == ] [ "\\b" ] ]
+        [ [ $code 12 == ] [ "\\f" ] ]
+        [ [ $code 10 == ] [ "\\n" ] ]
+        [ [ $code 13 == ] [ "\\r" ] ]
+        [ [ $code 9 == ] [ "\\t" ] ]
+        [ [ $code 32 < ] [
+                "0123456789abcdef" $code 16 / at
+                "0123456789abcdef" $code 16 % at
+                "\\u00{}{}" format
+            ] ]
+        [ [ true ] [ $char ] ]
+    ] cond
 ] def
-'one-chunk private
+'escape-ascii private
 
-'escape-string-tail [ | text index bytes |
+'escape-string-tail [ | text index chunks |
     $index $text len >= [
-        $bytes "\"" push-back >string
+        "\"" $chunks cons reverse "" join
     ] [
         $text $index at | char |
         $char char-code | code |
         $code 128 >= [
-            $text $index $bytes copy-utf8 | bytes next-index |
-            $text $next-index $bytes escape-string-tail
+            $text $index copy-utf8
         ] [
-            [
-                [ [ $char "\"" == ] [
-                        $bytes "\\" push-back "\"" push-back
-                    ] ]
-                [ [ $char "\\" == ] [
-                        $bytes "\\" push-back "\\" push-back
-                    ] ]
-                [ [ $code 8 == ] [ $bytes "\\" push-back "b" push-back ] ]
-                [ [ $code 12 == ] [ $bytes "\\" push-back "f" push-back ] ]
-                [ [ $code 10 == ] [ $bytes "\\" push-back "n" push-back ] ]
-                [ [ $code 13 == ] [ $bytes "\\" push-back "r" push-back ] ]
-                [ [ $code 9 == ] [ $bytes "\\" push-back "t" push-back ] ]
-                [ [ $code 32 < ] [
-                        $bytes "\\" push-back "u" push-back
-                        "0" push-back "0" push-back
-                        "0123456789abcdef" $code 16 / at push-back
-                        "0123456789abcdef" $code 16 % at push-back
-                    ] ]
-                [ [ true ] [ $bytes $char push-back ] ]
-            ] cond | bytes |
-            $text $index 1 + $bytes escape-string-tail
-        ] ifelse
+            $char $code escape-ascii $index 1 +
+        ] ifelse | chunk next-index |
+        $chunk $chunks cons | chunks |
+        $text $next-index $chunks escape-string-tail
     ] ifelse
 ] def
 'escape-string-tail private
 
 'escape-string [ | text |
-    $text 0 [ "\"" ] escape-string-tail
+    $text 0 "\"" () cons escape-string-tail
 ] def
 'escape-string private
 
-'append-chunks [ | chunks additional |
-    $chunks $additional [ push-back ] fold
-] def
-'append-chunks private
-
-'encode-array-tail [ | values index chunks |
-    $index $values len >= [
-        $chunks "]" push-back
-    ] [
-        $index 0 > [ $chunks "," push-back ] [ $chunks ] ifelse | chunks |
-        $values $index at encode-chunks | additional |
-        $chunks $additional append-chunks | chunks |
-        $values $index 1 + $chunks encode-array-tail
-    ] ifelse
-] def
-'encode-array-tail private
-
 'encode-array [ | values |
-    $values 0 [ "[" ] encode-array-tail
+    $values [ encode-value ] map "," join "[{}]" format
 ] def
 'encode-array private
 
-'encode-object-tail [ | pairs index chunks |
-    $index $pairs len >= [
-        $chunks "}" push-back
-    ] [
-        $index 0 > [ $chunks "," push-back ] [ $chunks ] ifelse | chunks |
-        $pairs $index at | pair |
-        $pair 0 at | key |
-        $key string? not [ "JSON object keys must be strings" error ] if
-        $key escape-string one-chunk | additional |
-        $chunks $additional append-chunks ":" push-back | chunks |
-        $pair 1 at encode-chunks | additional |
-        $chunks $additional append-chunks | chunks |
-        $pairs $index 1 + $chunks encode-object-tail
-    ] ifelse
+'encode-pair [ | pair |
+    $pair 0 at | key |
+    $key string? not [ "JSON object keys must be strings" error ] if
+    $key escape-string
+    $pair 1 at encode-value
+    "{}:{}" format
 ] def
-'encode-object-tail private
+'encode-pair private
 
-'encode-object [
-    pairs | pairs |
-    $pairs 0 [ "{" ] encode-object-tail
+'encode-object [ | object |
+    $object pairs [ encode-pair ] map "," join "{{{}}}" format
 ] def
 'encode-object private
 
-'encode-chunks [ | value |
+'encode-value [ | value |
     $value type-of | type |
     [
-        [ [ $value null? ] [ "null" one-chunk ] ]
+        [ [ $value null? ] [ "null" ] ]
         [ [ $type "bool" == ] [
-                $value [ "true" ] [ "false" ] ifelse one-chunk
+                $value [ "true" ] [ "false" ] ifelse
             ] ]
-        [ [ $type "int" == ] [ $value "{}" format one-chunk ] ]
+        [ [ $type "int" == ] [ $value "{}" format ] ]
         [ [ $type "float" == ] [
                 $value nan? $value inf? or
                 [ "JSON cannot encode non-finite floats" error ] if
-                $value repr one-chunk
+                $value repr
             ] ]
-        [ [ $type "string" == ] [ $value escape-string one-chunk ] ]
+        [ [ $type "string" == ] [ $value escape-string ] ]
         [ [ $type "vector" == ] [ $value encode-array ] ]
-        [ [ $type "list" == ] [ $value >vector encode-array ] ]
+        [ [ $type "list" == ] [ $value encode-array ] ]
         [ [ $type "map" == ] [ $value encode-object ] ]
         [ [ true ] [ $type "JSON cannot encode a {} value" format error ] ]
     ] cond
 ] def
-'encode-chunks private
+'encode-value private
 
 'encode [
-    encode-chunks "" join
+    encode-value
 ] def

@@ -1,0 +1,107 @@
+\ Equivalent source-level construction patterns.
+\ These workloads compare idioms, not the underlying collection primitives.
+
+'bench-build [ | count name callable |
+    monotonic-ns | start |
+    $count $callable exec drop
+    monotonic-ns $start - | elapsed |
+    $name $count $elapsed "{} n={}: {} ns" format print
+] def
+
+'bench-sizes [ | name callable |
+    1000 $name $callable bench-build
+    5000 $name $callable bench-build
+    10000 $name $callable bench-build
+] def
+
+'verify [ not [ "construction pattern produced the wrong value" error ] if ] def
+
+\ Fetching a captured accumulator makes an update observe a shared value.
+'vector-captured [ | count |
+    [] 0 $count range [ | accumulator item |
+        $accumulator $item push-back
+    ] fold
+] def
+
+\ Fold already threads its accumulator, preserving unique vector updates.
+'vector-threaded [ | count |
+    [] 0 $count range [ push-back ] fold
+] def
+
+\ Persistent lists are cheap to prepend; reverse and convert once.
+'vector-via-list [ | count |
+    () 0 $count range [ swap cons ] fold reverse >vector
+] def
+
+\ Infra collects values naturally emitted onto a temporary stack.
+'vector-via-infra [ | count |
+    [] [ 0 $count range [] each ] infra
+] def
+
+'map-captured [ | count |
+    {} 0 $count range [ | accumulator item |
+        $accumulator $item $item assoc
+    ] fold
+] def
+
+'map-threaded [ | count |
+    {} 0 $count range [ dup assoc ] fold
+] def
+
+'map-via-pairs [ | count |
+    () 0 $count range [
+        dup () cons cons swap cons
+    ] fold reverse >map
+] def
+
+'string-items [ | count |
+    $count [ "x" ] replicate
+] def
+
+'string-captured [ | count |
+    "" $count string-items [ | accumulator char |
+        $accumulator $char push-back
+    ] fold
+] def
+
+'string-threaded [ | count |
+    "" $count string-items [ push-back ] fold
+] def
+
+'string-via-join [ | count |
+    $count string-items "" join
+] def
+
+'string-via-infra [ | count |
+    [] [ $count string-items [] each ] infra >string
+] def
+
+\ Keep correctness outside measured regions.
+100 vector-captured 0 100 range == verify
+100 vector-threaded 0 100 range == verify
+100 vector-via-list 0 100 range == verify
+100 vector-via-infra 0 100 range == verify
+
+100 map-captured 100 map-threaded == verify
+100 map-via-pairs 100 map-threaded == verify
+
+100 string-captured 100 string-via-join == verify
+100 string-threaded 100 string-via-join == verify
+100 string-via-infra 100 string-via-join == verify
+
+"--- Vector construction ---" print
+"captured accumulator" 'vector-captured bench-sizes
+"stack-threaded fold" 'vector-threaded bench-sizes
+"list then convert" 'vector-via-list bench-sizes
+"infra collection" 'vector-via-infra bench-sizes
+
+"--- Map construction ---" print
+"captured accumulator" 'map-captured bench-sizes
+"stack-threaded fold" 'map-threaded bench-sizes
+"pair list then convert" 'map-via-pairs bench-sizes
+
+"--- String construction ---" print
+"captured accumulator" 'string-captured bench-sizes
+"stack-threaded fold" 'string-threaded bench-sizes
+"join once" 'string-via-join bench-sizes
+"infra then convert" 'string-via-infra bench-sizes

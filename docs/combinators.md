@@ -6,6 +6,9 @@ that inspects a quotation may also extract one of its call instructions and
 pass that directly, though most programs never need to do this. This guide uses
 *callable* as a short name for any of these values because each one can be run.
 
+For guidance on choosing among these words, captures, and collection-building
+patterns, see [Writing Idiomatic Toy](./idioms.md).
+
 Combinators that run a predicate follow Toy's observer rule: after reading its
 boolean answer, Toy restores the surrounding stack. Side effects still happen.
 

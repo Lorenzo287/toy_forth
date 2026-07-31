@@ -1,0 +1,40 @@
+\ Scaling workloads for the Toy-written core:json package.
+
+"core:json" import
+
+'json-text [ | count |
+    $count [ "{\"name\":\"Ada\",\"active\":true}" ] replicate
+    "," join "[{}]" format
+] def
+
+'json-values [ | count |
+    $count [ { "name" "Ada" "active" true } ] replicate
+] def
+
+'bench-json [ | count name input callable |
+    monotonic-ns | start |
+    $input $callable exec drop
+    monotonic-ns $start - | elapsed |
+    $name $count $elapsed "{} n={}: {} ns" format print
+] def
+
+'bench-decode [ | count |
+    $count "decode array" $count json-text 'json.decode bench-json
+] def
+
+'bench-encode [ | count |
+    $count "encode array" $count json-values 'json.encode bench-json
+] def
+
+'verify [ not [ "JSON benchmark produced the wrong value" error ] if ] def
+
+10 json-text json.decode len 10 == verify
+10 json-values dup json.encode json.decode == verify
+
+1000 bench-decode
+5000 bench-decode
+10000 bench-decode
+
+1000 bench-encode
+2500 bench-encode
+5000 bench-encode

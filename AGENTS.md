@@ -34,6 +34,8 @@ navigation and development rules.
 - `docs/development/`: source build, testing, and runtime implementation notes.
 - `docs/combinators.md`: examples for nontrivial control, recursion, and
   collection combinator usage.
+- `docs/idioms.md`: preferred source patterns for combinators, captures,
+  construction state, sharing, and collection choice.
 - `docs/data-model.md`: collection syntax, interop, complexity, equality, and
   hashing reference.
 - `docs/packages.md`: directory packages, exact imports, executable entry
@@ -104,6 +106,7 @@ navigation and development rules.
 - Package model: `docs/packages.md`.
 - C library boundaries: `docs/c-libraries.md`.
 - Data model reference: `docs/data-model.md`.
+- Toy source idioms: `docs/idioms.md`.
 - Test conventions: `docs/development/testing.md`.
 - Editor tooling and formatter behavior: `docs/editor.md`.
 
@@ -135,6 +138,11 @@ navigation and development rules.
   native words.
 - Language direction: settle semantics before adding syntax. Prefer
   quotation-first words and combinators over new syntax.
+- Toy source: use combinators as the default control vocabulary. Captures are
+  best for stable inputs and context; thread evolving aggregate state on the
+  stack so copy-on-write collections can remain unique. Choose specialized
+  structures for operations the program actually needs; consult
+  `docs/idioms.md` for examples and benchmark evidence.
 - Vocabulary: overload an existing word when the language concept is the same
   across types. Avoid aliases that expose only implementation categories. New
   words need clear stack effects, focused tests, and a real use case.

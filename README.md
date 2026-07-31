@@ -212,7 +212,10 @@ that existed before the predicate ran. Output, file writes, and other side
 effects performed by a predicate are not undone.
 
 The [combinator reference](./docs/combinators.md) covers the less obvious
-control, recursion, and collection combinators in more depth.
+control, recursion, and collection combinators in more depth. The
+[idiomatic Toy guide](./docs/idioms.md) shows how to combine them with captures
+and collection representations while keeping dataflow clear and construction
+linear.
 
 ### Versatile Collections
 

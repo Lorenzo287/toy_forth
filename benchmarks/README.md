@@ -39,10 +39,14 @@ Before drawing a conclusion:
 
 Current workloads:
 
+- `construction-patterns.toy`: equivalent captured, stack-threaded, list,
+  `infra`, and one-shot conversion patterns for vectors, maps, and strings;
 - `dispatch.toy`: inline native calls versus user-word dispatch.
 - `deque.toy`: unique/shared endpoint updates, pops, wraparound, and projection.
 - `list.toy`: constant-time front operations, linear traversal, and
   copy-left/share-right concatenation.
+- `json.toy`: decode and encode scaling for the Toy-written `core:json`
+  package.
 - `map.toy`: unique growth and replacement, shared updates, lookup, and
   absent-key deletion.
 - `set.toy`: unique growth, duplicate insertion, shared updates, membership,

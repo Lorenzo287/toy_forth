@@ -962,6 +962,7 @@ NOBDEF bool build_distribution(const Build_Config *config, const char *root) {
         "data-model.md",
         "editor.md",
         "embedding.md",
+        "idioms.md",
         "installation.md",
         "json.md",
         "packages.md",
