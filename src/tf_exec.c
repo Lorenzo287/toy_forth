@@ -658,19 +658,25 @@ void tf_ctx_parse_error(tf_ctx *ctx, const char *source_name, size_t line,
 }
 
 void tf_ctx_runtime_errorf(tf_ctx *ctx, const char *fmt, ...) {
-    if (ctx->error_suppression_depth > 0) return;
     va_list args;
     va_start(args, fmt);
-    ctx_diagnostic_vf(ctx, "runtime error", TF_CLR_ERR, fmt, args);
+    if (ctx->error_suppression_depth > 0) {
+        ctx_store_error_vf(ctx, fmt, args);
+    } else {
+        ctx_diagnostic_vf(ctx, "runtime error", TF_CLR_ERR, fmt, args);
+    }
     va_end(args);
     ctx->error_reported = true;
 }
 
 void tf_ctx_program_errorf(tf_ctx *ctx, const char *fmt, ...) {
-    if (ctx->error_suppression_depth > 0) return;
     va_list args;
     va_start(args, fmt);
-    ctx_diagnostic_vf(ctx, "program error", TF_CLR_PROGRAM_ERR, fmt, args);
+    if (ctx->error_suppression_depth > 0) {
+        ctx_store_error_vf(ctx, fmt, args);
+    } else {
+        ctx_diagnostic_vf(ctx, "program error", TF_CLR_PROGRAM_ERR, fmt, args);
+    }
     va_end(args);
     ctx->error_reported = true;
 }
@@ -996,9 +1002,7 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
     tf_ctx_clear_error(ctx);
     ctx->current_span = program ? tf_obj_span(program) : (tf_source_span){0};
     if (tf_obj_typeof(program) != TF_OBJ_TYPE_VECTOR) {
-        if (ctx->error_suppression_depth == 0) {
-            tf_ctx_runtime_errorf(ctx, "attempted to execute non-vector object\n");
-        }
+        tf_ctx_runtime_errorf(ctx, "attempted to execute non-vector object\n");
         return TF_ERR;
     }
 
@@ -1026,7 +1030,7 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
                 f->as.native.step(ctx, f->as.native.state, &done);
             if (cont_res != TF_OK) {
                 if (cont_res == TF_ERR) {
-                    if (ctx->error_suppression_depth == 0 && !ctx->error_reported) {
+                    if (!ctx->error_reported) {
                         tf_ctx_runtime_errorf(ctx, "execution failed\n");
                     }
                     if (frame_handle_error(ctx, entry_depth, cont_res)) continue;
@@ -1065,10 +1069,8 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
             ctx->current_word = o->str.ptr;
             tf_word *word = quickened_call_lookup(ctx, f, o, pc);
             if (!word) {
-                if (ctx->error_suppression_depth == 0) {
-                    tf_ctx_runtime_errorf(ctx, "undefined word '%s'\n",
-                                          o->str.ptr);
-                }
+                tf_ctx_runtime_errorf(ctx, "undefined word '%s'\n",
+                                      o->str.ptr);
                 if (frame_handle_error(ctx, entry_depth, TF_ERR)) {
                     continue;
                 }
@@ -1084,8 +1086,7 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
                 return TF_EXIT_REQUESTED;
             }
             if (call_res == TF_ERR) {
-                if (ctx->error_suppression_depth == 0 &&
-                    !ctx->error_reported) {
+                if (!ctx->error_reported) {
                     tf_ctx_runtime_errorf(ctx, "execution of word '%s' failed\n",
                                           o->str.ptr);
                 }
@@ -1101,10 +1102,8 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
             for (int i = (int)o->vector.len - 1; i >= 0; i--) {
                 tf_obj *val = tf_stack_pop(ctx);
                 if (!val) {
-                    if (ctx->error_suppression_depth == 0) {
-                        tf_ctx_runtime_errorf(ctx,
-                            "stack underflow during variable binding\n");
-                    }
+                    tf_ctx_runtime_errorf(
+                        ctx, "stack underflow during variable binding\n");
                     if (frame_handle_error(ctx, entry_depth, TF_ERR)) {
                         continue;
                     }
@@ -1117,10 +1116,8 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
         case TF_OBJ_TYPE_VARFETCH: {
             tf_obj *val = tf_scope_lookup_var(ctx, o);
             if (!val) {
-                if (ctx->error_suppression_depth == 0) {
-                    tf_ctx_runtime_errorf(ctx, "undefined variable '$%s'\n",
-                                          o->str.ptr);
-                }
+                tf_ctx_runtime_errorf(ctx, "undefined variable '$%s'\n",
+                                      o->str.ptr);
                 if (frame_handle_error(ctx, entry_depth, TF_ERR)) {
                     continue;
                 }

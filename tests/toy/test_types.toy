@@ -8,6 +8,20 @@
 
 5 int? true == check
 3.14 float? true == check
+"42" >int 42 == check
+"+42" >int 42 == check
+"-9223372036854775808" >int -9223372036854775808 == check
+42.0 >int 42 == check
+42 >int 42 == check
+"3.5" >float 3.5 == check
+"1e2" >float 100.0 == check
+42 >float 42.0 == check
+3.5 >float 3.5 == check
+[ "1.0" >int ] [] try "strict decimal integer text" contains? true == check
+[ 1.5 >int ] [] try "integral float" contains? true == check
+[ " 1" >int ] [] try "strict decimal integer text" contains? true == check
+[ "nan" >float ] [] try "finite decimal numeric text" contains? true == check
+[ "0x1p2" >float ] [] try "finite decimal numeric text" contains? true == check
 pwd string? true == check
 'dup symbol? true == check
 'dup call? false == check

@@ -28,7 +28,7 @@
 			[ $j pred at ] [ $j 2 - at ] bi +
 			push-back
 		] fold
-	] [] try \ Avoid range error for n = 1
+	] [ drop ] try \ Avoid range error for n = 1
 	$n at
 ] def
 
@@ -43,7 +43,7 @@
 			push-back
 			$j succ
 		] times drop
-	] [] try
+	] [ drop ] try
 	$n at
 ] def
 

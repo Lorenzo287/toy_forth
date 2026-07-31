@@ -133,14 +133,32 @@ Conversions that change observable behavior are explicit:
 [ 1 2 2 3 ] >set         \ intentionally collapse duplicates
 ( 1 2 3 ) >deque         \ choose front/back endpoint behavior
 [ [ 10 "low" ] [ 1 "urgent" ] ] >pqueue pairs >pqueue
+"42" >int                \ parse strict decimal integer text
+"3.5" >float             \ parse strict finite floating-point text
+42.0 >int                 \ exact because the float is integral
 ```
+
+`>int` also accepts integers unchanged and finite floats that are exactly
+integral and within the signed 64-bit range. Choose `floor`, `ceil`, or `round`
+before `>int` when discarding a fractional part is intentional. `>float`
+accepts floats unchanged and converts integers explicitly, with the normal
+precision limits of double-precision representation. Numeric strings consume
+their entire input and do not accept surrounding whitespace; use `trim` when
+that policy is desired.
 
 `contains?` and `index-of` use item equality for vectors and lists. For strings,
 the second argument is a substring; the empty substring is found at byte index
 zero, and `index-of` returns `-1` when absent.
 
+`starts-with?` and `ends-with?` accept empty prefixes and suffixes. `replace`
+substitutes every non-overlapping byte substring from left to right and rejects
+an empty search string. These operations follow Toy's byte-string model; they
+do not apply Unicode case or grapheme rules.
+
 `>char` accepts integer codes from 0 through 255. `char-code` is its inverse,
 and `read-key` returns the same one-byte string representation.
+Numeric parsing is separate: `"7" >int` returns `7`, while `"7" char-code`
+returns the byte code `55`.
 
 ## Equality, Hashing, Sorting
 

@@ -1,17 +1,25 @@
 
-\ A handler runs against the restored surrounding stack.
-0 [ "intentional error" error ] [ 1 + ] try 1 == check
-0 [ 1 0 / ] [ 1 + ] try 1 == check
+\ A handler receives the message on top of the restored surrounding stack.
+[ "intentional error" error ] [] try "intentional error" == check
+[ 1 0 / ] [] try "divide by zero" contains? true == check
+[ missing-word ] [] try "undefined word 'missing-word'" == check
+0 [ "intentional error" error ] [ drop 1 + ] try 1 == check
+0 [ 1 0 / ] [ drop 1 + ] try 1 == check
 
 \ An inner handler can recover without invoking the outer handler.
 0 [
-    [ "inner error" error ] [ 1 + ] try
+    [ "inner error" error ] [ drop 1 + ] try
     1 +
-] [ 100 + ] try
+] [ drop 100 + ] try
 2 == check
 
 \ A handler error propagates to the next enclosing handler.
 0 [
-    [ "inner error" error ] [ "propagated error" error ] try
-] [ 10 + ] try
+    [ "inner error" error ] [ drop "propagated error" error ] try
+] [ drop 10 + ] try
 10 == check
+
+[
+    [ "inner" error ] [ drop "outer" error ] try
+] [] try
+"outer" == check

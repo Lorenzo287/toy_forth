@@ -604,6 +604,14 @@
     "named": false
   },
   {
+    "type": ">float",
+    "named": false
+  },
+  {
+    "type": ">int",
+    "named": false
+  },
+  {
     "type": ">list",
     "named": false
   },
@@ -816,6 +824,10 @@
     "named": false
   },
   {
+    "type": "ends-with?",
+    "named": false
+  },
+  {
     "type": "env?",
     "named": false
   },
@@ -865,6 +877,10 @@
   },
   {
     "type": "fold",
+    "named": false
+  },
+  {
+    "type": "format",
     "named": false
   },
   {
@@ -1176,6 +1192,10 @@
     "named": false
   },
   {
+    "type": "replace",
+    "named": false
+  },
+  {
     "type": "replicate",
     "named": false
   },
@@ -1285,6 +1305,10 @@
   },
   {
     "type": "square",
+    "named": false
+  },
+  {
+    "type": "starts-with?",
     "named": false
   },
   {

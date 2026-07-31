@@ -19,4 +19,25 @@ var corePackageDocs = map[string]corePackageDoc{
 			},
 		},
 	},
+	"core:json": {
+		Name: "json",
+		Words: map[string]builtinDoc{
+			"null": {
+				StackEffect: "-- null",
+				Description: "Return the explicit package-specific value used for JSON null.",
+			},
+			"null?": {
+				StackEffect: "value -- bool",
+				Description: "Check whether a value is the package-specific JSON null value.",
+			},
+			"decode": {
+				StackEffect: "string -- value",
+				Description: "Decode one strict UTF-8 JSON document or raise an error.",
+			},
+			"encode": {
+				StackEffect: "value -- string",
+				Description: "Encode a supported Toy value as compact UTF-8 JSON or raise an error.",
+			},
+		},
+	},
 }

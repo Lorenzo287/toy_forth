@@ -1,0 +1,27 @@
+{
+  "name": "json",
+  "locator": "core:json",
+  "kind": "source",
+  "words": [
+    {
+      "name": "null",
+      "stackEffect": "-- null",
+      "description": "Return the explicit package-specific value used for JSON null."
+    },
+    {
+      "name": "null?",
+      "stackEffect": "value -- bool",
+      "description": "Check whether a value is the package-specific JSON null value."
+    },
+    {
+      "name": "decode",
+      "stackEffect": "string -- value",
+      "description": "Decode one strict UTF-8 JSON document or raise an error."
+    },
+    {
+      "name": "encode",
+      "stackEffect": "value -- string",
+      "description": "Encode a supported Toy value as compact UTF-8 JSON or raise an error."
+    }
+  ]
+}

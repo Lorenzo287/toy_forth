@@ -4,7 +4,7 @@
 [ 1 2 3 ] >deque deque? true == check
 [ 1 2 3 ] >deque type-of "deque" == check
 [ 1 2 3 ] >deque len 3 == check
-[ ] >deque empty? true == check
+[] >deque empty? true == check
 [ 1 "two" ] >deque repr "[1 \"two\"] >deque" == check
 
 [ 1 2 3 ] >deque items [ 1 2 3 ] == check
@@ -24,14 +24,14 @@ items [ 1 2 ] == check
 items [ 1 2 3 ] == check
 [ 1 2 3 ] >deque pop-front push-front [ 1 2 3 ] >deque == check
 [ 1 2 3 ] >deque pop-back push-back [ 1 2 3 ] >deque == check
-[ [ ] >deque pop-front ] [ "empty-deque" ] try "empty-deque" == check
-[ [ ] >deque pop-back ] [ "empty-deque" ] try "empty-deque" == check
+[ [] >deque pop-front ] [ drop "empty-deque" ] try "empty-deque" == check
+[ [] >deque pop-back ] [ drop "empty-deque" ] try "empty-deque" == check
 [ 1 2 ] >deque [ 1 2 ] >deque == check
 
 \ Exercise ring-buffer wraparound and growth beyond the initial allocation.
 [ 0 1 2 3 ] >deque pop-front drop pop-front drop 4 push-back 5 push-back
 items [ 2 3 4 5 ] == check
-[ ] >deque 1000 [ dup len push-back ] times
+[] >deque 1000 [ dup len push-back ] times
 dup len 1000 == check
 500 [ pop-front drop ] times
 dup first 500 == check
@@ -41,7 +41,7 @@ drop
 [ [ 10 "low" ] [ 1 "urgent" ] [ 5 "mid" ] ] >pqueue pqueue? true == check
 [ [ 10 "low" ] [ 1 "urgent" ] [ 5 "mid" ] ] >pqueue type-of "pqueue" == check
 [ [ 10 "low" ] [ 1 "urgent" ] [ 5 "mid" ] ] >pqueue len 3 == check
-[ ] >pqueue empty? true == check
+[] >pqueue empty? true == check
 [ [ 2 "two" ] [ 1 "one" ] ] >pqueue repr
 "[[1 \"one\"] [2 \"two\"]] >pqueue" == check
 
@@ -57,12 +57,12 @@ drop
 [ [ 9007199254740993 "higher" ] [ 9007199254740992.0 "lower" ] ] >pqueue pq-pop
 "lower" == check 9007199254740992.0 == check drop
 
-[ ] >pqueue 2 "two" pq-push 1 "one" pq-push pairs
+[] >pqueue 2 "two" pq-push 1 "one" pq-push pairs
 [ [ 1 "one" ] [ 2 "two" ] ] == check
 [ [ 10 "low" ] [ 1 "urgent" ] [ 5 "mid" ] ] >pqueue pq-pop
 "urgent" == check 1 == check pairs [ [ 5 "mid" ] [ 10 "low" ] ] == check
-[ [ ] >pqueue pq-pop ] [ "empty-pqueue" ] try "empty-pqueue" == check
-[ [ ] >pqueue pq-peek ] [ "empty-pqueue" ] try "empty-pqueue" == check
+[ [] >pqueue pq-pop ] [ drop "empty-pqueue" ] try "empty-pqueue" == check
+[ [] >pqueue pq-peek ] [ drop "empty-pqueue" ] try "empty-pqueue" == check
 
 \ Shared push/pop preserve the original priority queue.
 [ [ 1 "one" ] [ 2 "two" ] ] >pqueue dup 0 "zero" pq-push swap
@@ -73,7 +73,7 @@ pairs [ [ 0 "zero" ] [ 1 "one" ] [ 2 "two" ] ] == check
 pairs [ [ 1 "one" ] [ 2 "two" ] ] == check
 
 \ Exercise heap growth and repeated logarithmic removal.
-[ ] >pqueue 1000 [ dup len dup pq-push ] times
+[] >pqueue 1000 [ dup len dup pq-push ] times
 dup len 1000 == check
 pq-peek 0 == check 0 == check
 500 [ pq-pop drop drop ] times
@@ -84,4 +84,4 @@ drop
 [ [ 2 "b" ] [ 1 "a" ] ] >pqueue [ [ 1 "a" ] [ 2 "b" ] ] >pqueue == check
 [ [ 1 "a" ] ] >pqueue [ [ 1.0 "a" ] ] >pqueue == check
 [ [ 1 "a" ] [ 1 "b" ] ] >pqueue [ [ 1 "b" ] [ 1 "a" ] ] >pqueue != check
-[ [ [ "bad" "x" ] ] >pqueue ] [ "bad-priority" ] try "bad-priority" == check
+[ [ [ "bad" "x" ] ] >pqueue ] [ drop "bad-priority" ] try "bad-priority" == check

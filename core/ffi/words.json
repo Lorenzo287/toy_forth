@@ -1,6 +1,7 @@
 {
   "name": "ffi",
   "locator": "core:ffi",
+  "kind": "native",
   "cArray": "ffi_words",
   "words": [
     {

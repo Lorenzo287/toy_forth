@@ -95,12 +95,20 @@ function loadCorePackages() {
     const prefix = `core/${entry.name}/words.json`;
     requireString(metadata.name, `${prefix}.name`);
     requireString(metadata.locator, `${prefix}.locator`);
-    requireString(metadata.cArray, `${prefix}.cArray`);
+    requireString(metadata.kind, `${prefix}.kind`);
+    if (metadata.kind !== 'native' && metadata.kind !== 'source') {
+      fail(`${prefix}.kind must be native or source`);
+    }
     if (metadata.locator !== `core:${entry.name}`) {
       fail(`${prefix}.locator must be core:${entry.name}`);
     }
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(metadata.cArray)) {
-      fail(`${prefix}.cArray is not a C array identifier`);
+    if (metadata.kind === 'native') {
+      requireString(metadata.cArray, `${prefix}.cArray`);
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(metadata.cArray)) {
+        fail(`${prefix}.cArray is not a C array identifier`);
+      }
+    } else if (metadata.cArray !== undefined) {
+      fail(`${prefix}.cArray is only valid for native packages`);
     }
     if (!Array.isArray(metadata.words) || metadata.words.length === 0) {
       fail(`${prefix}.words must be a non-empty array`);
@@ -110,11 +118,15 @@ function loadCorePackages() {
     for (const [wordIndex, word] of metadata.words.entries()) {
       const wordPrefix = `${prefix}.words[${wordIndex}]`;
       requireString(word.name, `${wordPrefix}.name`);
-      requireString(word.cFunction, `${wordPrefix}.cFunction`);
       requireString(word.stackEffect, `${wordPrefix}.stackEffect`);
       requireString(word.description, `${wordPrefix}.description`);
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(word.cFunction)) {
-        fail(`${wordPrefix}.cFunction is not a C function identifier`);
+      if (metadata.kind === 'native') {
+        requireString(word.cFunction, `${wordPrefix}.cFunction`);
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(word.cFunction)) {
+          fail(`${wordPrefix}.cFunction is not a C function identifier`);
+        }
+      } else if (word.cFunction !== undefined) {
+        fail(`${wordPrefix}.cFunction is only valid for native packages`);
       }
       if (names.has(word.name)) fail(`duplicate word in ${prefix}: ${word.name}`);
       names.add(word.name);
@@ -414,7 +426,7 @@ function main() {
     ['tools/vscode-toy/syntaxes/toy.tmLanguage.json', renderVsCodeGrammar(manifest)],
     ['README.md', renderReadme(manifest, fs.readFileSync(readmePath, 'utf8'))],
   ]);
-  for (const metadata of corePackages) {
+  for (const metadata of corePackages.filter((pkg) => pkg.kind === 'native')) {
     targets.set(
       `core/${metadata.directory}/generated_words.inc`,
       renderCorePackageWords(metadata)

@@ -82,13 +82,13 @@
 "positive" == check
 5 == check
 
-10 [ "bad input" error ] [ 0 ] try
+10 [ "bad input" error ] [ drop 0 ] try
 0 == check
 10 == check
 
 'fact [
     [ 1 <= ]
-    [ ]
+    []
     [ dup pred ]
     [ * ]
     linrec
@@ -99,7 +99,7 @@
 
 'qsort [
     [ len 2 < ]
-    [ ]
+    []
     [ uncons [ > ] split ]
     [ swapd cons concat ]
     binrec
@@ -114,7 +114,7 @@
 \ Exercise binrec's heap fallback with more ambient stack values than its
 \ inline rollback snapshot can hold.
 0 33 range 10 push-back
-[ [ 2 < ] [ ] [ pred dup pred ] [ + ] binrec ] infra
+[ [ 2 < ] [] [ pred dup pred ] [ + ] binrec ] infra
 0 33 range 55 push-back == check
 
 \ An error during the first recursive branch releases a heap fallback snapshot
@@ -122,27 +122,27 @@
 0 33 range 10 push-back [
     [
         [ dup 2 == [ "binrec rollback" error ] if 2 < ]
-        [ ]
+        []
         [ pred dup pred ]
         [ + ]
         binrec
-    ] [ drop ] try
+    ] [ drop drop ] try
 ] infra
 0 33 range == check
 
-[ 1 [ 2 3 ] 4 ] [ ] [ 0 swap [ + ] fold ] treerec
+[ 1 [ 2 3 ] 4 ] [] [ 0 swap [ + ] fold ] treerec
 10 == check
 
 \ Exercise treerec's heap fallback with a deep ambient stack.
 0 33 range [ 1 [ 2 3 ] 4 ] push-back
-[ [ ] [ ] treerec ] infra
+[ [] [] treerec ] infra
 0 33 range [ 1 [ 2 3 ] 4 ] push-back == check
 
 \ Nested oversized snapshots use separate scratch blocks and unwind in LIFO
 \ order through an error handler.
 0 600 range [
     1 [
-        [ "scratch unwind" error ] [ ] try
+        [ "scratch unwind" error ] [ drop ] try
     ] dip drop
 ] infra
 0 600 range == check

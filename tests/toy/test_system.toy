@@ -9,7 +9,7 @@ argv 0 at "toy-test-argument" == check
 
 "TEST_VAR" env? true == check
 "TEST_VAR" get-env "TEST_VALUE" == check
-[ "TOY_TEST_MISSING_ENV_VAR" get-env drop false ] [ true ] try true == check
+[ "TOY_TEST_MISSING_ENV_VAR" get-env drop false ] [ drop true ] try true == check
 
 \ shell returns its output first and its exit status on top.
 "cd ." shell 0 == check "" == check

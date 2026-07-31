@@ -23,4 +23,4 @@
 20 == check
 
 \ `empty` must remove every item, making `pick` fail in the body.
-[ 1 2 3 empty 0 pick false ] [ true ] try true == check
+[ 1 2 3 empty 0 pick false ] [ drop true ] try true == check

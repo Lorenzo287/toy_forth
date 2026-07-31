@@ -8,7 +8,7 @@
 
 { 'name "Ada" 'age 36 } len 2 == check
 #{ 1 2 3 } len 3 == check
-{ } empty? true == check
+{} empty? true == check
 #{} empty? true == check
 
 { 'name "Ada" 'age 36 } 'name get "Ada" == check
@@ -41,7 +41,7 @@
 { 1 "integer" "one" "string" 'one "symbol" true "boolean" } 'one get "symbol" == check
 
 \ Exercise entry and bucket growth well beyond the initial allocation.
-{ } 1000 [ dup len dup assoc ] times
+{} 1000 [ dup len dup assoc ] times
 dup len 1000 == check
 dup 0 get 0 == check
 dup 511 get 511 == check
@@ -53,7 +53,7 @@ dup 500 get 500 == check
 drop
 
 [ [ 'name "Ada" ] [ 'age 36 ] ] >map { 'name "Ada" 'age 36 } == check
-[ [ [ 'a 1 ] [ 'a 2 ] ] >map ] [ "duplicate" ] try "duplicate" == check
+[ [ [ 'a 1 ] [ 'a 2 ] ] >map ] [ drop "duplicate" ] try "duplicate" == check
 
 #{ 1 2 3 } 2 has? true == check
 #{ 1 2 3 } 4 has? false == check
@@ -117,8 +117,8 @@ dup 499 has? false == check
 dup 500 has? true == check
 drop
 
-[ [ [ 1 ] ] >set ] [ "unhashable" ] try "unhashable" == check
-[ [] [ dup ] first push-back >set ] [ "unhashable-call" ] try
+[ [ [ 1 ] ] >set ] [ drop "unhashable" ] try "unhashable" == check
+[ [] [ dup ] first push-back >set ] [ drop "unhashable-call" ] try
 "unhashable-call" == check
 
 { 'a 1 'b 2 } { 'b 2 'a 1 } == check

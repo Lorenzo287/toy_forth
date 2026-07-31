@@ -279,7 +279,9 @@ The display words `.`, `.s`, and `.S` are observers: they print without
 changing the stack. `repr` returns an escaped, source-like string
 (makes me think of [quines](examples/quines/quine.toy)).
 `print` writes one value literally with a newline; `printf` interprets `{}`
-placeholders and adds no newline. Comments use `\` to the end of a line
+placeholders and adds no newline, while `format` returns the same substitution
+as a string. `>int` and `>float` convert strict numeric text from input, files,
+or process arguments. Comments use `\` to the end of a line
 or `/* ... */` for a block.
 
 ## Packages
@@ -307,7 +309,21 @@ imported package is accessed through its declared name:
 Run it with `toy app`. Use `"../math" 'm import-as` when a local
 alias is useful. Relative and absolute imports name exact directories;
 Toy's fixed core-package directory is accessible with the core directive,
-for example `"core:ffi" import`.
+for example `"core:json" import` or `"core:ffi" import`.
+
+`core:json` is a strict Toy-written JSON codec:
+
+```toy
+"core:json" import
+"{\"name\":\"Ada\",\"active\":true}" json.decode
+dup "name" get print
+json.encode print
+```
+
+See the [JSON reference](./docs/json.md) for its value mapping, explicit null
+value, UTF-8 rules, and error behavior. The runnable
+[`examples/json.toy`](./examples/json.toy) demonstrates decoding, collection
+processing, encoding, and recovery from invalid input.
 
 Package top level is declaration-only, so files can be split without creating
 an execution order. The CLI invokes the public `main` word of a package named
@@ -364,11 +380,11 @@ wrappers.
 | Ordered Collections         | `>vector`, `>list`, `>string`, `>deque`, `at`, `set-at`, `slice`, `take`, `skip`, `len`, `concat`, `reverse`, `split-mid`, `range`, `empty?` |
 | Collection Endpoints        | `first`, `last`, `rest`, `uncons`, `cons`, `push-front`, `push-back`, `pop-front`, `pop-back` |
 | Sequence Search / Ordering  | `contains?`, `index-of`, `unique`, `sort` |
-| Strings / Characters        | `join`, `trim`, `upper`, `lower`, `char?`, `>char`, `char-code`, `letter?`, `digit?`, `alnum?`, `space?`, `upper?`, `lower?`, `punct?` |
+| Strings / Characters        | `join`, `trim`, `starts-with?`, `ends-with?`, `replace`, `format`, `upper`, `lower`, `char?`, `>char`, `char-code`, `letter?`, `digit?`, `alnum?`, `space?`, `upper?`, `lower?`, `punct?` |
 | Maps / Sets                 | `>map`, `>set`, `has?`, `get`, `get-or`, `assoc`, `dissoc`, `keys`, `values`, `pairs`, `items`, `insert`, `remove` |
 | Set Algebra                 | `union`, `intersection`, `difference`, `symmetric-difference`, `subset?`, `proper-subset?`, `superset?`, `proper-superset?`, `disjoint?` |
 | Priority Queues             | `>pqueue`, `pq-push`, `pq-peek`, `pq-pop` |
-| Types                       | `type-of`, `bool?`, `int?`, `float?`, `string?`, `symbol?`, `call?`, `vector?`, `list?`, `map?`, `set?`, `deque?`, `pqueue?`, `resource?`, `number?`, `sequence?`, `callable?` |
+| Types                       | `type-of`, `bool?`, `int?`, `float?`, `>int`, `>float`, `string?`, `symbol?`, `call?`, `vector?`, `list?`, `map?`, `set?`, `deque?`, `pqueue?`, `resource?`, `number?`, `sequence?`, `callable?` |
 | Definitions / Introspection | `def`, `private`, `word?`, `var?`, `body`, `>symbol`, `>call`, `name`, `words`, `see`, `doc`, `search-words`, `repr` |
 | Console                     | `printf`, `print`, `.`, `.s`, `.S`, `read-key`, `read-line`, `clear` |
 | Packages                    | `package`, `import`, `import-as` |

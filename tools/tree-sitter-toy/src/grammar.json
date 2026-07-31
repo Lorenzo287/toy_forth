@@ -632,6 +632,22 @@
         },
         {
           "type": "STRING",
+          "value": "starts-with?"
+        },
+        {
+          "type": "STRING",
+          "value": "ends-with?"
+        },
+        {
+          "type": "STRING",
+          "value": "replace"
+        },
+        {
+          "type": "STRING",
+          "value": "format"
+        },
+        {
+          "type": "STRING",
           "value": "upper"
         },
         {
@@ -797,6 +813,14 @@
         {
           "type": "STRING",
           "value": "float?"
+        },
+        {
+          "type": "STRING",
+          "value": ">int"
+        },
+        {
+          "type": "STRING",
+          "value": ">float"
         },
         {
           "type": "STRING",

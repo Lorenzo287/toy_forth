@@ -1,6 +1,7 @@
 #include "tf_builtins.h"
 #include <inttypes.h>
 #include <ctype.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,136 @@ tf_ret tf_number_q(tf_ctx *ctx) {
     tf_stack_push(ctx, tf_obj_new_bool(type == TF_OBJ_TYPE_INT ||
                                       type == TF_OBJ_TYPE_FLOAT));
     tf_obj_release(o);
+    return TF_OK;
+}
+
+static bool parse_int_text(tf_obj *text, int64_t *result) {
+    if (text->str.len == 0 ||
+        memchr(text->str.ptr, '\0', text->str.len) != NULL ||
+        isspace((unsigned char)text->str.ptr[0])) {
+        return false;
+    }
+    errno = 0;
+    char *end = NULL;
+    long long value = strtoll(text->str.ptr, &end, 10);
+    if (errno == ERANGE || end != text->str.ptr + text->str.len) return false;
+    if (value < INT64_MIN || value > INT64_MAX) return false;
+    *result = (int64_t)value;
+    return true;
+}
+
+static bool parse_float_text(tf_obj *text, double *result) {
+    if (text->str.len == 0 ||
+        memchr(text->str.ptr, '\0', text->str.len) != NULL ||
+        isspace((unsigned char)text->str.ptr[0])) {
+        return false;
+    }
+    size_t position = 0;
+    if (text->str.ptr[position] == '+' || text->str.ptr[position] == '-') {
+        position++;
+    }
+    size_t integer_start = position;
+    while (position < text->str.len &&
+           isdigit((unsigned char)text->str.ptr[position])) {
+        position++;
+    }
+    if (position == integer_start) return false;
+    if (position < text->str.len && text->str.ptr[position] == '.') {
+        position++;
+        while (position < text->str.len &&
+               isdigit((unsigned char)text->str.ptr[position])) {
+            position++;
+        }
+    }
+    if (position < text->str.len &&
+        (text->str.ptr[position] == 'e' ||
+         text->str.ptr[position] == 'E')) {
+        position++;
+        if (position < text->str.len &&
+            (text->str.ptr[position] == '+' ||
+             text->str.ptr[position] == '-')) {
+            position++;
+        }
+        size_t exponent_start = position;
+        while (position < text->str.len &&
+               isdigit((unsigned char)text->str.ptr[position])) {
+            position++;
+        }
+        if (position == exponent_start) return false;
+    }
+    if (position != text->str.len) return false;
+
+    errno = 0;
+    char *end = NULL;
+    double value = strtod(text->str.ptr, &end);
+    if (errno == ERANGE || end != text->str.ptr + text->str.len ||
+        !isfinite(value)) {
+        return false;
+    }
+    *result = value;
+    return true;
+}
+
+tf_ret tf_to_int(tf_ctx *ctx) {
+    if (!tf_ctx_require_stack(ctx, 1)) return TF_ERR;
+    tf_obj *value = tf_stack_peek(ctx, 0);
+    tf_type type = tf_obj_typeof(value);
+    if (type == TF_OBJ_TYPE_INT) return TF_OK;
+
+    int64_t result = 0;
+    if (type == TF_OBJ_TYPE_FLOAT) {
+        const double upper_bound = 9223372036854775808.0;
+        if (!isfinite(value->f) || trunc(value->f) != value->f ||
+            value->f < (double)INT64_MIN || value->f >= upper_bound) {
+            tf_ctx_runtime_errorf(
+                ctx, "'>int' expected an integral float in the int range\n");
+            return TF_ERR;
+        }
+        result = (int64_t)value->f;
+    } else if (type == TF_OBJ_TYPE_STR) {
+        if (!parse_int_text(value, &result)) {
+            tf_ctx_runtime_errorf(
+                ctx, "'>int' expected strict decimal integer text\n");
+            return TF_ERR;
+        }
+    } else {
+        tf_ctx_runtime_errorf(
+            ctx, "'>int' expected int, float, or string, found %s\n",
+            tf_obj_type_name(value));
+        return TF_ERR;
+    }
+
+    value = tf_stack_pop(ctx);
+    tf_stack_push(ctx, tf_obj_new_int(result));
+    tf_obj_release(value);
+    return TF_OK;
+}
+
+tf_ret tf_to_float(tf_ctx *ctx) {
+    if (!tf_ctx_require_stack(ctx, 1)) return TF_ERR;
+    tf_obj *value = tf_stack_peek(ctx, 0);
+    tf_type type = tf_obj_typeof(value);
+    if (type == TF_OBJ_TYPE_FLOAT) return TF_OK;
+
+    double result = 0.0;
+    if (type == TF_OBJ_TYPE_INT) {
+        result = (double)tf_obj_int_value(value);
+    } else if (type == TF_OBJ_TYPE_STR) {
+        if (!parse_float_text(value, &result)) {
+            tf_ctx_runtime_errorf(
+                ctx, "'>float' expected strict finite decimal numeric text\n");
+            return TF_ERR;
+        }
+    } else {
+        tf_ctx_runtime_errorf(
+            ctx, "'>float' expected int, float, or string, found %s\n",
+            tf_obj_type_name(value));
+        return TF_ERR;
+    }
+
+    value = tf_stack_pop(ctx);
+    tf_stack_push(ctx, tf_obj_new_float(result));
+    tf_obj_release(value);
     return TF_OK;
 }
 

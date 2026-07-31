@@ -527,9 +527,9 @@
         {
           "name": "try",
           "cFunction": "tf_try",
-          "stackEffect": "callable callable --",
+          "stackEffect": "... body handler -- ...",
           "syntax": "",
-          "description": "Execute body and run handler if body reports an error.",
+          "description": "Execute body and, on error, restore the surrounding stack and run handler with the error message.",
           "syntaxClass": "control"
         },
         {
@@ -985,6 +985,38 @@
           "syntaxClass": "builtin"
         },
         {
+          "name": "starts-with?",
+          "cFunction": "tf_starts_with_q",
+          "stackEffect": "string prefix -- bool",
+          "syntax": "",
+          "description": "Check whether a byte string starts with a prefix.",
+          "syntaxClass": "builtin"
+        },
+        {
+          "name": "ends-with?",
+          "cFunction": "tf_ends_with_q",
+          "stackEffect": "string suffix -- bool",
+          "syntax": "",
+          "description": "Check whether a byte string ends with a suffix.",
+          "syntaxClass": "builtin"
+        },
+        {
+          "name": "replace",
+          "cFunction": "tf_replace",
+          "stackEffect": "string old new -- string",
+          "syntax": "",
+          "description": "Replace every non-overlapping occurrence of a non-empty byte substring from left to right.",
+          "syntaxClass": "builtin"
+        },
+        {
+          "name": "format",
+          "cFunction": "tf_format",
+          "stackEffect": "args... format -- string",
+          "syntax": "",
+          "description": "Return a string by substituting values into {} placeholders; {{ and }} produce literal braces.",
+          "syntaxClass": "builtin"
+        },
+        {
           "name": "upper",
           "cFunction": "tf_upper",
           "stackEffect": "string -- string",
@@ -1342,6 +1374,22 @@
           "stackEffect": "x -- bool",
           "syntax": "",
           "description": "Check whether the input is a float.",
+          "syntaxClass": "builtin"
+        },
+        {
+          "name": ">int",
+          "cFunction": "tf_to_int",
+          "stackEffect": "int|float|string -- int",
+          "syntax": "",
+          "description": "Convert strict decimal text or an exactly integral finite float to a signed 64-bit integer.",
+          "syntaxClass": "builtin"
+        },
+        {
+          "name": ">float",
+          "cFunction": "tf_to_float",
+          "stackEffect": "int|float|string -- float",
+          "syntax": "",
+          "description": "Convert an integer or strict decimal numeric text to a double-precision float.",
           "syntaxClass": "builtin"
         },
         {

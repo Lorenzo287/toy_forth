@@ -251,8 +251,8 @@ var builtinDocs = map[string]builtinDoc{
 		Description: "Evaluate predicate/body clause pairs and execute the body for the first true predicate.",
 	},
 	"try": {
-		StackEffect: "callable callable --",
-		Description: "Execute body and run handler if body reports an error.",
+		StackEffect: "... body handler -- ...",
+		Description: "Execute body and, on error, restore the surrounding stack and run handler with the error message.",
 	},
 	"error": {
 		StackEffect: "string --",
@@ -462,6 +462,22 @@ var builtinDocs = map[string]builtinDoc{
 		StackEffect: "string -- string",
 		Description: "Remove leading and trailing whitespace from a string.",
 	},
+	"starts-with?": {
+		StackEffect: "string prefix -- bool",
+		Description: "Check whether a byte string starts with a prefix.",
+	},
+	"ends-with?": {
+		StackEffect: "string suffix -- bool",
+		Description: "Check whether a byte string ends with a suffix.",
+	},
+	"replace": {
+		StackEffect: "string old new -- string",
+		Description: "Replace every non-overlapping occurrence of a non-empty byte substring from left to right.",
+	},
+	"format": {
+		StackEffect: "args... format -- string",
+		Description: "Return a string by substituting values into {} placeholders; {{ and }} produce literal braces.",
+	},
 	"upper": {
 		StackEffect: "string -- string",
 		Description: "Convert a string to uppercase.",
@@ -629,6 +645,14 @@ var builtinDocs = map[string]builtinDoc{
 	"float?": {
 		StackEffect: "x -- bool",
 		Description: "Check whether the input is a float.",
+	},
+	">int": {
+		StackEffect: "int|float|string -- int",
+		Description: "Convert strict decimal text or an exactly integral finite float to a signed 64-bit integer.",
+	},
+	">float": {
+		StackEffect: "int|float|string -- float",
+		Description: "Convert an integer or strict decimal numeric text to a double-precision float.",
 	},
 	"string?": {
 		StackEffect: "x -- bool",

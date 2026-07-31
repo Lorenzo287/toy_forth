@@ -96,6 +96,9 @@ the importing package and are not re-exported transitively.
 The installed CLI finds `core:` packages beside the SDK. A source build also
 accepts `core` beside the executable, and `--core-path DIR` overrides that
 location. An embedder sets `toy_state_config.core_package_path` explicitly.
+Toy currently ships the strict Toy-written `core:json` package and the
+native `core:ffi` package. Core packages use the same import and namespace
+rules as project packages.
 
 ## Standalone Evaluation
 

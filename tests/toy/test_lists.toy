@@ -1,15 +1,15 @@
 
 \ Persistent-list behavior and shared-sequence regressions.
 
-( ) len 0 == check
+() len 0 == check
 ( 1 2 3 ) len 3 == check
 ( 1 2 3 ) first 1 == check
 ( 1 2 3 ) last 3 == check
 ( 1 2 3 ) rest ( 2 3 ) == check
-( ) rest ( ) == check
+() rest () == check
 ( 1 2 3 ) uncons ( 2 3 ) == check
 1 == check
-[ ( ) uncons ] [ "empty-list" ] try "empty-list" == check
+[ () uncons ] [ drop "empty-list" ] try "empty-list" == check
 
 ( 2 3 ) dup 1 swap cons ( 1 2 3 ) == check
 ( 2 3 ) == check
@@ -51,15 +51,15 @@
 ( "a" "b" "c" ) "-" join "a-b-c" == check
 
 ( ( 'a 1 ) ( 'b 2 ) ) >map 'b get 2 == check
-[ ( ( 'a 1 ) ( 'a 2 ) ) >map ] [ "duplicate-list-map" ] try
+[ ( ( 'a 1 ) ( 'a 2 ) ) >map ] [ drop "duplicate-list-map" ] try
 "duplicate-list-map" == check
 ( ( 2 "b" ) ( 1 "a" ) ) >pqueue pairs [ [ 1 "a" ] [ 2 "b" ] ] == check
 
 [ ( 1 2 3 ) [ dup 2 == [ "bad" square ] [ 1 + ] ifelse ] map ]
-[ "list-map-error" ] try "list-map-error" == check
+[ drop "list-map-error" ] try "list-map-error" == check
 
 \ Repeated cons builds in reverse order in O(n); one reverse restores order.
-( ) [ 1 2 3 4 ] [ swap cons ] fold reverse ( 1 2 3 4 ) == check
+() [ 1 2 3 4 ] [ swap cons ] fold reverse ( 1 2 3 4 ) == check
 
 \ Large enough to catch accidental indexed traversal of a list.
 0 2000 range >list

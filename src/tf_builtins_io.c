@@ -24,6 +24,88 @@ static void ctx_write_value(tf_ctx *ctx, tf_obj *value, bool color) {
     tf_obj_write_value(value, ctx_output_obj_write, ctx, color);
 }
 
+typedef struct {
+    char *data;
+    size_t len;
+    size_t cap;
+} format_buffer;
+
+static void format_buffer_write(void *userdata, const char *data,
+                                size_t length) {
+    format_buffer *buffer = userdata;
+    if (length > SIZE_MAX - buffer->len - 1) abort();
+    size_t needed = buffer->len + length + 1;
+    if (needed > buffer->cap) {
+        size_t capacity = buffer->cap ? buffer->cap : 64;
+        while (capacity < needed) {
+            capacity = capacity > SIZE_MAX / 2 ? needed : capacity * 2;
+        }
+        buffer->data = tf_xrealloc(buffer->data, capacity);
+        buffer->cap = capacity;
+    }
+    memcpy(buffer->data + buffer->len, data, length);
+    buffer->len += length;
+    buffer->data[buffer->len] = '\0';
+}
+
+static size_t format_placeholder_count(const char *format, size_t length,
+                                       bool *has_format) {
+    size_t count = 0;
+    *has_format = false;
+    for (size_t i = 0; i < length; i++) {
+        if (format[i] == '{') {
+            if (i + 1 < length && format[i + 1] == '}') {
+                count++;
+                *has_format = true;
+                i++;
+            } else if (i + 1 < length && format[i + 1] == '{') {
+                *has_format = true;
+                i++;
+            }
+        } else if (format[i] == '}' && i + 1 < length &&
+                   format[i + 1] == '}') {
+            *has_format = true;
+            i++;
+        }
+    }
+    return count;
+}
+
+static void render_format(tf_ctx *ctx, const char *format, size_t length,
+                          size_t argument_count, tf_obj_write_fn write,
+                          void *userdata) {
+    size_t argument = 0;
+    for (size_t i = 0; i < length; i++) {
+        if (format[i] == '{') {
+            if (i + 1 < length && format[i + 1] == '}') {
+                tf_obj_write_value(
+                    tf_stack_peek(ctx, argument_count - 1 - argument),
+                    write, userdata, false);
+                argument++;
+                i++;
+            } else if (i + 1 < length && format[i + 1] == '{') {
+                write(userdata, "{", 1);
+                i++;
+            } else {
+                write(userdata, "{", 1);
+            }
+        } else if (format[i] == '}' && i + 1 < length &&
+                   format[i + 1] == '}') {
+            write(userdata, "}", 1);
+            i++;
+        } else {
+            write(userdata, &format[i], 1);
+        }
+    }
+}
+
+static void consume_format_arguments(tf_ctx *ctx, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        tf_obj *argument = tf_stack_pop(ctx);
+        tf_obj_release(argument);
+    }
+}
+
 static int read_line_dynamic(FILE *fp, char **buf, size_t *cap,
                              size_t *line_len) {
     *line_len = 0;
@@ -60,26 +142,8 @@ tf_ret tf_printf(tf_ctx *ctx) {
     const char *fmt = o->str.ptr;
     size_t fmt_len = o->str.len;
 
-    // Count placeholders and check for escapes
-    size_t count = 0;
     bool has_format = false;
-    for (size_t i = 0; i < fmt_len; i++) {
-        if (fmt[i] == '{') {
-            if (i + 1 < fmt_len && fmt[i + 1] == '}') {
-                count++;
-                has_format = true;
-                i++;
-            } else if (i + 1 < fmt_len && fmt[i + 1] == '{') {
-                has_format = true;
-                i++;
-            }
-        } else if (fmt[i] == '}') {
-            if (i + 1 < fmt_len && fmt[i + 1] == '}') {
-                has_format = true;
-                i++;
-            }
-        }
-    }
+    size_t count = format_placeholder_count(fmt, fmt_len, &has_format);
 
     if (!has_format) {
         o = tf_stack_pop(ctx);
@@ -97,38 +161,37 @@ tf_ret tf_printf(tf_ctx *ctx) {
     }
 
     o = tf_stack_pop(ctx);
-    size_t arg_idx = 0;
-    for (size_t i = 0; i < fmt_len; i++) {
-        if (fmt[i] == '{') {
-            if (i + 1 < fmt_len && fmt[i + 1] == '}') {
-                ctx_write_value(ctx,
-                                tf_stack_peek(ctx, count - 1 - arg_idx),
-                                false);
-                arg_idx++;
-                i++;
-            } else if (i + 1 < fmt_len && fmt[i + 1] == '{') {
-                tf_ctx_write_output(ctx, "{", 1);
-                i++;
-            } else {
-                tf_ctx_write_output(ctx, "{", 1);
-            }
-        } else if (fmt[i] == '}') {
-            if (i + 1 < fmt_len && fmt[i + 1] == '}') {
-                tf_ctx_write_output(ctx, "}", 1);
-                i++;
-            } else {
-                tf_ctx_write_output(ctx, "}", 1);
-            }
-        } else {
-            tf_ctx_write_output(ctx, &fmt[i], 1);
-        }
+    render_format(ctx, fmt, fmt_len, count, ctx_output_obj_write, ctx);
+    consume_format_arguments(ctx, count);
+    tf_obj_release(o);
+    return TF_OK;
+}
+
+tf_ret tf_format(tf_ctx *ctx) {
+    if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) return TF_ERR;
+    tf_obj *format = tf_stack_peek(ctx, 0);
+    bool has_format = false;
+    size_t count = format_placeholder_count(format->str.ptr, format->str.len,
+                                            &has_format);
+    (void)has_format;
+    if (tf_stack_len(ctx) - 1 < count) {
+        tf_ctx_runtime_errorf(
+            ctx, "'format' expected %zu format argument%s, found %zu\n",
+            count, count == 1 ? "" : "s", tf_stack_len(ctx) - 1);
+        return TF_ERR;
     }
 
-    for (size_t i = 0; i < count; i++) {
-        tf_obj *arg = tf_stack_pop(ctx);
-        tf_obj_release(arg);
+    format = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    format_buffer buffer = {0};
+    render_format(ctx, format->str.ptr, format->str.len, count,
+                  format_buffer_write, &buffer);
+    if (!buffer.data) {
+        buffer.data = tf_xmalloc(1);
+        buffer.data[0] = '\0';
     }
-    tf_obj_release(o);
+    consume_format_arguments(ctx, count);
+    tf_obj_release(format);
+    tf_stack_push(ctx, tf_obj_new_string_take(buffer.data, buffer.len));
     return TF_OK;
 }
 

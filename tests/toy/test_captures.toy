@@ -25,7 +25,7 @@ true [ 30 | branch-only | ] if
 'branch-only var? false == check
 
 'make-reader [ 40 | held | [ $held ] ] def
-[ make-reader exec ] [ "no-closure" ] try "no-closure" == check
+[ make-reader exec ] [ drop "no-closure" ] try "no-closure" == check
 
 \ Both comment forms are accepted between executable tokens.
 1

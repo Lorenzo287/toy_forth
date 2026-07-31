@@ -2,7 +2,7 @@
 \ Sort/unique correctness, stability, fast-path, and fallback regressions.
 
 [] sort [] == check
-( ) sort ( ) == check
+() sort () == check
 "" sort "" == check
 [ 3 1 2 ] sort [ 1 2 3 ] == check
 ( "c" "a" "b" ) sort ( "a" "b" "c" ) == check
@@ -25,9 +25,9 @@ dup "b" index-of 8 == check
 dup "z" index-of 200 == check
 last "z" == check
 
-[ [ true ] sort ] [ "unsupported-sort" ] try "unsupported-sort" == check
-[ [ 1 "x" ] sort ] [ "mixed-sort" ] try "mixed-sort" == check
-[ 0 3 range 1 nan set-at sort ] [ "nan-sort" ] try "nan-sort" == check
+[ [ true ] sort ] [ drop "unsupported-sort" ] try "unsupported-sort" == check
+[ [ 1 "x" ] sort ] [ drop "mixed-sort" ] try "mixed-sort" == check
+[ 0 3 range 1 nan set-at sort ] [ drop "nan-sort" ] try "nan-sort" == check
 
 [] unique [] == check
 "banana" unique "ban" == check

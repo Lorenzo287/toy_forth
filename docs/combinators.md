@@ -95,7 +95,7 @@ produce exactly one collected result.
 | `if` / `ifelse` | execute branches from a boolean or predicate callable |
 | `while` | repeat a body while a predicate callable is true |
 | `cond` | choose the body from the first true predicate/body clause |
-| `try` | run a handler if the body raises a runtime error |
+| `try` | restore the stack and pass an error message to a handler |
 
 ```toy
 0 3 [ 1 + ] times                    \ leaves 3
@@ -112,11 +112,12 @@ produce exactly one collected result.
     [ [ true ] [ "positive" ] ]
 ] cond                               \ leaves 5 "positive"
 
-10 [ "bad input" error ] [ 0 ] try   \ leaves 10 0
+10 [ "bad input" error ] [ drop 0 ] try   \ leaves 10 0
 ```
 
 `try` restores the stack that existed after the body and handler were consumed,
-then runs the handler.
+pushes the error message, then runs the handler. A handler that does not need
+the message should begin with `drop`.
 
 ## Recursion Schemes
 

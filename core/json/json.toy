@@ -1,0 +1,453 @@
+'json package
+
+'null [ 'json.null ] def
+'null? [ 'json.null == ] def
+
+'fail-at [ | index message |
+    $index $message "JSON error at byte {}: {}" format error
+] def
+'fail-at private
+
+'json-space? [
+    char-code [ 9 10 13 32 ] swap contains?
+] def
+'json-space? private
+
+'char-at? [ | text index expected |
+    $index $text len <
+    [ $text $index at $expected == ]
+    [ false ] ifelse
+] def
+'char-at? private
+
+'skip-space [ | text index |
+    $index $text len <
+    [ $text $index at json-space? ]
+    [ false ] ifelse
+    [ $text $index 1 + skip-space ]
+    [ $index ] ifelse
+] def
+'skip-space private
+
+'digit-at? [ | text index |
+    $index $text len <
+    [ $text $index at digit? ]
+    [ false ] ifelse
+] def
+'digit-at? private
+
+'scan-digits [ | text index |
+    $text $index digit-at?
+    [ $text $index 1 + scan-digits ]
+    [ $index ] ifelse
+] def
+'scan-digits private
+
+'hex-at [ | text index |
+    $index $text len >= [ $index "incomplete Unicode escape" fail-at ] if
+    "0123456789abcdef" $text $index at lower index-of
+    dup 0 < [ drop $index "expected a hexadecimal digit" fail-at ] if
+] def
+'hex-at private
+
+'read-hex4 [ | text index |
+    $text $index hex-at | a |
+    $text $index 1 + hex-at | b |
+    $text $index 2 + hex-at | c |
+    $text $index 3 + hex-at | d |
+    $a 4096 * $b 256 * + $c 16 * + $d +
+    $index 4 +
+] def
+'read-hex4 private
+
+'append-codepoint [ | bytes code |
+    [
+        [ [ $code 128 < ] [
+                $bytes $code >char push-back
+            ] ]
+        [ [ $code 2048 < ] [
+                $bytes
+                192 $code 64 / + >char push-back
+                128 $code 64 % + >char push-back
+            ] ]
+        [ [ $code 65536 < ] [
+                $bytes
+                224 $code 4096 / + >char push-back
+                128 $code 64 / 64 % + >char push-back
+                128 $code 64 % + >char push-back
+            ] ]
+        [ [ $code 1114112 < ] [
+                $bytes
+                240 $code 262144 / + >char push-back
+                128 $code 4096 / 64 % + >char push-back
+                128 $code 64 / 64 % + >char push-back
+                128 $code 64 % + >char push-back
+            ] ]
+        [ [ true ] [ "JSON code point is out of range" error ] ]
+    ] cond
+] def
+'append-codepoint private
+
+'byte-in-range? [ | text index low high |
+    $index $text len < [
+        $text $index at char-code | code |
+        $code $low >= $code $high <= and
+    ] [
+        false
+    ] ifelse
+] def
+'byte-in-range? private
+
+'copy-utf8 [ | text index bytes |
+    $text $index at char-code | first |
+    [
+        [ [ $first 194 >= $first 223 <= and ] [
+                $text $index 1 + 128 191 byte-in-range? not
+                [ $index "invalid UTF-8 sequence" fail-at ] if
+                $bytes $text $index at push-back
+                $text $index 1 + at push-back
+                $index 2 +
+            ] ]
+        [ [ $first 224 >= $first 239 <= and ] [
+                $first 224 == [ 160 ] [ 128 ] ifelse | second-low |
+                $first 237 == [ 159 ] [ 191 ] ifelse | second-high |
+                $text $index 1 + $second-low $second-high byte-in-range? not
+                $text $index 2 + 128 191 byte-in-range? not or
+                [ $index "invalid UTF-8 sequence" fail-at ] if
+                $bytes $text $index at push-back
+                $text $index 1 + at push-back
+                $text $index 2 + at push-back
+                $index 3 +
+            ] ]
+        [ [ $first 240 >= $first 244 <= and ] [
+                $first 240 == [ 144 ] [ 128 ] ifelse | second-low |
+                $first 244 == [ 143 ] [ 191 ] ifelse | second-high |
+                $text $index 1 + $second-low $second-high byte-in-range? not
+                $text $index 2 + 128 191 byte-in-range? not or
+                $text $index 3 + 128 191 byte-in-range? not or
+                [ $index "invalid UTF-8 sequence" fail-at ] if
+                $bytes $text $index at push-back
+                $text $index 1 + at push-back
+                $text $index 2 + at push-back
+                $text $index 3 + at push-back
+                $index 4 +
+            ] ]
+        [ [ true ] [ $index "invalid UTF-8 sequence" fail-at ] ]
+    ] cond
+] def
+'copy-utf8 private
+
+'parse-string-tail [ | text index bytes |
+    $index $text len >= [ $index "unterminated string" fail-at ] if
+    $text $index at | char |
+    [
+        [ [ $char "\"" == ] [ $bytes >string $index 1 + ] ]
+        [ [ $char "\\" == ] [
+                $text $index 1 + $bytes parse-escape
+            ] ]
+        [ [ true ] [
+                $char char-code 32 <
+                [ $index "unescaped control byte in string" fail-at ] if
+                $char char-code 128 < [
+                    $text $index 1 + $bytes $char push-back parse-string-tail
+                ] [
+                    $text $index $bytes copy-utf8 | next-bytes next-index |
+                    $text $next-index $next-bytes parse-string-tail
+                ] ifelse
+            ] ]
+    ] cond
+] def
+'parse-string-tail private
+
+'parse-escape [ | text index bytes |
+    $index $text len >= [ $index "incomplete string escape" fail-at ] if
+    $text $index at | escape |
+    $escape "u" == [
+        $text $index 1 + read-hex4 | code next-index |
+        $code 55296 >= $code 56319 <= and [
+            $text $next-index "\\" char-at?
+            $text $next-index 1 + "u" char-at? and not
+            [ $next-index "expected a low-surrogate escape" fail-at ] if
+            $text $next-index 2 + read-hex4 | low after-low |
+            $low 56320 < $low 57343 > or
+            [ $next-index "expected a low surrogate" fail-at ] if
+            $code 55296 - 1024 * $low 56320 - + 65536 +
+            $after-low
+        ] [
+            $code $next-index
+        ] ifelse | code next-index |
+        $code 56320 >= $code 57343 <= and
+        [ $index "unexpected low surrogate" fail-at ] if
+        $bytes $code append-codepoint | bytes |
+        $text $next-index $bytes parse-string-tail
+    ] [
+        [
+            [ [ $escape "\"" == ] [ "\"" ] ]
+            [ [ $escape "\\" == ] [ "\\" ] ]
+            [ [ $escape "/" == ] [ "/" ] ]
+            [ [ $escape "b" == ] [ 8 >char ] ]
+            [ [ $escape "f" == ] [ 12 >char ] ]
+            [ [ $escape "n" == ] [ "\n" ] ]
+            [ [ $escape "r" == ] [ "\r" ] ]
+            [ [ $escape "t" == ] [ "\t" ] ]
+            [ [ true ] [ $index "invalid string escape" fail-at ] ]
+        ] cond | decoded |
+        $text $index 1 + $bytes $decoded push-back parse-string-tail
+    ] ifelse
+] def
+'parse-escape private
+
+'parse-string [ | text index |
+    $text $index "\"" char-at? not
+    [ $index "expected a string" fail-at ] if
+    $text $index 1 + [] parse-string-tail
+] def
+'parse-string private
+
+'match-token [ | text index token value |
+    $index $token len + $text len <=
+    [ $text $index $index $token len + slice $token == ]
+    [ false ] ifelse
+    [ $value $index $token len + ]
+    [ $index "invalid JSON value" fail-at ] ifelse
+] def
+'match-token private
+
+'parse-number [ | text start |
+    $text $start "-" char-at?
+    [ $start 1 + ] [ $start ] ifelse | position |
+    $text $position digit-at? not
+    [ $position "expected a digit" fail-at ] if
+    $text $position at "0" == [
+        $position 1 +
+        dup $text swap digit-at?
+        [ $position "leading zero in number" fail-at ] if
+    ] [
+        $text $position scan-digits
+    ] ifelse | position |
+    $text $position "." char-at? [
+        $position 1 + | fraction |
+        $text $fraction digit-at? not
+        [ $fraction "expected a digit after decimal point" fail-at ] if
+        $text $fraction scan-digits true
+    ] [
+        $position false
+    ] ifelse | position floating |
+    $text $position "e" char-at? $text $position "E" char-at? or [
+        $position 1 + | exponent |
+        $text $exponent "+" char-at? $text $exponent "-" char-at? or
+        [ $exponent 1 + ] [ $exponent ] ifelse | exponent |
+        $text $exponent digit-at? not
+        [ $exponent "expected an exponent digit" fail-at ] if
+        $text $exponent scan-digits true
+    ] [
+        $position $floating
+    ] ifelse | position floating |
+    $text $start $position slice | token |
+    $floating [
+        $token [ >float ]
+        [ | failed message | $start $message fail-at ] try
+    ] [
+        $token [ >int ]
+        [ | failed message | $start $message fail-at ] try
+    ] ifelse
+    $position
+] def
+'parse-number private
+
+'parse-array-tail [ | text index values |
+    $text $index skip-space | index |
+    $text $index "]" char-at? [
+        $values $index 1 +
+    ] [
+        $text $index parse-value | value next-index |
+        $values $value push-back | values |
+        $text $next-index skip-space | next-index |
+        $text $next-index "]" char-at? [
+            $values $next-index 1 +
+        ] [
+            $text $next-index "," char-at? not
+            [ $next-index "expected ',' or ']'" fail-at ] if
+            $text $next-index 1 + skip-space | next-index |
+            $text $next-index "]" char-at?
+            [ $next-index "trailing comma in array" fail-at ] if
+            $text $next-index $values parse-array-tail
+        ] ifelse
+    ] ifelse
+] def
+'parse-array-tail private
+
+'parse-object-tail [ | text index object |
+    $text $index skip-space | index |
+    $text $index "}" char-at? [
+        $object $index 1 +
+    ] [
+        $text $index parse-string | key next-index |
+        $text $next-index skip-space | next-index |
+        $text $next-index ":" char-at? not
+        [ $next-index "expected ':' after object key" fail-at ] if
+        $text $next-index 1 + skip-space | next-index |
+        $text $next-index parse-value | value next-index |
+        $object $key has?
+        [ $index "duplicate object key" fail-at ] if
+        $object $key $value assoc | object |
+        $text $next-index skip-space | next-index |
+        $text $next-index "}" char-at? [
+            $object $next-index 1 +
+        ] [
+            $text $next-index "," char-at? not
+            [ $next-index "expected ',' or '}'" fail-at ] if
+            $text $next-index 1 + skip-space | next-index |
+            $text $next-index "}" char-at?
+            [ $next-index "trailing comma in object" fail-at ] if
+            $text $next-index $object parse-object-tail
+        ] ifelse
+    ] ifelse
+] def
+'parse-object-tail private
+
+'parse-value [ | text index |
+    $text $index skip-space | index |
+    $index $text len >= [ $index "expected a JSON value" fail-at ] if
+    $text $index at | first |
+    [
+        [ [ $first "\"" == ] [ $text $index parse-string ] ]
+        [ [ $first "[" == ] [ $text $index 1 + [] parse-array-tail ] ]
+        [ [ $first "{" == ] [ $text $index 1 + {} parse-object-tail ] ]
+        [ [ $first "t" == ] [ $text $index "true" true match-token ] ]
+        [ [ $first "f" == ] [ $text $index "false" false match-token ] ]
+        [ [ $first "n" == ] [
+                $text $index "null" 'json.null match-token
+            ] ]
+        [ [ $first "-" == $first digit? or ] [
+                $text $index parse-number
+            ] ]
+        [ [ true ] [ $index "expected a JSON value" fail-at ] ]
+    ] cond
+] def
+'parse-value private
+
+'decode [ | text |
+    $text string? not [ "'json.decode' expected a string" error ] if
+    $text 0 parse-value | value index |
+    $text $index skip-space | index |
+    $index $text len != [ $index "unexpected text after JSON value" fail-at ] if
+    $value
+] def
+
+'one-chunk [
+    [] swap push-back
+] def
+'one-chunk private
+
+'escape-string-tail [ | text index bytes |
+    $index $text len >= [
+        $bytes "\"" push-back >string
+    ] [
+        $text $index at | char |
+        $char char-code | code |
+        $code 128 >= [
+            $text $index $bytes copy-utf8 | bytes next-index |
+            $text $next-index $bytes escape-string-tail
+        ] [
+            [
+                [ [ $char "\"" == ] [
+                        $bytes "\\" push-back "\"" push-back
+                    ] ]
+                [ [ $char "\\" == ] [
+                        $bytes "\\" push-back "\\" push-back
+                    ] ]
+                [ [ $code 8 == ] [ $bytes "\\" push-back "b" push-back ] ]
+                [ [ $code 12 == ] [ $bytes "\\" push-back "f" push-back ] ]
+                [ [ $code 10 == ] [ $bytes "\\" push-back "n" push-back ] ]
+                [ [ $code 13 == ] [ $bytes "\\" push-back "r" push-back ] ]
+                [ [ $code 9 == ] [ $bytes "\\" push-back "t" push-back ] ]
+                [ [ $code 32 < ] [
+                        $bytes "\\" push-back "u" push-back
+                        "0" push-back "0" push-back
+                        "0123456789abcdef" $code 16 / at push-back
+                        "0123456789abcdef" $code 16 % at push-back
+                    ] ]
+                [ [ true ] [ $bytes $char push-back ] ]
+            ] cond | bytes |
+            $text $index 1 + $bytes escape-string-tail
+        ] ifelse
+    ] ifelse
+] def
+'escape-string-tail private
+
+'escape-string [ | text |
+    $text 0 [ "\"" ] escape-string-tail
+] def
+'escape-string private
+
+'append-chunks [ | chunks additional |
+    $chunks $additional [ push-back ] fold
+] def
+'append-chunks private
+
+'encode-array-tail [ | values index chunks |
+    $index $values len >= [
+        $chunks "]" push-back
+    ] [
+        $index 0 > [ $chunks "," push-back ] [ $chunks ] ifelse | chunks |
+        $values $index at encode-chunks | additional |
+        $chunks $additional append-chunks | chunks |
+        $values $index 1 + $chunks encode-array-tail
+    ] ifelse
+] def
+'encode-array-tail private
+
+'encode-array [ | values |
+    $values 0 [ "[" ] encode-array-tail
+] def
+'encode-array private
+
+'encode-object-tail [ | pairs index chunks |
+    $index $pairs len >= [
+        $chunks "}" push-back
+    ] [
+        $index 0 > [ $chunks "," push-back ] [ $chunks ] ifelse | chunks |
+        $pairs $index at | pair |
+        $pair 0 at | key |
+        $key string? not [ "JSON object keys must be strings" error ] if
+        $key escape-string one-chunk | additional |
+        $chunks $additional append-chunks ":" push-back | chunks |
+        $pair 1 at encode-chunks | additional |
+        $chunks $additional append-chunks | chunks |
+        $pairs $index 1 + $chunks encode-object-tail
+    ] ifelse
+] def
+'encode-object-tail private
+
+'encode-object [
+    pairs | pairs |
+    $pairs 0 [ "{" ] encode-object-tail
+] def
+'encode-object private
+
+'encode-chunks [ | value |
+    $value type-of | type |
+    [
+        [ [ $value null? ] [ "null" one-chunk ] ]
+        [ [ $type "bool" == ] [
+                $value [ "true" ] [ "false" ] ifelse one-chunk
+            ] ]
+        [ [ $type "int" == ] [ $value "{}" format one-chunk ] ]
+        [ [ $type "float" == ] [
+                $value nan? $value inf? or
+                [ "JSON cannot encode non-finite floats" error ] if
+                $value repr one-chunk
+            ] ]
+        [ [ $type "string" == ] [ $value escape-string one-chunk ] ]
+        [ [ $type "vector" == ] [ $value encode-array ] ]
+        [ [ $type "list" == ] [ $value >vector encode-array ] ]
+        [ [ $type "map" == ] [ $value encode-object ] ]
+        [ [ true ] [ $type "JSON cannot encode a {} value" format error ] ]
+    ] cond
+] def
+'encode-chunks private
+
+'encode [
+    encode-chunks "" join
+] def

@@ -351,6 +351,26 @@ c.bind`)
 	}
 }
 
+func TestHoverUsesSourceCorePackageMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := writeToyFile(t, root, "main.toy", `'main package
+"core:json" import
+json.decode`)
+	server := NewServer(log.New(io.Discard, "", 0))
+	server.docs.configureWorkspace(initializeParams{RootURI: testFileURI(root)})
+
+	hover, ok := server.resolveCorePackageHover(
+		testFileURI(path), analysis.Position{Line: 2, Character: 7})
+	if !ok {
+		t.Fatal("source core package hover did not resolve")
+	}
+	want := "```toy\njson.decode\n```\nstack: `string -- value`\n\n" +
+		"Decode one strict UTF-8 JSON document or raise an error."
+	if hover.Contents != want {
+		t.Fatalf("source core package hover = %q, want %q", hover.Contents, want)
+	}
+}
+
 func TestSafeCorePackagePath(t *testing.T) {
 	tests := map[string]bool{
 		"ffi":           true,

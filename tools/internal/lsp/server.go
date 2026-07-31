@@ -316,15 +316,15 @@ func (s *Server) handleHover(w io.Writer, req request) error {
 	}
 	info, ok := analysis.LookupHover(doc.Index, position)
 	if !ok {
+		info, ok = s.resolveCorePackageHover(params.TextDocument.URI, position)
+	}
+	if !ok {
 		target, resolved := s.resolveDefinition(params.TextDocument.URI, position)
 		token, hasToken := analysis.LookupTokenAt(doc.Index, position)
 		if resolved && hasToken {
 			info = analysis.DefinitionHover(token.Text, target.Symbol, token.Range)
 			ok = true
 		}
-	}
-	if !ok {
-		info, ok = s.resolveCorePackageHover(params.TextDocument.URI, position)
 	}
 	if !ok {
 		return writeResponse(w, response{

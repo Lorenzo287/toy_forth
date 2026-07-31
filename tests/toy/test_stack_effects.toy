@@ -1,7 +1,7 @@
 
 \ Stack-effect convention regression tests.
 
-[ 1 error ] [ "non-string-error" ] try "non-string-error" == check
+[ 1 error ] [ drop "non-string-error" ] try "non-string-error" == check
 
 words 'push-back contains? true == check
 words 'append contains? false == check
@@ -49,7 +49,7 @@ words 'back contains? false == check
 [ 1 2 3 ] == check
 0 40 range pop-back 39 == check
 len 39 == check
-[ [ ] pop-back ] [ "empty-vector" ] try "empty-vector" == check
+[ [] pop-back ] [ drop "empty-vector" ] try "empty-vector" == check
 [ 1 2 ] [ 3 4 ] concat [ 1 2 3 4 ] == check
 0 2 range [ 2 3 ] concat [ 0 1 2 3 ] == check
 [ 1 2 ] dup [ 3 4 ] concat [ 1 2 3 4 ] == check
@@ -72,7 +72,7 @@ len 39 == check
 ( 1 2 3 ) uncons ( 2 3 ) == check
 1 == check
 "" empty? true == check
-( ) empty? true == check
+() empty? true == check
 [ 1 2 3 ] 1 99 set-at [ 1 99 3 ] == check
 0 5 range 1 99 set-at [ 0 99 2 3 4 ] == check
 [ 1 2 3 ] dup 1 99 set-at [ 1 99 3 ] == check
@@ -106,18 +106,18 @@ len 39 == check
 "cba" sort "abc" == check
 "abc" 0 1 neg slice "" == check
 
-[ "x" square ] [ "square-error" ] try "square-error" == check
-[ "x" cube ] [ "cube-error" ] try "cube-error" == check
-[ 9223372036854775807 1 + ] [ "add-overflow" ] try "add-overflow" == check
-[ -9223372036854775808 1 - ] [ "sub-overflow" ] try "sub-overflow" == check
-[ 9223372036854775807 2 * ] [ "mul-overflow" ] try "mul-overflow" == check
-[ 3037000500 square ] [ "square-overflow" ] try "square-overflow" == check
-[ 2097152 cube ] [ "cube-overflow" ] try "cube-overflow" == check
-[ -9223372036854775808 neg ] [ "neg-overflow" ] try "neg-overflow" == check
-[ -9223372036854775808 abs ] [ "abs-overflow" ] try "abs-overflow" == check
-[ -9223372036854775808 pred ] [ "pred-overflow" ] try "pred-overflow" == check
-[ 9223372036854775807 succ ] [ "succ-overflow" ] try "succ-overflow" == check
-[ -9223372036854775808 -1 / ] [ "div-overflow" ] try "div-overflow" == check
+[ "x" square ] [ drop "square-error" ] try "square-error" == check
+[ "x" cube ] [ drop "cube-error" ] try "cube-error" == check
+[ 9223372036854775807 1 + ] [ drop "add-overflow" ] try "add-overflow" == check
+[ -9223372036854775808 1 - ] [ drop "sub-overflow" ] try "sub-overflow" == check
+[ 9223372036854775807 2 * ] [ drop "mul-overflow" ] try "mul-overflow" == check
+[ 3037000500 square ] [ drop "square-overflow" ] try "square-overflow" == check
+[ 2097152 cube ] [ drop "cube-overflow" ] try "cube-overflow" == check
+[ -9223372036854775808 neg ] [ drop "neg-overflow" ] try "neg-overflow" == check
+[ -9223372036854775808 abs ] [ drop "abs-overflow" ] try "abs-overflow" == check
+[ -9223372036854775808 pred ] [ drop "pred-overflow" ] try "pred-overflow" == check
+[ 9223372036854775807 succ ] [ drop "succ-overflow" ] try "succ-overflow" == check
+[ -9223372036854775808 -1 / ] [ drop "div-overflow" ] try "div-overflow" == check
 
 16777216 16777217 == false == check
 16777216 16777217 < true == check
@@ -137,10 +137,10 @@ len 39 == check
 "abc" dup len 3 == check
 "abc" == check
 
-5 [ 0 > ] [ ] if
+5 [ 0 > ] [] if
 5 == check
 
-[ 1 2 3 ] [ len 3 == ] [ ] if
+[ 1 2 3 ] [ len 3 == ] [] if
 [ 1 2 3 ] == check
 
 [ 1 2 3 4 ] [ 2 % 0 == ] filter [ 2 4 ] == check

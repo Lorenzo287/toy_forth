@@ -10,9 +10,9 @@
 "abcdefghijklmnopqrstuv" len 22 == check
 "abcdefghijklmnopqrstuvw" len 23 == check
 "abcdefghijklmnopqrstuv" "w" push-back
-    "abcdefghijklmnopqrstuvw" == check
+"abcdefghijklmnopqrstuvw" == check
 "abcdefghijklmnopqrstuvw" reverse reverse
-    "abcdefghijklmnopqrstuvw" == check
+"abcdefghijklmnopqrstuvw" == check
 "abcdefghijklmnopqrstuvw" 22 at "w" == check
 'abcdefghijklmnopqrstuv name "abcdefghijklmnopqrstuv" == check
 'abcdefghijklmnopqrstuvw name "abcdefghijklmnopqrstuvw" == check
@@ -22,6 +22,21 @@
 "ab" dup 0 "x" set-at "xb" == check "ab" == check
 [ "a" "b" "c" ] "-" join "a-b-c" == check
 "  Toy\n" trim "Toy" == check
+"Toy language" "Toy" starts-with? true == check
+"Toy language" "language" ends-with? true == check
+"Toy" "" starts-with? true == check
+"Toy" "" ends-with? true == check
+"Toy" "toy" starts-with? false == check
+"aaaa" "aa" "b" replace "bb" == check
+"one two one" "one" "three" replace "three two three" == check
+"unchanged" "missing" "x" replace "unchanged" == check
+[ "abc" "" "x" replace ] [] try
+"non-empty substring" contains? true == check
+"Ada" 42 "{} scored {}" format "Ada scored 42" == check
+"{{value}}" format "{value}" == check
+"plain" format "plain" == check
+[ "{} {}" format ] [] try
+"expected 2 format arguments" contains? true == check
 "Toy" upper "TOY" == check
 "Toy" lower "toy" == check
 

@@ -2104,6 +2104,99 @@ tf_ret tf_trim(tf_ctx *ctx) {
     return TF_OK;
 }
 
+tf_ret tf_starts_with_q(tf_ctx *ctx) {
+    if (!tf_ctx_require_type(ctx, 1, TF_OBJ_TYPE_STR) ||
+        !tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) {
+        return TF_ERR;
+    }
+    tf_obj *prefix = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    tf_obj *string = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    bool result = prefix->str.len <= string->str.len &&
+                  memcmp(string->str.ptr, prefix->str.ptr,
+                         prefix->str.len) == 0;
+    tf_stack_push(ctx, tf_obj_new_bool(result));
+    tf_obj_release(string);
+    tf_obj_release(prefix);
+    return TF_OK;
+}
+
+tf_ret tf_ends_with_q(tf_ctx *ctx) {
+    if (!tf_ctx_require_type(ctx, 1, TF_OBJ_TYPE_STR) ||
+        !tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) {
+        return TF_ERR;
+    }
+    tf_obj *suffix = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    tf_obj *string = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    bool result = suffix->str.len <= string->str.len &&
+                  memcmp(string->str.ptr + string->str.len - suffix->str.len,
+                         suffix->str.ptr, suffix->str.len) == 0;
+    tf_stack_push(ctx, tf_obj_new_bool(result));
+    tf_obj_release(string);
+    tf_obj_release(suffix);
+    return TF_OK;
+}
+
+tf_ret tf_replace(tf_ctx *ctx) {
+    if (!tf_ctx_require_type(ctx, 2, TF_OBJ_TYPE_STR) ||
+        !tf_ctx_require_type(ctx, 1, TF_OBJ_TYPE_STR) ||
+        !tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) {
+        return TF_ERR;
+    }
+    tf_obj *string = tf_stack_peek(ctx, 2);
+    tf_obj *old = tf_stack_peek(ctx, 1);
+    tf_obj *replacement = tf_stack_peek(ctx, 0);
+    if (old->str.len == 0) {
+        tf_ctx_runtime_errorf(ctx, "'replace' expected a non-empty substring\n");
+        return TF_ERR;
+    }
+
+    size_t count = 0;
+    size_t position = 0;
+    while (old->str.len <= string->str.len - position) {
+        if (memcmp(string->str.ptr + position, old->str.ptr,
+                   old->str.len) == 0) {
+            count++;
+            position += old->str.len;
+        } else {
+            position++;
+        }
+    }
+    size_t result_len = string->str.len;
+    if (replacement->str.len > old->str.len) {
+        size_t growth = replacement->str.len - old->str.len;
+        if (count > (SIZE_MAX - result_len) / growth) {
+            tf_ctx_runtime_errorf(ctx, "'replace' result is too large\n");
+            return TF_ERR;
+        }
+        result_len += count * growth;
+    } else {
+        result_len -= count * (old->str.len - replacement->str.len);
+    }
+
+    replacement = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    old = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    string = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+    tf_obj *result = tf_obj_new_string_uninitialized(result_len);
+    size_t input = 0;
+    size_t output = 0;
+    while (input < string->str.len) {
+        if (old->str.len <= string->str.len - input &&
+            memcmp(string->str.ptr + input, old->str.ptr, old->str.len) == 0) {
+            memcpy(result->str.ptr + output, replacement->str.ptr,
+                   replacement->str.len);
+            input += old->str.len;
+            output += replacement->str.len;
+        } else {
+            result->str.ptr[output++] = string->str.ptr[input++];
+        }
+    }
+    tf_stack_push(ctx, result);
+    tf_obj_release(string);
+    tf_obj_release(old);
+    tf_obj_release(replacement);
+    return TF_OK;
+}
+
 tf_ret tf_upper(tf_ctx *ctx) {
     if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) return TF_ERR;
     tf_obj *str = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);

@@ -150,7 +150,9 @@ Unhandled diagnostics inspect the same live VM state before error unwinding.
 They print a bounded data-stack snapshot and, when execution is nested, a
 bounded call chain of Toy program frames. Native continuation frames remain an
 implementation detail in these user-facing reports. Error suppression used by
-`try` prevents handled failures from producing diagnostics.
+`try` prevents handled failures from producing diagnostics, copies the stored
+error message onto the restored data stack, and clears the handled context
+before scheduling its handler.
 
 ## Object Layout
 

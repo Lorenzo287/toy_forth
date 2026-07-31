@@ -882,7 +882,14 @@ static tf_ret try_error(tf_ctx *ctx, void *state, tf_ret status, bool *handled) 
         ctx->error_suppression_depth--;
         s->suppressing_errors = false;
     }
+    const char *message = tf_ctx_last_error(ctx);
+    tf_obj *error = tf_obj_new_string(message ? message : "execution failed",
+                                      message ? strlen(message) : 16);
     stack_snapshot_restore(ctx, &s->stack);
+    tf_stack_push(ctx, error);
+    tf_ctx_clear_error(ctx);
+    ctx->error_reported = false;
+    ctx->program_error = false;
     s->stage = TF_TRY_HANDLER;
 
     tf_ret res = tf_vm_call_callable(ctx, s->handler);
@@ -1924,10 +1931,7 @@ static void treerec_push_owned(tf_ctx *ctx, tf_obj *tree, tf_obj *leaf,
 tf_ret tf_error(tf_ctx *ctx) {
     if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) return TF_ERR;
     tf_obj *msg = tf_stack_pop(ctx);
-    if (ctx->error_suppression_depth == 0) {
-        tf_ctx_program_errorf(ctx, "%s\n", msg->str.ptr);
-        ctx->error_reported = true;
-    }
+    tf_ctx_program_errorf(ctx, "%s\n", msg->str.ptr);
     tf_obj_release(msg);
     ctx->program_error = true;
     return TF_ERR;

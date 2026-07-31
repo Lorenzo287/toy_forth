@@ -130,6 +130,8 @@ NOBDEF bool link_executable(const Build_Config *config, const char *output, cons
 NOBDEF bool run_generator(const Build_Config *config, const char *manifest, const char *output, const char *package_name);
 NOBDEF bool write_package_manifest(const char *directory, const char *name, const char *extension_file);
 NOBDEF bool build_core_ffi(const Build_Config *config, Compile_Commands *compile_commands);
+NOBDEF bool stage_core_source_package(const Build_Config *config,
+                                      const char *name);
 NOBDEF bool build_core(const Build_Config *config, Compile_Commands *compile_commands);
 NOBDEF bool remove_tree(const char *path);
 NOBDEF bool copy_sdk_file(const char *source, const char *destination);
@@ -807,6 +809,18 @@ NOBDEF bool build_core_ffi(const Build_Config *config,
     return ok;
 }
 
+NOBDEF bool stage_core_source_package(const Build_Config *config,
+                                      const char *name) {
+    const char *source = temp_sprintf("core/%s", name);
+    const char *destination = temp_sprintf("%s/%s", config->core_package_dir,
+                                           name);
+    if (!remove_tree(destination) || !copy_sdk_tree(source, destination)) {
+        return false;
+    }
+    nob_log(INFO, "staged core package %s", destination);
+    return true;
+}
+
 NOBDEF bool build_core(const Build_Config *config,
                        Compile_Commands *compile_commands) {
     File_Paths headers = {0};
@@ -833,6 +847,7 @@ NOBDEF bool build_core(const Build_Config *config,
     }
     if (ok) ok = link_executable(config, config->toy_exe, &cli_objects, true);
     if (ok) ok = build_core_ffi(config, compile_commands);
+    if (ok) ok = stage_core_source_package(config, "json");
 
     da_free(processes);
     da_free(headers);
@@ -948,6 +963,7 @@ NOBDEF bool build_distribution(const Build_Config *config, const char *root) {
         "editor.md",
         "embedding.md",
         "installation.md",
+        "json.md",
         "packages.md",
         "repl.md",
     };

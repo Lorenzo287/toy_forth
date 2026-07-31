@@ -60,7 +60,8 @@ Toy source packages require neither tool. A package with a C extension contains
 compiled code in a `.dll`, `.so`, or `.dylib`; its manifest names that library
 with `extension`. The optional `core:ffi` package may also require the platform's
 libffi shared library at runtime; [Using C Libraries](./c-libraries.md#dynamic-ffi)
-describes that dependency.
+describes that dependency. The Toy-written `core:json` package has no external
+runtime dependency.
 
 ## Installed and Project Packages
 

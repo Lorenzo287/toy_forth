@@ -1,0 +1,45 @@
+\ Decode, inspect, transform, and encode JSON with core:json.
+
+"core:json" import
+
+'decode-or-report [
+	[ json.decode ]
+	[ | source message |
+		$source len $message
+		"Could not decode {}-byte JSON: {}" format print
+		json.null
+	] try
+] def
+
+"{
+  \"project\": \"Toy\",
+  \"contributors\": [
+    {\"name\": \"Ada\", \"active\": true, \"languages\": [\"C\", \"Toy\"]},
+    {\"name\": \"Lin\", \"active\": false, \"languages\": [\"Go\"]},
+    {\"name\": \"Sam\", \"active\": true, \"languages\": [\"Toy\", \"Lua\"]}
+  ]
+}" json.decode | document |
+
+"Contributors:" print
+$document "contributors" get [ | contributor |
+	$contributor "name" get
+	$contributor "languages" get ", " join
+	"- {} uses {}" format print
+] each
+
+$document "contributors" get
+[ "active" get ] filter
+[ "name" get ] map | active-names |
+
+$active-names ", " join
+"Active: {}" format print
+
+{}
+"project" $document "project" get assoc
+"active-contributors" $active-names assoc
+"next-release" json.null assoc
+json.encode
+"Summary: {}" format print
+
+"{\"missing\":}" decode-or-report
+json.null? [ "The invalid document produced the chosen fallback." print ] if

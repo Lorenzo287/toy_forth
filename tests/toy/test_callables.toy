@@ -47,7 +47,7 @@
 13 == check
 10 == check
 
-[ 1 2 [ dup ] app2 ] [ "app2-shape" ] try
+[ 1 2 [ dup ] app2 ] [ drop "app2-shape" ] try
 "app2-shape" == check
 
 0 3 'succ times 3 == check
@@ -64,7 +64,7 @@
 3 'pos? 'dec while 0 == check
 
 'bad-square [ "x" square ] def
-'zero [ 0 ] def
+'zero [ drop 0 ] def
 'bad-square 'zero try 0 == check
 
 'positive [ "positive" ] def
@@ -79,11 +79,11 @@
 5 [ 'succ 'square ] construct [ 6 25 ] == check
 
 'done? [ 1 <= ] def
-'base [ ] def
+'base [] def
 'pre [ dup pred ] def
 'post [ * ] def
 5 'done? 'base 'pre 'post linrec 120 == check
 
-'leaf-id [ ] def
+'leaf-id [] def
 'node-sum [ 0 swap '+ fold ] def
 [ 1 [ 2 3 ] 4 ] 'leaf-id 'node-sum treerec 10 == check

@@ -1,0 +1,65 @@
+"core:json" import
+
+'decode-error [ [ json.decode ] [ nip ] try ] def
+'encode-error [ [ json.encode ] [ nip ] try ] def
+
+json.null json.null? true == check
+'json.null json.null? true == check
+'other json.null? false == check
+
+"null" json.decode json.null? true == check
+"true" json.decode true == check
+"false" json.decode false == check
+"42" json.decode 42 == check
+"-42" json.decode -42 == check
+"1.25" json.decode 1.25 == check
+"-1.5e2" json.decode -150.0 == check
+" \t\r\n [1, true, null, \"x\"] " json.decode
+[ 1 true 'json.null "x" ] == check
+"{\"name\":\"Ada\",\"age\":36,\"nested\":{\"ok\":true}}" json.decode
+{ "name" "Ada" "age" 36 "nested" { "ok" true } } == check
+
+"\"a\\n\\t\\b\\f\\r\\/\\\"\\\\\"" json.decode
+"a\n\t\x08\x0c\r/\"\\" == check
+"\"\\u20ac\"" json.decode "\xe2\x82\xac" == check
+"\"\\ud83d\\ude00\"" json.decode "\xf0\x9f\x98\x80" == check
+"\"raw \xe2\x82\xac\"" json.decode "raw \xe2\x82\xac" == check
+
+json.null json.encode "null" == check
+true json.encode "true" == check
+false json.encode "false" == check
+42 json.encode "42" == check
+1.0 json.encode "1.0" == check
+"a\n\"\\\x00" json.encode "\"a\\n\\\"\\\\\\u0000\"" == check
+"\xe2\x82\xac" json.encode "\"\xe2\x82\xac\"" == check
+[ 1 true 'json.null "x" ] json.encode "[1,true,null,\"x\"]" == check
+( 1 2 3 ) json.encode "[1,2,3]" == check
+{ "name" "Ada" "items" [ 1 false ] } json.encode
+"{\"name\":\"Ada\",\"items\":[1,false]}" == check
+
+"{\"name\":\"Ada\",\"items\":[1,false,null]}" json.decode
+dup json.encode json.decode == check
+
+"" decode-error "expected a JSON value" contains? true == check
+"+1" decode-error "expected a JSON value" contains? true == check
+".5" decode-error "expected a JSON value" contains? true == check
+"01" decode-error "leading zero" contains? true == check
+"1." decode-error "digit after decimal point" contains? true == check
+"1e" decode-error "exponent digit" contains? true == check
+"9223372036854775808" decode-error "decimal integer text" contains? true == check
+"1e9999" decode-error "decimal numeric text" contains? true == check
+"true false" decode-error "unexpected text" contains? true == check
+"[1,]" decode-error "trailing comma in array" contains? true == check
+"{\"a\":1,}" decode-error "trailing comma in object" contains? true == check
+"{\"a\":1,\"a\":2}" decode-error "duplicate object key" contains? true == check
+"\"\\x\"" decode-error "invalid string escape" contains? true == check
+"\"a\nb\"" decode-error "unescaped control byte" contains? true == check
+"\"\\ude00\"" decode-error "unexpected low surrogate" contains? true == check
+"\"\\ud83d\"" decode-error "low-surrogate escape" contains? true == check
+"\"\xc0\x80\"" decode-error "invalid UTF-8" contains? true == check
+
+nan encode-error "non-finite" contains? true == check
+inf encode-error "non-finite" contains? true == check
+'symbol encode-error "symbol value" contains? true == check
+{ 'key 1 } encode-error "keys must be strings" contains? true == check
+"\xc0\x80" encode-error "invalid UTF-8" contains? true == check
