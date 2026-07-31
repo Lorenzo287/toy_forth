@@ -294,6 +294,63 @@ func TestRenameCoversEveryFileInDirectoryPackagesAndImporters(t *testing.T) {
 	}
 }
 
+func TestCaptureRenamePreservesFetchPrefix(t *testing.T) {
+	root := t.TempDir()
+	path := writeToyFile(t, root, "capture.toy", "'read [ | value | $value ] def\n")
+	server := NewServer(log.New(io.Discard, "", 0))
+	server.docs.configureWorkspace(initializeParams{RootURI: testFileURI(root)})
+
+	params, err := json.Marshal(renameParams{
+		TextDocument: textDocumentIdentifier{URI: testFileURI(path)},
+		Position:     lspPosition{Line: 0, Character: 11},
+		NewName:      "item",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	if err := server.handleRename(&output, request{ID: json.RawMessage("1"), Params: params}); err != nil {
+		t.Fatal(err)
+	}
+	response := decodeTestResponse(t, output.Bytes())
+	var edit workspaceEdit
+	if err := json.Unmarshal(response.Result, &edit); err != nil {
+		t.Fatal(err)
+	}
+	edits := edit.Changes[testFileURI(path)]
+	if len(edits) != 2 {
+		t.Fatalf("capture rename edits = %+v", edits)
+	}
+	if edits[0].Range.Start.Character != 10 || edits[1].Range.Start.Character != 19 {
+		t.Fatalf("capture rename ranges include syntax prefixes: %+v", edits)
+	}
+	for _, change := range edits {
+		if change.NewText != "item" {
+			t.Fatalf("capture rename text = %+v", change)
+		}
+	}
+}
+
+func TestHoverUsesCorePackageWordMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := writeToyFile(t, root, "main.toy", `'main package
+"core:ffi" 'c import-as
+c.bind`)
+	server := NewServer(log.New(io.Discard, "", 0))
+	server.docs.configureWorkspace(initializeParams{RootURI: testFileURI(root)})
+
+	hover, ok := server.resolveCorePackageHover(
+		testFileURI(path), analysis.Position{Line: 2, Character: 3})
+	if !ok {
+		t.Fatal("core package hover did not resolve")
+	}
+	want := "```toy\nc.bind\n```\nstack: `library symbol signature -- function`\n\n" +
+		"Resolve a library symbol using an input-to-output signature such as `cstr -> usize`."
+	if hover.Contents != want {
+		t.Fatalf("core package hover = %q, want %q", hover.Contents, want)
+	}
+}
+
 func TestSafeCorePackagePath(t *testing.T) {
 	tests := map[string]bool{
 		"ffi":           true,

@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push add library path");
     CHECK(toy_eval(state, "<ffi-add>",
                    "ffi.open \"toy_ffi_add_i32\" "
-                   "\"i32(i32,i32)\" ffi.bind ffi.call") == TOY_OK,
+                   "\"i32 i32 -> i32\" ffi.bind ffi.call") == TOY_OK,
           "call integer function");
     int64_t integer = 0;
     CHECK(toy_get_int(state, 0, &integer) && integer == 42,
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push i8 library path");
     CHECK(toy_eval(state, "<ffi-i8>",
                    "ffi.open \"toy_ffi_negative_i8\" "
-                   "\"i8()\" ffi.bind ffi.call") == TOY_OK,
+                   "\"-> i8\" ffi.bind ffi.call") == TOY_OK,
           "call narrow signed function");
     CHECK(toy_get_int(state, 0, &integer) && integer == -7,
           "narrow signed result");
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push u32 library path");
     CHECK(toy_eval(state, "<ffi-u32>",
                    "ffi.open \"toy_ffi_large_u32\" "
-                   "\"u32()\" ffi.bind ffi.call") == TOY_OK,
+                   "\"-> u32\" ffi.bind ffi.call") == TOY_OK,
           "call narrow unsigned function");
     CHECK(toy_get_int(state, 0, &integer) && integer == UINT32_MAX,
           "narrow unsigned result");
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push float library path");
     CHECK(toy_eval(state, "<ffi-float>",
                    "ffi.open \"toy_ffi_scale_f64\" "
-                   "\"f64(f64,i32)\" ffi.bind ffi.call") == TOY_OK,
+                   "\"f64 i32 -> f64\" ffi.bind ffi.call") == TOY_OK,
           "call mixed numeric function");
     double floating = 0.0;
     CHECK(toy_get_float(state, 0, &floating) && floating == 10.5,
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push string library path");
     CHECK(toy_eval(state, "<ffi-string-argument>",
                    "ffi.open \"toy_ffi_text_length\" "
-                   "\"usize(cstr)\" ffi.bind ffi.call") == TOY_OK,
+                   "\"cstr -> usize\" ffi.bind ffi.call") == TOY_OK,
           "call C string function");
     CHECK(toy_get_int(state, 0, &integer) && integer == 5,
           "string length result");
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push greeting library path");
     CHECK(toy_eval(state, "<ffi-string-result>",
                    "ffi.open \"toy_ffi_greeting\" "
-                   "\"cstr()\" ffi.bind ffi.call") == TOY_OK,
+                   "\"-> cstr\" ffi.bind ffi.call") == TOY_OK,
           "copy C string result");
     const char *text = NULL;
     size_t text_length = 0;
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push bool library path");
     CHECK(toy_eval(state, "<ffi-bool>",
                    "ffi.open \"toy_ffi_not\" "
-                   "\"bool(bool)\" ffi.bind ffi.call") == TOY_OK,
+                   "\"bool -> bool\" ffi.bind ffi.call") == TOY_OK,
           "call bool function");
     bool boolean = true;
     CHECK(toy_get_bool(state, 0, &boolean) && !boolean, "bool result");
@@ -125,24 +125,35 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push void library path");
     CHECK(toy_eval(state, "<ffi-void>",
                    "ffi.open \"toy_ffi_ignore_i32\" "
-                   "\"void(i32)\" ffi.bind ffi.call") == TOY_OK,
+                   "\"i32 -> void\" ffi.bind ffi.call") == TOY_OK,
           "call void function");
     CHECK(toy_stack_size(state) == 0, "void function result");
 
     CHECK(push_path(state, argv[2]) == TOY_OK, "push invalid library path");
     CHECK(toy_eval(state, "<ffi-invalid-signature>",
                    "ffi.open \"toy_ffi_add_i32\" "
-                   "\"i32(pointer)\" ffi.bind") == TOY_ERROR,
+                   "\"pointer -> i32\" ffi.bind") == TOY_ERROR,
           "reject unsupported signature type");
     CHECK(toy_get_error(state) &&
               strstr(toy_get_error(state), "invalid signature"),
           "invalid signature diagnostic");
     CHECK(toy_pop(state, 3), "pop invalid binding inputs");
 
+    CHECK(push_path(state, argv[2]) == TOY_OK,
+          "push obsolete signature library path");
+    CHECK(toy_eval(state, "<ffi-obsolete-signature>",
+                   "ffi.open \"toy_ffi_add_i32\" "
+                   "\"i32(i32 i32)\" ffi.bind") == TOY_ERROR,
+          "reject obsolete return-first signature");
+    CHECK(toy_get_error(state) &&
+              strstr(toy_get_error(state), "invalid signature"),
+          "obsolete signature diagnostic");
+    CHECK(toy_pop(state, 3), "pop obsolete binding inputs");
+
     CHECK(push_path(state, argv[2]) == TOY_OK, "push missing symbol path");
     CHECK(toy_eval(state, "<ffi-missing-symbol>",
                    "ffi.open \"toy_ffi_missing\" "
-                   "\"void()\" ffi.bind") == TOY_ERROR,
+                   "\"-> void\" ffi.bind") == TOY_ERROR,
           "reject missing symbol");
     CHECK(toy_get_error(state) &&
               strstr(toy_get_error(state), "could not resolve"),
@@ -153,7 +164,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push range library path");
     CHECK(toy_eval(state, "<ffi-range>",
                    "ffi.open \"toy_ffi_ignore_i32\" "
-                   "\"void(i16)\" ffi.bind ffi.call") == TOY_ERROR,
+                   "\"i16 -> void\" ffi.bind ffi.call") == TOY_ERROR,
           "reject out-of-range argument");
     CHECK(toy_get_error(state) && strstr(toy_get_error(state), "expected i16"),
           "argument range diagnostic");
@@ -162,7 +173,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push u64 library path");
     CHECK(toy_eval(state, "<ffi-return-range>",
                    "ffi.open \"toy_ffi_too_large\" "
-                   "\"u64()\" ffi.bind ffi.call") == TOY_ERROR,
+                   "\"-> u64\" ffi.bind ffi.call") == TOY_ERROR,
           "reject unrepresentable return value");
     CHECK(toy_get_error(state) &&
               strstr(toy_get_error(state), "outside Toy's range"),
@@ -172,7 +183,7 @@ int main(int argc, char **argv) {
     CHECK(push_path(state, argv[2]) == TOY_OK, "push shutdown library path");
     CHECK(toy_eval(state, "<ffi-shutdown>",
                    "ffi.open \"toy_ffi_add_i32\" "
-                   "\"i32(i32,i32)\" ffi.bind") == TOY_OK,
+                   "\"i32 i32 -> i32\" ffi.bind") == TOY_OK,
           "leave bound function for state teardown");
     toy_state_free(state);
 

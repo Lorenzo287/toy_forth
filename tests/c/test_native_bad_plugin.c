@@ -6,7 +6,7 @@ static toy_status unavailable(toy_state *state) {
 }
 
 static const toy_native_word words[] = {
-    {"unavailable", unavailable},
+    {.name = "unavailable", .callback = unavailable},
 };
 
 static const toy_extension extension = {

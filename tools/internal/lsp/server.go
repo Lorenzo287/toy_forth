@@ -324,6 +324,9 @@ func (s *Server) handleHover(w io.Writer, req request) error {
 		}
 	}
 	if !ok {
+		info, ok = s.resolveCorePackageHover(params.TextDocument.URI, position)
+	}
+	if !ok {
 		return writeResponse(w, response{
 			JSONRPC: "2.0",
 			ID:      decodeID(req.ID),

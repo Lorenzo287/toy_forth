@@ -1,0 +1,25 @@
+{
+  "name": "ffi",
+  "locator": "core:ffi",
+  "cArray": "ffi_words",
+  "words": [
+    {
+      "name": "open",
+      "cFunction": "ffi_open",
+      "stackEffect": "path -- library",
+      "description": "Open a shared library and return a managed library handle."
+    },
+    {
+      "name": "bind",
+      "cFunction": "ffi_bind",
+      "stackEffect": "library symbol signature -- function",
+      "description": "Resolve a library symbol using an input-to-output signature such as `cstr -> usize`."
+    },
+    {
+      "name": "call",
+      "cFunction": "ffi_invoke",
+      "stackEffect": "args... function -- result?",
+      "description": "Call a bound foreign function, consuming its arguments and function handle."
+    }
+  ]
+}

@@ -60,10 +60,10 @@ static toy_status plugin_make_pair(toy_state *state) {
 }
 
 static const toy_native_word plugin_words[] = {
-    {"double", plugin_double},
-    {"make-resource", plugin_make_resource},
-    {"sequence-size", plugin_sequence_size},
-    {"make-pair", plugin_make_pair},
+    {.name = "double", .callback = plugin_double},
+    {.name = "make-resource", .callback = plugin_make_resource},
+    {.name = "sequence-size", .callback = plugin_sequence_size},
+    {.name = "make-pair", .callback = plugin_make_pair},
 };
 
 static const toy_extension extension = {

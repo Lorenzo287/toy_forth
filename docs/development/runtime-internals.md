@@ -98,7 +98,7 @@ but remain state-bound, so C cannot expose or transfer `tf_obj` layouts between
 runtimes. Typed resource access wraps external pointers in ordinary refcounted
 objects with copied tags and exactly-once destructors, while keeping the
 pointer and object layout opaque to Toy code.
-The same header defines C-extension ABI version 1: an exported
+The same header defines C-extension ABI version 2: an exported
 descriptor entry point, a size-tagged host function table, and an
 implementation-macro forwarding layer for the familiar public stack/resource
 calls. A C extension defines `TOY_EXTENSION_IMPLEMENTATION` before including

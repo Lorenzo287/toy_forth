@@ -13,7 +13,7 @@ static toy_status twice(toy_state *state) {
 }
 
 static const toy_native_word words[] = {
-    {"twice", twice},
+    {.name = "twice", .callback = twice},
 };
 
 static const toy_extension extension = {

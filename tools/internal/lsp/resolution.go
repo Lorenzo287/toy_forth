@@ -57,6 +57,42 @@ func (s *Server) resolveDefinitionWithResolver(uri string, position analysis.Pos
 	return s.resolveWord(doc, token.Text)
 }
 
+func (s *Server) resolveCorePackageHover(uri string,
+	position analysis.Position) (analysis.Hover, bool) {
+	doc, ok := s.docs.get(uri)
+	if !ok || doc.Path == "" {
+		return analysis.Hover{}, false
+	}
+	token, ok := analysis.LookupTokenAt(doc.Index, position)
+	if !ok {
+		return analysis.Hover{}, false
+	}
+	qualifier, localName, qualified := strings.Cut(token.Text, ".")
+	if !qualified || qualifier == "" || localName == "" ||
+		strings.Contains(localName, ".") {
+		return analysis.Hover{}, false
+	}
+
+	for _, importer := range s.docs.packageDocuments(filepath.Dir(doc.Path)) {
+		for _, imported := range importer.Index.Imports {
+			packageName, known := analysis.CorePackageName(imported.Path)
+			if !known {
+				continue
+			}
+			alias := imported.Alias
+			if alias == "" {
+				alias = packageName
+			}
+			if qualifier != alias {
+				continue
+			}
+			return analysis.LookupCorePackageHover(
+				imported.Path, localName, token.Text, token.Range)
+		}
+	}
+	return analysis.Hover{}, false
+}
+
 func (s *Server) resolveWord(doc *document, word string) (definitionTarget, bool) {
 	if doc == nil {
 		return definitionTarget{}, false

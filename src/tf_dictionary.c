@@ -110,11 +110,31 @@ static tf_word *dict_insert_word(tf_ctx *ctx, size_t package_index,
     word->owns_name = copy_name;
     word->package_index = package_index;
     word->is_public = is_public;
+    word->doc_stack_effect = NULL;
+    word->doc_description = NULL;
     word->type = TF_WORD_NATIVE;
     word->native_impl = NULL;
     ctx->words.buckets[slot] = entry_index + 1;
     tf_dict_resolution_changed(ctx);
     return word;
+}
+
+static void dict_clear_doc(tf_word *word) {
+    free(word->doc_stack_effect);
+    free(word->doc_description);
+    word->doc_stack_effect = NULL;
+    word->doc_description = NULL;
+}
+
+static void dict_set_doc(tf_word *word, const char *stack_effect,
+                         const char *description) {
+    dict_clear_doc(word);
+    if (stack_effect && stack_effect[0] != '\0') {
+        word->doc_stack_effect = tf_xstrdup(stack_effect);
+    }
+    if (description && description[0] != '\0') {
+        word->doc_description = tf_xstrdup(description);
+    }
 }
 
 static void dict_set_native(tf_ctx *ctx, const char *name, tf_native_fn cb,
@@ -125,6 +145,7 @@ static void dict_set_native(tf_ctx *ctx, const char *name, tf_native_fn cb,
     bool replacing = word != NULL;
     if (word) {
         if (word->type == TF_WORD_USER) tf_obj_release(word->user_impl);
+        dict_clear_doc(word);
     } else {
         word = dict_insert_word(ctx, TF_ROOT_PACKAGE, name, name_len,
                                 copy_name, true);
@@ -145,12 +166,15 @@ void tf_dict_set_native_copy(tf_ctx *ctx, const char *name, tf_native_fn cb) {
 }
 
 void tf_dict_add_native_scoped(tf_ctx *ctx, const char *name, size_t name_len,
-                               size_t package_index, tf_native_fn cb) {
+                               size_t package_index, tf_native_fn cb,
+                               const char *stack_effect,
+                               const char *description) {
     assert(tf_dict_lookup_scoped(ctx, package_index, name, name_len) == NULL);
     tf_word *word = dict_insert_word(ctx, package_index, name, name_len, true,
                                      true);
     word->type = TF_WORD_NATIVE;
     word->native_impl = cb;
+    dict_set_doc(word, stack_effect, description);
 }
 
 static bool name_is_local(const char *name, size_t len) {
@@ -170,6 +194,7 @@ bool tf_dict_set_user_in_package(tf_ctx *ctx, size_t package_index,
     bool replacing = word != NULL;
     if (word) {
         if (word->type == TF_WORD_USER) tf_obj_release(word->user_impl);
+        dict_clear_doc(word);
     } else {
         word = dict_insert_word(ctx, package_index, name->str.ptr,
                                 name->str.len, true, true);

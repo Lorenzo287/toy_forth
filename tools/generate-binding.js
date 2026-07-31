@@ -1199,7 +1199,9 @@ function renderBinding(manifest) {
 
   lines.push('static const toy_native_word binding_words[] = {');
   for (const [index, fn] of manifest.functions.entries()) {
-    lines.push(`    {${cString(fn.word || fn.name)}, binding_word_${index}},`);
+    lines.push(
+      `    {.name = ${cString(fn.word || fn.name)}, .callback = binding_word_${index}},`
+    );
   }
   lines.push(
     '};',

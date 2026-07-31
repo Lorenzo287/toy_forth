@@ -13,6 +13,44 @@ type builtinDoc struct {
 	Description string
 }
 
+type corePackageDoc struct {
+	Name  string
+	Words map[string]builtinDoc
+}
+
+func docHover(displayName string, doc builtinDoc, rng Range) Hover {
+	body := doc.Description
+	switch {
+	case doc.StackEffect != "":
+		body = "stack: `" + doc.StackEffect + "`\n\n" + body
+	case doc.Syntax != "":
+		body = "syntax: `" + doc.Syntax + "`\n\n" + body
+	}
+
+	return Hover{
+		Contents: strings.TrimSpace("```toy\n" + displayName + "\n```\n" + body),
+		Range:    rng,
+	}
+}
+
+func CorePackageName(locator string) (string, bool) {
+	pkg, ok := corePackageDocs[locator]
+	return pkg.Name, ok
+}
+
+func LookupCorePackageHover(locator, localName, displayName string,
+	rng Range) (Hover, bool) {
+	pkg, ok := corePackageDocs[locator]
+	if !ok {
+		return Hover{}, false
+	}
+	doc, ok := pkg.Words[localName]
+	if !ok {
+		return Hover{}, false
+	}
+	return docHover(displayName, doc, rng), true
+}
+
 func LookupHover(index DocumentIndex, pos Position) (Hover, bool) {
 	word, tok, ok := lookupTokenAt(index, pos)
 	if !ok {
@@ -38,18 +76,7 @@ func LookupHover(index DocumentIndex, pos Position) (Hover, bool) {
 	}
 
 	if doc, ok := builtinDocs[word]; ok {
-		body := doc.Description
-		switch {
-		case doc.StackEffect != "":
-			body = "stack: `" + doc.StackEffect + "`\n\n" + body
-		case doc.Syntax != "":
-			body = "syntax: `" + doc.Syntax + "`\n\n" + body
-		}
-
-		return Hover{
-			Contents: strings.TrimSpace("```toy\n" + word + "\n```\n" + body),
-			Range:    tok.Range,
-		}, true
+		return docHover(word, doc, tok.Range), true
 	}
 
 	if sym, ok := index.Definitions[word]; ok {

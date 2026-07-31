@@ -246,7 +246,7 @@ func LookupRenameEdits(index DocumentIndex, pos Position) []Range {
 	word, tok, ok := lookupTokenAt(index, pos)
 	if !ok {
 		if local, ok := lookupLocalBindingDeclarationAt(index, pos); ok {
-			return localReferences(index, local, true)
+			return localRenameEdits(index, local)
 		}
 		return nil
 	}
@@ -256,7 +256,7 @@ func LookupRenameEdits(index DocumentIndex, pos Position) []Range {
 		if !ok {
 			return nil
 		}
-		return localReferences(index, local, true)
+		return localRenameEdits(index, local)
 	}
 	if tok.Kind == tokenKindSymbol && !isPrivacyRange(index, word, tok.Range) && !isDefinitionRange(index, word, tok.Range) {
 		return nil
@@ -282,6 +282,25 @@ func LookupRenameEdits(index DocumentIndex, pos Position) []Range {
 		if private.Name == sym.Name {
 			edits = append(edits, private.Range)
 		}
+	}
+	return edits
+}
+
+func localRenameEdits(index DocumentIndex, local LocalBinding) []Range {
+	edits := []Range{local.Range}
+	for _, candidate := range index.WordTokens {
+		if candidate.Kind != tokenKindVariable || candidate.Text != local.Name {
+			continue
+		}
+		resolved, ok := lookupLocalBinding(index, candidate.Text, candidate.Range.Start)
+		if !ok || !sameRange(resolved.Range, local.Range) {
+			continue
+		}
+		rng := candidate.Range
+		// Variable token ranges include the `$` so hover and references cover
+		// the complete fetch. Rename only the identifier that follows it.
+		rng.Start.Character++
+		edits = append(edits, rng)
 	}
 	return edits
 }

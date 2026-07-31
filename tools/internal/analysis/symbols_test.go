@@ -253,7 +253,7 @@ func TestLookupRenameEdits(t *testing.T) {
 	if localDeclEdits[0].Start.Line != 9 || localDeclEdits[0].Start.Character != 36 {
 		t.Fatalf("unexpected inner local declaration rename edit: %+v", localDeclEdits[0])
 	}
-	if localDeclEdits[1].Start.Line != 9 || localDeclEdits[1].Start.Character != 44 {
+	if localDeclEdits[1].Start.Line != 9 || localDeclEdits[1].Start.Character != 45 {
 		t.Fatalf("unexpected inner local use rename edit: %+v", localDeclEdits[1])
 	}
 
@@ -264,10 +264,10 @@ func TestLookupRenameEdits(t *testing.T) {
 	if localUseEdits[0].Start.Line != 9 || localUseEdits[0].Start.Character != 17 {
 		t.Fatalf("unexpected outer local declaration rename edit: %+v", localUseEdits[0])
 	}
-	if localUseEdits[1].Start.Line != 9 || localUseEdits[1].Start.Character != 25 {
+	if localUseEdits[1].Start.Line != 9 || localUseEdits[1].Start.Character != 26 {
 		t.Fatalf("unexpected first outer local use rename edit: %+v", localUseEdits[1])
 	}
-	if localUseEdits[2].Start.Line != 9 || localUseEdits[2].Start.Character != 58 {
+	if localUseEdits[2].Start.Line != 9 || localUseEdits[2].Start.Character != 59 {
 		t.Fatalf("unexpected second outer local use rename edit: %+v", localUseEdits[2])
 	}
 }

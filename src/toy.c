@@ -233,7 +233,9 @@ toy_status tf_install_native_package(toy_state *state, size_t package_index,
         tf_dict_add_native_scoped(state, package->words[i].name,
                                   strlen(package->words[i].name),
                                   package_index,
-                                  package->words[i].callback);
+                                  package->words[i].callback,
+                                  package->words[i].stack_effect,
+                                  package->words[i].description);
     }
     return TOY_OK;
 }

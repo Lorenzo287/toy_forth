@@ -6,7 +6,7 @@
 
 'c-strlen [
 	argv 0 at c.open
-	"strlen" "usize(cstr)" c.bind c.call
+	"strlen" "cstr -> usize" c.bind c.call
 ] def
 
 "Toy speaks C" c-strlen print

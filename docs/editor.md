@@ -38,9 +38,10 @@ vim.lsp.buf.format({ async = false })
 ## Language Server
 
 `toy-lsp` indexes Toy files with Tree-sitter and provides definitions,
-references, rename, document symbols, builtin and source documentation on
-hover, and formatting. It understands top-level definitions, captures,
-privacy, qualified package words, and literal `import` and `import-as` paths.
+references, rename, document symbols, builtin, source, and official `core:`
+package documentation on hover, and formatting. It understands top-level
+definitions, captures, privacy, qualified package words, and literal `import`
+and `import-as` paths.
 Rename and references cover every direct source file in a package directory and
 the workspace files that import that package. Open buffers override files on
 disk during analysis.
@@ -59,8 +60,10 @@ vim.lsp.enable("toyls")
 
 Imports assembled dynamically during evaluation have no static target.
 Packages implemented by C extensions likewise have no Toy definition file to
-open. For `core:` navigation, the server uses a `core` directory beneath the
-workspace root when one is present.
+open, and the server does not load arbitrary binaries to discover their
+documentation. Generated metadata provides hover documentation for official
+`core:` packages such as `core:ffi`. For `core:` source navigation, the server
+uses a `core` directory beneath the workspace root when one is present.
 
 ## Debugger
 

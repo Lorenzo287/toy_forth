@@ -98,6 +98,8 @@ typedef struct {
     bool owns_name;
     size_t package_index;
     bool is_public;
+    char *doc_stack_effect;
+    char *doc_description;
     tf_word_kind type;
     union {
         tf_native_fn native_impl;
@@ -338,7 +340,9 @@ const tf_builtin_group *tf_builtin_groups(size_t *count);
 void tf_dict_set_native(tf_ctx *ctx, const char *name, tf_native_fn cb);
 void tf_dict_set_native_copy(tf_ctx *ctx, const char *name, tf_native_fn cb);
 void tf_dict_add_native_scoped(tf_ctx *ctx, const char *name, size_t name_len,
-                               size_t package_index, tf_native_fn cb);
+                               size_t package_index, tf_native_fn cb,
+                               const char *stack_effect,
+                               const char *description);
 bool tf_dict_set_user(tf_ctx *ctx, tf_obj *name, tf_obj *uf);
 bool tf_dict_set_user_in_package(tf_ctx *ctx, size_t package_index,
                                  tf_obj *name, tf_obj *uf);

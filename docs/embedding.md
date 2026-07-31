@@ -105,7 +105,12 @@ words into a package:
 
 ```c
 static const toy_native_word host_words[] = {
-    {"log", host_log},
+    {
+        .name = "log",
+        .callback = host_log,
+        .stack_effect = "message --",
+        .description = "Write one string through the host logger.",
+    },
 };
 
 static const toy_native_package host_package = {
@@ -117,9 +122,9 @@ static const toy_native_package host_package = {
 toy_register_package(state, &host_package);
 ```
 
-Toy can then call `host.log`. Registration copies the names and makes all words
-public. The callback functions themselves must remain valid for the lifetime of
-the state.
+Toy can then call `host.log`. Registration copies names and optional
+documentation and makes all words public. The callback functions themselves
+must remain valid for the lifetime of the state.
 
 ## Persistent and Structured Values
 

@@ -108,6 +108,8 @@ void tf_ctx_free(tf_ctx *ctx) {
     for (size_t i = 0; i < ctx->words.count; i++) {
         tf_word *word = &ctx->words.entries[i];
         if (word->owns_name) free((char *)word->name);
+        free(word->doc_stack_effect);
+        free(word->doc_description);
         if (word->type == TF_WORD_USER) tf_obj_release(word->user_impl);
     }
     free(ctx->words.entries);

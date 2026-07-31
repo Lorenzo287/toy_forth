@@ -21,7 +21,7 @@ static toy_status hostLog(toy_state *state) {
 }
 
 static const toy_native_word host_words[] = {
-    {"log", hostLog},
+    {.name = "log", .callback = hostLog},
 };
 
 static const toy_native_package host_package = {

@@ -4,4 +4,5 @@
 
 'main [
 	'ffi.open word? print
+	'ffi.bind doc "cstr -> usize" contains? print
 ] def

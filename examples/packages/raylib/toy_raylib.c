@@ -364,22 +364,22 @@ static toy_status raylib_frame_time(toy_state *state) {
 }
 
 static const toy_native_word raylib_words[] = {
-    {"init-window", raylib_init_window},
-    {"close-window", raylib_close_window},
-    {"window-should-close?", raylib_window_should_close},
-    {"set-target-fps", raylib_set_target_fps},
-    {"begin-drawing", raylib_begin_drawing},
-    {"end-drawing", raylib_end_drawing},
-    {"rgba", raylib_rgba},
-    {"clear-background", raylib_clear_background},
-    {"draw-circle", raylib_draw_circle},
-    {"draw-rectangle", raylib_draw_rectangle},
-    {"draw-text", raylib_draw_text},
-    {"load-texture", raylib_load_texture},
-    {"draw-texture", raylib_draw_texture},
-    {"mouse-x", raylib_mouse_x},
-    {"mouse-y", raylib_mouse_y},
-    {"frame-time", raylib_frame_time},
+    {.name = "init-window", .callback = raylib_init_window},
+    {.name = "close-window", .callback = raylib_close_window},
+    {.name = "window-should-close?", .callback = raylib_window_should_close},
+    {.name = "set-target-fps", .callback = raylib_set_target_fps},
+    {.name = "begin-drawing", .callback = raylib_begin_drawing},
+    {.name = "end-drawing", .callback = raylib_end_drawing},
+    {.name = "rgba", .callback = raylib_rgba},
+    {.name = "clear-background", .callback = raylib_clear_background},
+    {.name = "draw-circle", .callback = raylib_draw_circle},
+    {.name = "draw-rectangle", .callback = raylib_draw_rectangle},
+    {.name = "draw-text", .callback = raylib_draw_text},
+    {.name = "load-texture", .callback = raylib_load_texture},
+    {.name = "draw-texture", .callback = raylib_draw_texture},
+    {.name = "mouse-x", .callback = raylib_mouse_x},
+    {.name = "mouse-y", .callback = raylib_mouse_y},
+    {.name = "frame-time", .callback = raylib_frame_time},
 };
 
 static const toy_extension raylib_extension = {

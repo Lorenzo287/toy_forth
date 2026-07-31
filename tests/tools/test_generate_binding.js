@@ -22,7 +22,7 @@ function manifest() {
 const rendered = renderBinding(validateManifest(manifest()));
 assert(rendered.includes('#define TOY_EXTENSION_IMPLEMENTATION'));
 assert(rendered.includes('"sample"'));
-assert(rendered.includes('{"length", binding_word_0}'));
+assert(rendered.includes('{.name = "length", .callback = binding_word_0}'));
 assert(rendered.includes('sample_length(argument_0)'));
 assert(rendered.includes("memchr(string_data_0, '\\0', string_length_0)"));
 assert(rendered.includes('*toy_extension_init('));

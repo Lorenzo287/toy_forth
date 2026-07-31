@@ -50,10 +50,13 @@ enum {
 typedef toy_status (*toy_native_fn)(toy_state *state);
 typedef void (*toy_resource_destructor)(void *resource, void *userdata);
 
-/* Word names are copied when a host registers the containing package. */
+/* Word names and optional documentation are copied when a host registers the
+ * containing package. Stack effects use Toy's `inputs -- outputs` notation. */
 typedef struct {
     const char *name;
     toy_native_fn callback;
+    const char *stack_effect;
+    const char *description;
 } toy_native_word;
 
 /* Data-stack access. Depth zero addresses the top value. */
@@ -164,7 +167,7 @@ toy_status toy_run_package(toy_state *state, const char *path);
 
 /* C-extension ABI. */
 
-#define TOY_EXTENSION_ABI_VERSION 1u
+#define TOY_EXTENSION_ABI_VERSION 2u
 #define TOY_EXTENSION_ENTRY_SYMBOL "toy_extension_init"
 
 #if defined(_WIN32)

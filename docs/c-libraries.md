@@ -25,7 +25,7 @@ signature, and calls it without compiling a wrapper:
 
 "hello"
 "msvcrt.dll" c.open
-"strlen" "usize(cstr)" c.bind
+"strlen" "cstr -> usize" c.bind
 c.call print
 ```
 
@@ -38,13 +38,14 @@ Release SDKs include the compiled `core:ffi` package. A platform may also need
 the libffi shared library available to its operating-system loader. Building
 Toy from source requires the matching libffi headers and link library.
 
-An FFI signature has a return type followed by its argument types:
+An FFI signature lists its argument types in call order, followed by `->` and
+its return type:
 
 ```text
-i32(i32,i32)
-usize(cstr)
-cstr()
-void(i32)
+i32 i32 -> i32
+cstr -> usize
+-> cstr
+i32 -> void
 ```
 
 The supported types are `bool`, signed and unsigned integers from 8 to 64 bits,
@@ -179,7 +180,12 @@ static toy_status twice(toy_state *state) {
 }
 
 static const toy_native_word words[] = {
-    {"twice", twice},
+    {
+        .name = "twice",
+        .callback = twice,
+        .stack_effect = "n -- 2n",
+        .description = "Double an integer.",
+    },
 };
 
 static const toy_extension extension = {
@@ -198,7 +204,11 @@ TOY_EXTENSION_EXPORT const toy_extension *toy_extension_init(
 
 Define `TOY_EXTENSION_IMPLEMENTATION` in exactly one C file. Native words read
 their inputs by stack depth, consume them explicitly, and push their results.
-`toy_fail()` stores a diagnostic and returns `TOY_ERROR`.
+`toy_fail()` stores a diagnostic and returns `TOY_ERROR`. The optional stack
+effect and description are copied during package registration and exposed by
+Toy's `doc` word. Official `core:` package metadata also supplies this
+documentation to the LSP; arbitrary extension binaries are not loaded by the
+language server.
 
 External handles can be wrapped with `toy_push_resource()`. A resource has an
 exact type name and an optional destructor that runs once when the last Toy

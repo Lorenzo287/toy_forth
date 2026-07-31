@@ -317,40 +317,32 @@ static bool parse_signature(const char *text, foreign_signature *signature,
     size_t argument_count = 0;
 
     memset(signature, 0, sizeof(*signature));
-    if (!parse_kind(text, length, &position, true, &signature->return_kind,
-                    error, error_size)) {
-        return false;
-    }
-    skip_space(text, length, &position);
-    if (position >= length || text[position++] != '(') {
-        snprintf(error, error_size, "expected '(' after the return type");
-        return false;
-    }
-    skip_space(text, length, &position);
-    if (position < length && text[position] != ')') {
-        while (true) {
-            if (argument_count >= TOY_FFI_MAX_ARGUMENTS) {
-                snprintf(error, error_size,
-                         "signatures support at most %d arguments",
-                         TOY_FFI_MAX_ARGUMENTS);
-                return false;
-            }
-            if (!parse_kind(text, length, &position, false,
-                            &arguments[argument_count], error, error_size)) {
-                return false;
-            }
-            argument_count++;
-            skip_space(text, length, &position);
-            if (position < length && text[position] == ',') {
-                position++;
-                continue;
-            }
+    while (true) {
+        skip_space(text, length, &position);
+        if (position + 1 < length && text[position] == '-' &&
+            text[position + 1] == '>') {
+            position += 2;
             break;
         }
+        if (position >= length) {
+            snprintf(error, error_size, "expected '->' after the argument types");
+            return false;
+        }
+        if (argument_count >= TOY_FFI_MAX_ARGUMENTS) {
+            snprintf(error, error_size,
+                     "signatures support at most %d arguments",
+                     TOY_FFI_MAX_ARGUMENTS);
+            return false;
+        }
+        if (!parse_kind(text, length, &position, false,
+                        &arguments[argument_count], error, error_size)) {
+            return false;
+        }
+        argument_count++;
     }
-    skip_space(text, length, &position);
-    if (position >= length || text[position++] != ')') {
-        snprintf(error, error_size, "expected ')' after the argument types");
+
+    if (!parse_kind(text, length, &position, true, &signature->return_kind,
+                    error, error_size)) {
         return false;
     }
     skip_space(text, length, &position);
@@ -727,11 +719,7 @@ static toy_status ffi_invoke(toy_state *state) {
     return status;
 }
 
-static const toy_native_word ffi_words[] = {
-    {"open", ffi_open},
-    {"bind", ffi_bind},
-    {"call", ffi_invoke},
-};
+#include "generated_words.inc"
 
 static const toy_extension ffi_extension = {
     sizeof(toy_extension),

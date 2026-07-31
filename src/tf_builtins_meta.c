@@ -586,6 +586,21 @@ static bool contains_ascii_casefold(const char *haystack, size_t haystack_len,
     return false;
 }
 
+static const tf_doc_entry *word_doc(tf_word *word, tf_doc_entry *scratch) {
+    if (!word || word->type != TF_WORD_NATIVE) return NULL;
+    if (word->package_index == TF_ROOT_PACKAGE) {
+        return tf_doc_lookup(word->name);
+    }
+    if (!word->doc_stack_effect && !word->doc_description) return NULL;
+    *scratch = (tf_doc_entry){
+        word->name,
+        word->doc_stack_effect ? word->doc_stack_effect : "",
+        "",
+        word->doc_description ? word->doc_description : "",
+    };
+    return scratch;
+}
+
 static bool word_matches_query(tf_word *word, const char *query,
                                size_t query_len) {
     if (contains_ascii_casefold(word->name, word->name_len, query,
@@ -593,9 +608,8 @@ static bool word_matches_query(tf_word *word, const char *query,
         return true;
     }
 
-    if (word->type != TF_WORD_NATIVE) return false;
-
-    const tf_doc_entry *doc = tf_doc_lookup(word->name);
+    tf_doc_entry scratch;
+    const tf_doc_entry *doc = word_doc(word, &scratch);
     return doc &&
            (contains_ascii_casefold(doc->stack_effect, strlen(doc->stack_effect),
                                     query, query_len) ||
@@ -654,10 +668,10 @@ tf_ret tf_doc(tf_ctx *ctx) {
 
     strbuf buf;
     strbuf_init(&buf);
-    const tf_doc_entry *entry =
-        word->type == TF_WORD_NATIVE ? tf_doc_lookup(word->name) : NULL;
+    tf_doc_entry scratch;
+    const tf_doc_entry *entry = word_doc(word, &scratch);
     if (entry) {
-        strbuf_append_cstr(&buf, entry->name);
+        strbuf_append_cstr(&buf, name->str.ptr);
         if (entry->stack_effect[0] != '\0') {
             strbuf_append_cstr(&buf, "\nstack: ");
             strbuf_append_cstr(&buf, entry->stack_effect);

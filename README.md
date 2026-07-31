@@ -340,7 +340,7 @@ signatures at run time:
 
 "hello"
 "msvcrt.dll" c.open
-"strlen" "usize(cstr)" c.bind
+"strlen" "cstr -> usize" c.bind
 c.call print
 ```
 

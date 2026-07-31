@@ -82,8 +82,13 @@ static toy_status host_fail_resource(toy_state *state) {
 }
 
 static const toy_native_word host_words[] = {
-    {"double", host_double},
-    {"fail-resource", host_fail_resource},
+    {
+        .name = "double",
+        .callback = host_double,
+        .stack_effect = "n -- 2n",
+        .description = "Double an integer supplied by the embedding host.",
+    },
+    {.name = "fail-resource", .callback = host_fail_resource},
 };
 
 static const toy_native_package host_package = {
@@ -93,7 +98,7 @@ static const toy_native_package host_package = {
 };
 
 static const toy_native_word host_tools_words[] = {
-    {"double", host_double},
+    {.name = "double", .callback = host_double},
 };
 
 static const toy_native_package host_tools_package = {
@@ -103,8 +108,8 @@ static const toy_native_package host_tools_package = {
 };
 
 static const toy_native_word invalid_atomic_words[] = {
-    {"ok", host_double},
-    {"bad.name", host_double},
+    {.name = "ok", .callback = host_double},
+    {.name = "bad.name", .callback = host_double},
 };
 
 static const toy_native_package invalid_atomic_package = {
@@ -114,7 +119,7 @@ static const toy_native_package invalid_atomic_package = {
 };
 
 static const toy_native_word atomic_words[] = {
-    {"ok", host_double},
+    {.name = "ok", .callback = host_double},
 };
 
 static const toy_native_package atomic_package = {
@@ -197,6 +202,18 @@ int main(void) {
 
     CHECK(toy_register_package(first, &host_package) == TOY_OK,
           "register package");
+    CHECK(toy_eval(first, "<native-doc>", "'host.double doc") == TOY_OK,
+          "read registered native word documentation");
+    const char expected_native_doc[] =
+        "host.double\nstack: n -- 2n\n"
+        "Double an integer supplied by the embedding host.";
+    const char *native_doc = NULL;
+    size_t native_doc_length = 0;
+    CHECK(toy_get_string(first, 0, &native_doc, &native_doc_length) &&
+              native_doc_length == sizeof(expected_native_doc) - 1 &&
+              memcmp(native_doc, expected_native_doc, native_doc_length) == 0,
+          "registered native word documentation");
+    CHECK(toy_pop(first, 1), "pop registered native word documentation");
     CHECK(toy_eval(first, "<native>", "21 host.double") == TOY_OK,
           "call registered package");
     CHECK(toy_get_int(first, 0, &integer) && integer == 42,
@@ -246,8 +263,15 @@ int main(void) {
 
     char copied_package_name[] = "copied";
     char copied_word_name[] = "double";
+    char copied_stack_effect[] = "n -- 2n";
+    char copied_description[] = "Documentation with transient storage.";
     toy_native_word copied_words[] = {
-        {copied_word_name, host_double},
+        {
+            .name = copied_word_name,
+            .callback = host_double,
+            .stack_effect = copied_stack_effect,
+            .description = copied_description,
+        },
     };
     toy_native_package copied_package = {
         copied_package_name,
@@ -258,11 +282,24 @@ int main(void) {
           "register package with transient names");
     copied_package_name[0] = 'X';
     copied_word_name[0] = 'X';
+    copied_stack_effect[0] = 'X';
+    copied_description[0] = 'X';
     CHECK(toy_eval(first, "<copied-native>", "21 copied.double") == TOY_OK,
           "package copied descriptor names");
     CHECK(toy_get_int(first, 0, &integer) && integer == 42,
           "copied package result");
     CHECK(toy_pop(first, 1), "pop copied package result");
+    CHECK(toy_eval(first, "<copied-native-doc>", "'copied.double doc") ==
+              TOY_OK,
+          "read copied native word documentation");
+    const char expected_copied_doc[] =
+        "copied.double\nstack: n -- 2n\n"
+        "Documentation with transient storage.";
+    CHECK(toy_get_string(first, 0, &native_doc, &native_doc_length) &&
+              native_doc_length == sizeof(expected_copied_doc) - 1 &&
+              memcmp(native_doc, expected_copied_doc, native_doc_length) == 0,
+          "package copied descriptor documentation");
+    CHECK(toy_pop(first, 1), "pop copied native word documentation");
 
     CHECK(toy_register_word(first, "legacy-double", host_double) == TOY_OK,
           "register standalone native word");
