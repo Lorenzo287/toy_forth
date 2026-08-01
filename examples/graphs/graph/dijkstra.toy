@@ -1,0 +1,38 @@
+'graph package
+
+\ State: queue distances -- queue distances distance node
+'pop-candidate [
+	swap pq-pop 3 roll rot rot
+] def
+'pop-candidate private
+
+\ graph start -- distance-map
+\
+\ The priority queue and distance map stay on the stack. Improved distances
+\ add another queue entry; stale entries are discarded when popped. This keeps
+\ the source independent of a decrease-key operation.
+'dijkstra [ | graph start |
+	[] >pqueue 0 $start pq-push
+	{} $start 0 assoc
+	[ 1 pick empty? not ]
+	[
+		pop-candidate | distance node |
+		[ $node get $distance == ] [
+			$graph $node [] get-or [ | edge |
+				$edge 0 at | neighbor |
+				$edge 1 at | weight |
+				$weight 0 < [ "Dijkstra requires non-negative weights" error ] if
+				$distance $weight + | candidate |
+				[
+					[ $neighbor has? ]
+					[ $neighbor get $candidate > ]
+					[ true ] ifelse
+				] [
+					$neighbor $candidate assoc
+					swap $candidate $neighbor pq-push swap
+				] if
+			] each
+		] if
+	] while
+	nip
+] def

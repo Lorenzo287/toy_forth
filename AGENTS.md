@@ -21,6 +21,8 @@ navigation and development rules.
 - `include/toy.h`: single public embedding and standalone C-extension header.
 - `examples/`: standalone Toy programs run with `toy --file`; formatting-
   sensitive quines live under `examples/quines/`.
+- `examples/graphs/`: executable, tested BFS and Dijkstra examples and their
+  demonstration package.
 - `examples/embedding/`: C hosts that embed and call the Toy runtime.
 - `examples/ffi/`, `examples/packages/`: dynamic FFI, generated binding, and
   handwritten C-extension examples. Library-specific adapters are test

@@ -1,3 +1,6 @@
+\ These are elegant but perform poorly,
+\ check the dynamic programming examples for usable code
+
 'fib1 [ | n |
 	[ $n 2 < ]
 	[ $n ]

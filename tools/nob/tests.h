@@ -297,6 +297,7 @@ typedef struct {
 static const Package_Test_Case package_test_cases[] = {
     {"test_package_basic", "tests/packages/basic/app", 0, "40\n42\n", NULL},
     {"test_package_core_ffi", "tests/packages/core-ffi", 0, "true\ntrue\n", NULL},
+    {"test_package_graphs", "tests/packages/graphs", 0, "", NULL},
     {"fail_package_private", "tests/packages/private/app", 1, NULL,
      "undefined word 'secrets.hidden'"},
     {"fail_package_cycle", "tests/packages/cycle/app", 1, NULL,

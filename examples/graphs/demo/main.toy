@@ -1,0 +1,32 @@
+'main package
+
+"../graph" import
+
+'unweighted [
+	{
+		"A" [ "B" "C" ]
+		"B" [ "D" "E" ]
+		"C" [ "F" ]
+		"D" []
+		"E" [ "F" ]
+		"F" []
+	}
+] def
+
+'weighted [
+	{
+		"A" [ [ "B" 4 ] [ "C" 2 ] ]
+		"B" [ [ "C" 1 ] [ "D" 5 ] ]
+		"C" [ [ "B" 1 ] [ "D" 8 ] [ "E" 10 ] ]
+		"D" [ [ "E" 2 ] ]
+		"E" []
+	}
+] def
+
+'main [
+	"BFS: " printf
+	unweighted "A" graph.bfs print
+
+	"Distances: " printf
+	weighted "A" graph.dijkstra print
+] def

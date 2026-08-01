@@ -1,0 +1,61 @@
+'main package
+
+"../../../examples/graphs/graph" import
+
+'assert [ | condition message |
+    $condition [] [ $message error ] ifelse
+] def
+
+'assert-equal [ | actual expected message |
+    $actual $expected == $message assert
+] def
+
+'unweighted [
+    {
+        "A" [ "B" "C" ]
+        "B" [ "D" "E" ]
+        "C" [ "F" ]
+        "D" []
+        "E" [ "F" ]
+        "F" [ "A" ]
+        "isolated" []
+    }
+] def
+
+'weighted [
+    {
+        "A" [ [ "B" 4 ] [ "C" 2 ] ]
+        "B" [ [ "C" 1 ] [ "D" 5 ] ]
+        "C" [ [ "B" 1 ] [ "D" 8 ] [ "E" 10 ] ]
+        "D" [ [ "E" 2 ] ]
+        "E" []
+    }
+] def
+
+'distance-is [ | distances node expected |
+    $distances $node get $expected == "wrong shortest distance" assert
+] def
+
+'main [
+    unweighted "A" graph.bfs
+    [ "A" "B" "C" "D" "E" "F" ]
+    "BFS order or duplicate suppression is wrong" assert-equal
+
+    {} "leaf" graph.bfs [ "leaf" ]
+    "BFS should accept a node without an adjacency entry" assert-equal
+
+    weighted "A" graph.dijkstra | distances |
+    $distances "A" 0 distance-is
+    $distances "B" 3 distance-is
+    $distances "C" 2 distance-is
+    $distances "D" 8 distance-is
+    $distances "E" 10 distance-is
+
+    {} "leaf" graph.dijkstra { "leaf" 0 }
+    "Dijkstra should accept a node without an adjacency entry" assert-equal
+
+    [
+        { "A" [ [ "B" -1 ] ] } "A" graph.dijkstra
+    ] [ "Dijkstra requires non-negative weights" == ] try
+    "Dijkstra should reject negative reachable weights" assert
+] def

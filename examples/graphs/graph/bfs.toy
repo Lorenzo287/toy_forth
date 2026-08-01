@@ -1,0 +1,36 @@
+'graph package
+
+\ State: order queue seen neighbor -- order queue seen
+'enqueue-unseen [ | neighbor |
+	dup $neighbor has?
+	[]
+	[
+		$neighbor insert
+		swap $neighbor push-back swap
+	] ifelse
+] def
+'enqueue-unseen private
+
+\ State: order queue seen -- order queue seen node
+'dequeue-visit [
+	swap pop-front swapd | node |
+	2 roll $node push-back rot rot
+	$node
+] def
+'dequeue-visit private
+
+\ graph start -- visit-order
+\
+\ The queue, seen set, and result vector remain as three independent values.
+\ `while` and `each` thread them without packaging or capturing evolving state.
+'bfs [ | graph start |
+	[]
+	[] >deque $start push-back
+	#{} $start insert
+	[ 1 pick empty? not ]
+	[
+		dequeue-visit | node |
+		$graph $node [] get-or [ enqueue-unseen ] each
+	] while
+	drop drop
+] def
