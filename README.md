@@ -53,8 +53,6 @@ toy --tdb
 
 The SDK includes a formatter, language server, debugger adapter, and
 Tree-sitter grammar; the [editor guide](./docs/editor.md) shows how to use them.
-See the [installation guide](./docs/installation.md) for more details
-about the content of the SDK.
 
 ### Build Manually
 
@@ -73,8 +71,7 @@ nob test
 nob dist
 ```
 
-The staged SDK is under `dist/toy`; install it as described in the
-[installation guide](./docs/installation.md).
+The staged SDK is under `dist/toy`.
 
 ## Postfix Notation
 
@@ -147,9 +144,8 @@ inspect other programs:
 
 The first value is a call instruction; the second is a symbol. Most programs do
 not need to construct calls directly, but when they do `>call` makes runtime program
-generation possible (see [homoiconicity](https://en.wikipedia.org/wiki/Homoiconicity)).
-The [data-model reference](./docs/data-model.md) has a section describing the exact
-representations and conversions.
+generation possible through Toy's [homoiconic](https://en.wikipedia.org/wiki/Homoiconicity)
+value model.
 
 ### Captures Improve Usability
 
@@ -225,11 +221,8 @@ calling its handler. It does not catch interruption or exit, and if the handler
 itself fails, the new error propagates without another implicit rollback.
 
 The [combinator reference](./docs/combinators.md) covers the less obvious
-control, recursion, and collection combinators in more depth. The
-[idiomatic Toy guide](./docs/idioms.md) shows how to combine them with captures
-and collection representations while keeping dataflow clear and construction
-linear. The standalone [graph examples](./examples/graphs/README.md) provide a
-larger case study using some of those choices.
+control, recursion, and collection combinators in more depth, including larger
+source patterns.
 
 ### Versatile Collections
 
@@ -337,10 +330,8 @@ dup "name" get print
 json.encode print
 ```
 
-See the [JSON reference](./docs/core/json.md) for its value mapping, explicit null
-value, UTF-8 rules, and error behavior. The runnable
-[`examples/json.toy`](./examples/json.toy) demonstrates decoding, collection
-processing, encoding, and recovery from invalid input.
+The [JSON reference](./docs/core/json.md) defines its value mapping, explicit
+null value, UTF-8 rules, and error behavior.
 
 `core:random` builds useful random operations over the state-owned generator:
 
@@ -353,9 +344,8 @@ processing, encoding, and recovery from invalid input.
 ```
 
 It provides deterministic seeding, unbiased half-open integer ranges, unit
-floats, uniform choice, and type-preserving shuffling. See the
-[random reference](./docs/core/random.md) and runnable
-[`examples/random.toy`](./examples/random.toy).
+floats, uniform choice, and type-preserving shuffling. The
+[random reference](./docs/core/random.md) defines the exact behavior.
 
 Package top level is declaration-only, so files can be split without creating
 an execution order. The CLI invokes the public `main` word of a package named
@@ -366,18 +356,16 @@ evaluation, and native-library workflows.
 ## C Interop
 
 A C program can embed the runtime, evaluate source, call Toy words,
-exchange values, and add its own words. The smallest complete host is
-[`examples/embedding/embed.c`](./examples/embedding/embed.c); the
-[embedding guide](./docs/embedding.md) explains values, ownership, callbacks,
-and errors.
+exchange values, and add its own words. The
+[embedding guide](./docs/embedding.md) explains the complete minimal host,
+values, ownership, callbacks, and errors.
 
 A Toy package can contain Toy source, a C extension, or both. An extension uses the
 same single `toy.h` header as an embedding host and compiles to a shared library
 beside the package's `toy.package` manifest. The SDK's `toy-c-package` command
 performs that build, while `toy-bindgen` generates extension code from an
-explicit description of a C API. The [basic package](./examples/packages/basic/)
-is minimal example; the [SQLite](./examples/packages/sqlite/) and
-[Raylib](./examples/packages/raylib/) examples show how resources give foreign
+explicit description of a C API. Repository examples include a minimal native
+package plus SQLite and Raylib integrations showing how resources give foreign
 handles Toy lifetimes.
 
 For direct calls, `core:ffi` can open a shared library and bind fixed C
@@ -393,9 +381,8 @@ c.call print
 ```
 
 The library name is platform-specific. [Using C libraries](./docs/c-libraries.md)
-compares dynamic FFI, generated bindings, and handwritten extensions. The
-[binding manifest reference](./docs/bindgen.md) documents advanced generated
-wrappers.
+compares dynamic FFI, generated bindings, handwritten extensions, and their
+manifest options.
 
 ## Built-in Words
 
