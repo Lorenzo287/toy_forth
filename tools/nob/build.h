@@ -850,6 +850,7 @@ NOBDEF bool build_core(const Build_Config *config,
     if (ok) ok = link_executable(config, config->toy_exe, &cli_objects, true);
     if (ok) ok = build_core_ffi(config, compile_commands);
     if (ok) ok = stage_core_source_package(config, "json");
+    if (ok) ok = stage_core_source_package(config, "random");
 
     da_free(processes);
     da_free(headers);
@@ -966,8 +967,9 @@ NOBDEF bool build_distribution(const Build_Config *config, const char *root) {
         "embedding.md",
         "idioms.md",
         "installation.md",
-        "json.md",
+        "core/json.md",
         "packages.md",
+        "core/random.md",
         "repl.md",
     };
     const char *dist_parent = "dist";
@@ -983,12 +985,14 @@ NOBDEF bool build_distribution(const Build_Config *config, const char *root) {
     const char *include = temp_sprintf("%s/include", config->dist_dir);
     const char *lib = temp_sprintf("%s/lib", config->dist_dir);
     const char *docs = temp_sprintf("%s/docs", config->dist_dir);
+    const char *core_docs = temp_sprintf("%s/core", docs);
     const char *share = temp_sprintf("%s/share", config->dist_dir);
     const char *toy_share = temp_sprintf("%s/toy", share);
     const char *bindgen_share = temp_sprintf("%s/bindgen", toy_share);
     const char *tree_sitter = temp_sprintf("%s/tree-sitter-toy", toy_share);
     if (!ensure_directory(bin) || !ensure_directory(include) ||
         !ensure_directory(lib) || !ensure_directory(docs) ||
+        !ensure_directory(core_docs) ||
         !ensure_directory(share) ||
         !ensure_directory(toy_share) || !ensure_directory(bindgen_share) ||
         !ensure_directory(tree_sitter)) {

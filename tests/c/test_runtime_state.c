@@ -44,6 +44,46 @@ static int check_pcg_sequence(void) {
     return 0;
 }
 
+static int check_random_ranges(void) {
+    tf_random random = TF_RANDOM_INIT;
+    tf_random_seed(&random, UINT64_C(42), UINT64_C(54));
+    const int64_t expected[] = {65, 59, 46, 5, 48};
+    for (size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); i++) {
+        int64_t value = 0;
+        CHECK(tf_random_int_range(&random, 0, 100, &value),
+              "generate bounded integer");
+        CHECK(value == expected[i], "deterministic bounded sequence");
+    }
+
+    int64_t invalid_result = 0;
+    CHECK(!tf_random_int_range(&random, 0, 0, &invalid_result),
+          "reject empty integer range");
+    CHECK(!tf_random_int_range(&random, 1, 0, &invalid_result),
+          "reject reversed integer range");
+
+    const struct {
+        int64_t lower;
+        int64_t upper;
+    } ranges[] = {
+        {-50, 75},
+        {0, 1},
+        {INT64_MIN, INT64_MAX},
+        {INT64_MIN, INT64_MIN + 1},
+        {INT64_MAX - 1, INT64_MAX},
+    };
+    for (size_t i = 0; i < sizeof(ranges) / sizeof(ranges[0]); i++) {
+        for (size_t draw = 0; draw < 256; draw++) {
+            int64_t value = 0;
+            CHECK(tf_random_int_range(&random, ranges[i].lower,
+                                      ranges[i].upper, &value),
+                  "generate across signed range");
+            CHECK(value >= ranges[i].lower && value < ranges[i].upper,
+                  "bounded integer remains in half-open range");
+        }
+    }
+    return 0;
+}
+
 #if defined(_WIN32) && !defined(STB_LEAKCHECK)
 static DWORD WINAPI run_state_worker(void *userdata) {
     (void)userdata;
@@ -102,6 +142,7 @@ static int check_concurrent_states(void) {
 
 int main(void) {
     CHECK(check_pcg_sequence() == 0, "PCG32 implementation");
+    CHECK(check_random_ranges() == 0, "unbiased integer ranges");
 
     toy_state *first = toy_state_new(NULL);
     toy_state *second = toy_state_new(NULL);

@@ -62,9 +62,9 @@ Imports assembled dynamically during evaluation have no static target.
 Packages implemented by C extensions likewise have no Toy definition file to
 open, and the server does not load arbitrary binaries to discover their
 documentation. Generated metadata provides hover documentation for official
-`core:` packages such as `core:json` and `core:ffi`. For `core:` source
-navigation, the server uses a `core` directory beneath the workspace root when
-one is present.
+`core:` packages such as `core:json`, `core:random`, and `core:ffi`. For
+`core:` source navigation, the server uses a `core` directory beneath the
+workspace root when one is present.
 
 ## Debugger
 

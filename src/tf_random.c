@@ -44,6 +44,41 @@ uint32_t tf_random_u32(tf_random *random) {
            (xorshifted << ((0u - rotation) & 31u));
 }
 
+uint64_t tf_random_u64(tf_random *random) {
+    uint64_t high = tf_random_u32(random);
+    uint64_t low = tf_random_u32(random);
+    return (high << 32u) | low;
+}
+
+bool tf_random_int_range(tf_random *random, int64_t lower, int64_t upper,
+                         int64_t *result) {
+    if (!random || !result || lower >= upper) return false;
+
+    /* Rejection before the modulo removes the bias caused when the range
+     * width does not divide the complete 64-bit generator domain. */
+    uint64_t width = (uint64_t)upper - (uint64_t)lower;
+    uint64_t threshold = (UINT64_C(0) - width) % width;
+    uint64_t sample = 0;
+    do {
+        sample = tf_random_u64(random);
+    } while (sample < threshold);
+    uint64_t offset = sample % width;
+
+    /* Form lower + offset without overflowing signed arithmetic or relying on
+     * an implementation-defined uint64_t-to-int64_t conversion. */
+    if (lower >= 0) {
+        *result = lower + (int64_t)offset;
+        return true;
+    }
+    uint64_t distance_to_zero = UINT64_C(0) - (uint64_t)lower;
+    if (offset < distance_to_zero) {
+        *result = lower + (int64_t)offset;
+    } else {
+        *result = (int64_t)(offset - distance_to_zero);
+    }
+    return true;
+}
+
 void tf_random_seed(tf_random *random, uint64_t seed, uint64_t stream) {
     if (!random) return;
 

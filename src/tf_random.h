@@ -19,5 +19,8 @@ void tf_random_init(tf_random *random, const void *uniqueness);
 void tf_random_seed(tf_random *random, uint64_t seed, uint64_t stream);
 bool tf_random_seed_system(tf_random *random);
 uint32_t tf_random_u32(tf_random *random);
+uint64_t tf_random_u64(tf_random *random);
+bool tf_random_int_range(tf_random *random, int64_t lower, int64_t upper,
+                         int64_t *result);
 
 #endif  // TF_RANDOM_H

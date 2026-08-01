@@ -29,10 +29,13 @@ navigation and development rules.
   cases for the general boundary, not built-in integrations.
 - `core/`: official packages maintained and built with Toy.
 - `core/json/`: strict Toy-written JSON codec and generated editor metadata.
+- `core/random/`: Toy-written random ranges, choices, and shuffling over the
+  state-owned native generator.
 - `tests/packages/`: source, core, and C-extension integration fixtures.
 - `tests/toy/`, `tests/c/`: language cases and C API regressions. Toy test
   prefixes declare behavior: `test_`, `fail_`, `output_`, and `manual_`.
 - `docs/`: user-facing language, package, interop, and editor docs.
+- `docs/core/`: focused references for official core packages.
 - `docs/development/`: source build, testing, and runtime implementation notes.
 - `docs/combinators.md`: examples for nontrivial control, recursion, and
   collection combinator usage.
@@ -83,7 +86,9 @@ navigation and development rules.
 - Libffi core package: `core/ffi/toy_ffi.c`; user workflow, signatures, and
   safety contract: `docs/c-libraries.md`.
 - Toy-written JSON core package: `core/json/json.toy`; mapping and strictness
-  contract: `docs/json.md`.
+  contract: `docs/core/json.md`.
+- Toy-written random core package: `core/random/random.toy`; range, seeding,
+  and sequence-operation contract: `docs/core/random.md`.
 - Explicit-manifest binding generator: `tools/generate-binding.js`; installed
   frontend: `toy-bindgen`; C-extension compiler: `toy-c-package`; manifest
   reference: `docs/bindgen.md`.

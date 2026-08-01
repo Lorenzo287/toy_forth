@@ -1,0 +1,32 @@
+{
+  "name": "random",
+  "locator": "core:random",
+  "kind": "source",
+  "words": [
+    {
+      "name": "seed",
+      "stackEffect": "seed --",
+      "description": "Deterministically reseed the interpreter's pseudorandom stream from an integer."
+    },
+    {
+      "name": "int",
+      "stackEffect": "lower upper -- n",
+      "description": "Return an unbiased integer from lower up to, but not including, upper."
+    },
+    {
+      "name": "float",
+      "stackEffect": "-- f",
+      "description": "Return a pseudorandom float greater than or equal to zero and less than one."
+    },
+    {
+      "name": "choice",
+      "stackEffect": "sequence -- item",
+      "description": "Return one uniformly selected item from a non-empty vector, list, or string."
+    },
+    {
+      "name": "shuffle",
+      "stackEffect": "sequence -- sequence",
+      "description": "Return a uniformly shuffled vector, list, or string while preserving its sequence type."
+    }
+  ]
+}

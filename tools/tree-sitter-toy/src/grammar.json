@@ -512,6 +512,14 @@
         },
         {
           "type": "STRING",
+          "value": "seed-rand"
+        },
+        {
+          "type": "STRING",
+          "value": "rand-int"
+        },
+        {
+          "type": "STRING",
           "value": ">vector"
         },
         {

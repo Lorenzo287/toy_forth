@@ -91,6 +91,8 @@ export const builtinWords = [
   "inf?",
   "nan?",
   "rand",
+  "seed-rand",
+  "rand-int",
   ">vector",
   ">list",
   ">string",

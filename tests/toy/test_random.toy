@@ -1,0 +1,84 @@
+"core:random" import
+
+'seed-error [
+    [ random.seed ]
+    [ | seed message | $message ] try
+] def
+
+'int-error [
+    [ random.int ]
+    [ | lower upper message | $message ] try
+] def
+
+'choice-error [
+    [ random.choice ]
+    [ | sequence message | $message ] try
+] def
+
+'shuffle-error [
+    [ random.shuffle ]
+    [ | sequence message | $message ] try
+] def
+
+'ten-rolls [
+    10 [ 0 100 random.int ] replicate
+] def
+
+42 random.seed
+ten-rolls [ 65 59 46 5 48 25 61 35 31 70 ] == check
+42 random.seed ten-rolls
+42 random.seed ten-rolls == check
+
+1000 [
+    -50 75 random.int
+    dup -50 >= swap 75 < and check
+] times
+
+-9223372036854775808 -9223372036854775807 random.int
+-9223372036854775808 == check
+9223372036854775806 9223372036854775807 random.int
+9223372036854775806 == check
+-9223372036854775808 9223372036854775807 random.int
+dup -9223372036854775808 >=
+swap 9223372036854775807 < and check
+
+1000 [
+    random.float
+    dup float? check
+    dup 0.0 >= swap 1.0 < and check
+] times
+
+42 random.seed random.float
+42 random.seed random.float == check
+
+42 random.seed
+[ "red" "green" "blue" ] random.choice "red" == check
+42 random.seed
+( "red" "green" "blue" ) random.choice "red" == check
+42 random.seed
+"abc" random.choice "abc" swap contains? true == check
+
+42 random.seed
+[ 1 2 3 4 5 ] dup random.shuffle
+swap [ 1 2 3 4 5 ] == check
+dup sort [ 1 2 3 4 5 ] == check
+[ 5 2 3 4 1 ] == check
+
+42 random.seed
+( 1 2 3 4 5 ) random.shuffle
+dup list? check
+>vector [ 5 2 3 4 1 ] == check
+
+42 random.seed
+"abcde" random.shuffle "ebcda" == check
+[] random.shuffle [] == check
+() random.shuffle () == check
+"" random.shuffle "" == check
+
+"seed" seed-error "integer seed" contains? true == check
+0 0 int-error "greater than" contains? true == check
+10 0 int-error "greater than" contains? true == check
+0 1.0 int-error "integer bounds" contains? true == check
+[] choice-error "non-empty sequence" contains? true == check
+42 choice-error "expected a sequence" contains? true == check
+42 shuffle-error "expected a sequence" contains? true == check

@@ -337,10 +337,25 @@ dup "name" get print
 json.encode print
 ```
 
-See the [JSON reference](./docs/json.md) for its value mapping, explicit null
+See the [JSON reference](./docs/core/json.md) for its value mapping, explicit null
 value, UTF-8 rules, and error behavior. The runnable
 [`examples/json.toy`](./examples/json.toy) demonstrates decoding, collection
 processing, encoding, and recovery from invalid input.
+
+`core:random` builds useful random operations over the state-owned generator:
+
+```toy
+"core:random" import
+
+1 7 random.int
+[ "red" "green" "blue" ] random.choice
+[ 1 2 3 4 5 ] random.shuffle
+```
+
+It provides deterministic seeding, unbiased half-open integer ranges, unit
+floats, uniform choice, and type-preserving shuffling. See the
+[random reference](./docs/core/random.md) and runnable
+[`examples/random.toy`](./examples/random.toy).
 
 Package top level is declaration-only, so files can be split without creating
 an execution order. The CLI invokes the public `main` word of a package named
@@ -388,7 +403,7 @@ wrappers.
 | Category                    | Words |
 | --------------------------- | ----- |
 | Stack                       | `dup`, `drop`, `swap`, `over`, `rot`, `swapd`, `nip`, `tuck`, `pick`, `roll`, `empty` |
-| Math                        | `+`, `-`, `*`, `/`, `%`, `mod`, `neg`, `abs`, `max`, `min`, `sqrt`, `pow`, `exp`, `log`, `log10`, `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `pred`, `succ`, `square`, `cube`, `pi`, `e`, `tau`, `inf`, `nan`, `inf?`, `nan?`, `rand` |
+| Math                        | `+`, `-`, `*`, `/`, `%`, `mod`, `neg`, `abs`, `max`, `min`, `sqrt`, `pow`, `exp`, `log`, `log10`, `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `pred`, `succ`, `square`, `cube`, `pi`, `e`, `tau`, `inf`, `nan`, `inf?`, `nan?`, `rand`, `seed-rand`, `rand-int` |
 | Logic / Bitwise             | `and`, `or`, `xor`, `not`, `shl`, `shr` |
 | Comparison                  | `==`, `!=`, `<`, `>`, `<=`, `>=` |
 | Control                     | `exec`, `i`, `if`, `ifelse`, `while`, `cond`, `try`, `error` |

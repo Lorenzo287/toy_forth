@@ -40,4 +40,29 @@ var corePackageDocs = map[string]corePackageDoc{
 			},
 		},
 	},
+	"core:random": {
+		Name: "random",
+		Words: map[string]builtinDoc{
+			"seed": {
+				StackEffect: "seed --",
+				Description: "Deterministically reseed the interpreter's pseudorandom stream from an integer.",
+			},
+			"int": {
+				StackEffect: "lower upper -- n",
+				Description: "Return an unbiased integer from lower up to, but not including, upper.",
+			},
+			"float": {
+				StackEffect: "-- f",
+				Description: "Return a pseudorandom float greater than or equal to zero and less than one.",
+			},
+			"choice": {
+				StackEffect: "sequence -- item",
+				Description: "Return one uniformly selected item from a non-empty vector, list, or string.",
+			},
+			"shuffle": {
+				StackEffect: "sequence -- sequence",
+				Description: "Return a uniformly shuffled vector, list, or string while preserving its sequence type.",
+			},
+		},
+	},
 }

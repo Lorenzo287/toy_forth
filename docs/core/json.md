@@ -70,7 +70,7 @@ Use the error message supplied by `try` while returning an explicit fallback:
 "{broken}" decode-or-null
 ```
 
-The runnable [`examples/json.toy`](../examples/json.toy) combines nested data,
+The runnable [`examples/json.toy`](../../examples/json.toy) combines nested data,
 filtering and mapping, encoding, explicit null, and error recovery.
 
 ## Value Mapping

@@ -313,7 +313,8 @@ Each interpreter also owns an explicit PCG32 random stream. State creation seeds
 it from operating-system entropy, with a mixed unique fallback if entropy is
 unavailable. Creating or executing another state never reseeds that stream;
 `rand` is suitable for ordinary randomized algorithms but not cryptographic
-material.
+material. The range helper joins two 32-bit draws and uses rejection sampling,
+so signed half-open ranges do not inherit modulo bias.
 
 Predicate continuations keep up to 16 surrounding stack references inline and
 fall back to exact per-context scratch storage for deeper stacks. Collection

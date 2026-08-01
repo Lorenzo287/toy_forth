@@ -1,7 +1,9 @@
-\ Test rand and sleep
+\ Test core:random and sleep
+"core:random" import
+
 "Generating random number: " print
-rand print
-rand print
+0 100 random.int print
+random.float print
 "Sleeping for 5000ms..." print
 5000 sleep
 "Done!" print

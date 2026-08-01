@@ -1,5 +1,7 @@
 \ Merge sort using binrec and the native merge primitive.
 
+"core:random" import
+
 'small [ len 2 < ] def
 
 'mergesort [
@@ -10,7 +12,7 @@
 	binrec
 ] def
 
-20 [ rand 100 % ] replicate
+20 [ 0 100 random.int ] replicate
 "Original: " printf dup print
 mergesort
 "Sorted:   " printf print

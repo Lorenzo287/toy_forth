@@ -49,6 +49,8 @@ static const tf_builtin_word native_math_words[] = {
     {"inf?", tf_inf_q},
     {"nan?", tf_nan_q},
     {"rand", tf_rand},
+    {"seed-rand", tf_seed_rand},
+    {"rand-int", tf_rand_int},
     {NULL, NULL},
 };
 
