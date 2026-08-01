@@ -114,8 +114,6 @@ toy_state *toy_state_new(const toy_state_config *config) {
 void toy_state_free(toy_state *state) {
     if (!state) return;
     tf_ctx_free(state);
-    tf_control_state_cache_clear();
-    tf_obj_cache_clear();
 }
 
 toy_status toy_eval(toy_state *state, const char *source_name,
@@ -143,10 +141,12 @@ toy_status toy_call(toy_state *state, const char *word) {
     if (!state || !word || word[0] == '\0') return TOY_ERROR;
     if (!state_is_idle(state)) return TOY_ERROR;
 
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_obj *program = tf_obj_new_vector();
     tf_vector_push(program, tf_obj_new_call(word, strlen(word)));
     tf_ret result = tf_vm_exec(state, program);
     tf_obj_release(program);
+    tf_obj_pool_leave(previous_pool);
     state->current_span = (tf_source_span){0};
     state->current_word = NULL;
     return result;
@@ -383,25 +383,33 @@ bool toy_pop(toy_state *state, size_t count) {
 
 toy_status toy_push_bool(toy_state *state, bool value) {
     if (!state) return TOY_ERROR;
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_stack_push(state, tf_obj_new_bool(value));
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
 toy_status toy_push_int(toy_state *state, int64_t value) {
     if (!state) return TOY_ERROR;
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_stack_push(state, tf_obj_new_int(value));
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
 toy_status toy_push_float(toy_state *state, double value) {
     if (!state) return TOY_ERROR;
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_stack_push(state, tf_obj_new_float(value));
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
 toy_status toy_push_string(toy_state *state, const char *data, size_t length) {
     if (!state || (!data && length > 0)) return TOY_ERROR;
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_stack_push(state, tf_obj_new_string(data ? data : "", length));
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
@@ -436,9 +444,11 @@ toy_status toy_push_resource(toy_state *state, const char *type_name,
     if (!resource) {
         return api_errorf(state, "resource pointer must not be NULL");
     }
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_stack_push(state, tf_obj_new_resource(
                              type_name, type_len, resource, destructor,
                              destructor_userdata));
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
@@ -560,9 +570,11 @@ toy_value *toy_sequence_get(const toy_value *sequence, size_t index) {
                                    tf_list_get(object, index));
     case TF_OBJ_TYPE_STR:
         if (index >= object->str.len) return NULL;
-        return value_take_object(
-            sequence->state,
-            tf_obj_new_string(object->str.ptr + index, 1));
+        tf_obj_pool *previous_pool =
+            tf_obj_pool_enter(&sequence->state->objects);
+        tf_obj *item = tf_obj_new_string(object->str.ptr + index, 1);
+        tf_obj_pool_leave(previous_pool);
+        return value_take_object(sequence->state, item);
     default:
         return NULL;
     }
@@ -596,6 +608,7 @@ toy_status toy_make_vector(toy_state *state, size_t item_count) {
                           item_count);
     }
 
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_obj *vector = tf_obj_new_vector_with_capacity(item_count);
     for (size_t i = 0; i < item_count; i++) {
         tf_obj *item = tf_stack_peek(state, item_count - i - 1);
@@ -604,6 +617,7 @@ toy_status toy_make_vector(toy_state *state, size_t item_count) {
     }
     toy_pop(state, item_count);
     tf_stack_push(state, vector);
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 
@@ -626,6 +640,7 @@ toy_status toy_make_map(toy_state *state, size_t pair_count) {
         }
     }
 
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
     tf_obj *map = tf_obj_new_map();
     tf_map_reserve(map, pair_count);
     for (size_t i = 0; i < pair_count; i++) {
@@ -636,6 +651,7 @@ toy_status toy_make_map(toy_state *state, size_t pair_count) {
     }
     toy_pop(state, item_count);
     tf_stack_push(state, map);
+    tf_obj_pool_leave(previous_pool);
     return TOY_OK;
 }
 

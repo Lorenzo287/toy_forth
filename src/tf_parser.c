@@ -129,6 +129,8 @@ static int hex_value(int c) {
 tf_obj *tf_parse_source(tf_ctx *ctx, const char *filename,
                         const char *source_text) {
     if (!source_text) return NULL;
+    tf_obj_pool *previous_pool =
+        ctx ? tf_obj_pool_enter(&ctx->objects) : NULL;
     tf_source_file *source = tf_source_file_new(filename ? filename : "<eval>");
     tf_parser parser_state = {.source = source,
                             .start = source_text,
@@ -139,6 +141,7 @@ tf_obj *tf_parse_source(tf_ctx *ctx, const char *filename,
                             .ctx = ctx};
     tf_obj *result = parser_tokenize_until(&parser_state, 0);
     tf_source_file_release(source);
+    if (ctx) tf_obj_pool_leave(previous_pool);
     return result;
 }
 

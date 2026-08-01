@@ -759,7 +759,7 @@ tf_ret tf_run_repl(tf_ctx *ctx, bool show_parsed) {
 
 static tf_ret run_source(tf_ctx *ctx, const char *filename, const char *source,
                          bool show_parsed) {
-    tf_obj *prg = tf_parse_source(NULL, filename, source);
+    tf_obj *prg = tf_parse_source(ctx, filename, source);
     if (!prg) return TF_ERR;
 
     if (show_parsed) {

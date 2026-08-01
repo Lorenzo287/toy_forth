@@ -68,6 +68,7 @@ static const char *runtime_sources[] = {
     "src/tf_package_loader.c",
     "src/tf_native_loader.c",
     "src/tf_obj.c",
+    "src/tf_random.c",
     "src/toy.c",
 };
 
@@ -87,6 +88,7 @@ static const char *core_c_tests[] = {
     "tests/c/test_debug_control.c",
     "tests/c/test_debug_inspection.c",
     "tests/c/test_linenoise.c",
+    "tests/c/test_runtime_state.c",
 };
 
 

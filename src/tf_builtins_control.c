@@ -17,37 +17,36 @@ typedef struct control_state_cache_node {
     struct control_state_cache_node *next;
 } control_state_cache_node;
 
-static control_state_cache_node *control_state_cache = NULL;
-static size_t control_state_cache_len = 0;
-
-static void *control_state_acquire(size_t size) {
+static void *control_state_acquire(tf_ctx *ctx, size_t size) {
     if (size > TF_CONTROL_STATE_BLOCK_SIZE) return tf_xmalloc(size);
-    if (!control_state_cache) return tf_xmalloc(TF_CONTROL_STATE_BLOCK_SIZE);
-    control_state_cache_node *node = control_state_cache;
-    control_state_cache = node->next;
-    control_state_cache_len--;
+    if (!ctx->control_state_cache) {
+        return tf_xmalloc(TF_CONTROL_STATE_BLOCK_SIZE);
+    }
+    control_state_cache_node *node = ctx->control_state_cache;
+    ctx->control_state_cache = node->next;
+    ctx->control_state_cache_len--;
     return node;
 }
 
-static void control_state_release(void *ptr, size_t size) {
+static void control_state_release(tf_ctx *ctx, void *ptr, size_t size) {
     if (size > TF_CONTROL_STATE_BLOCK_SIZE ||
-        control_state_cache_len >= TF_CONTROL_STATE_CACHE_LIMIT) {
+        ctx->control_state_cache_len >= TF_CONTROL_STATE_CACHE_LIMIT) {
         free(ptr);
         return;
     }
     control_state_cache_node *node = ptr;
-    node->next = control_state_cache;
-    control_state_cache = node;
-    control_state_cache_len++;
+    node->next = ctx->control_state_cache;
+    ctx->control_state_cache = node;
+    ctx->control_state_cache_len++;
 }
 
-void tf_control_state_cache_clear(void) {
-    while (control_state_cache) {
-        control_state_cache_node *next = control_state_cache->next;
-        free(control_state_cache);
-        control_state_cache = next;
+void tf_control_state_cache_clear(tf_ctx *ctx) {
+    while (ctx->control_state_cache) {
+        control_state_cache_node *node = ctx->control_state_cache;
+        ctx->control_state_cache = node->next;
+        free(node);
     }
-    control_state_cache_len = 0;
+    ctx->control_state_cache_len = 0;
 }
 
 tf_ret tf_exec(tf_ctx *ctx) {
@@ -144,7 +143,7 @@ static void app2_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->left);
     tf_obj_release(s->right);
     if (s->left_result) tf_obj_release(s->left_result);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 tf_ret tf_app2(tf_ctx *ctx) {
@@ -152,7 +151,7 @@ tf_ret tf_app2(tf_ctx *ctx) {
         return TF_ERR;
     }
 
-    app2_state *state = control_state_acquire(sizeof(*state));
+    app2_state *state = control_state_acquire(ctx, sizeof(*state));
     state->callable = tf_stack_pop(ctx);
     state->right = tf_stack_pop(ctx);
     state->left = tf_stack_pop(ctx);
@@ -347,7 +346,7 @@ static void times_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     (void)status;
     times_state *s = state;
     tf_obj_release(s->body);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -375,7 +374,7 @@ static void each_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     each_state *s = state;
     tf_obj_release(s->body);
     tf_obj_release(s->data);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 /* The dip, keep, fold, and bi continuations thread the ambient stack through
@@ -411,7 +410,7 @@ static void dip_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     dip_state *s = state;
     tf_obj_release(s->body);
     if (s->saved) tf_obj_release(s->saved);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -454,7 +453,7 @@ static void keep_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     keep_state *s = state;
     tf_obj_release(s->body);
     if (s->saved) tf_obj_release(s->saved);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -500,7 +499,7 @@ static void fold_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     fold_state *s = state;
     tf_obj_release(s->body);
     tf_obj_release(s->data);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -588,7 +587,7 @@ static void map_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     } else if (s->vector_result) {
         tf_obj_release(s->vector_result);
     }
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -638,7 +637,7 @@ static void replicate_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     stack_snapshot_release(ctx, &s->stack, s->inline_stack);
     tf_obj_release(s->body);
     if (s->result) tf_obj_release(s->result);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -678,7 +677,7 @@ static void infra_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->body);
     tf_obj_release(s->data);
     if (s->result) tf_obj_release(s->result);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -737,7 +736,7 @@ static void cleave_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->branches);
     tf_obj_release(s->value);
     if (s->outputs) tf_obj_release(s->outputs);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum {
@@ -820,7 +819,7 @@ static void bi_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->left);
     tf_obj_release(s->right);
     if (s->saved) tf_obj_release(s->saved);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum { TF_TRY_START, TF_TRY_BODY, TF_TRY_HANDLER } try_stage;
@@ -893,7 +892,7 @@ static void try_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     stack_snapshot_release(ctx, &s->stack, s->inline_stack);
     tf_obj_release(s->body);
     tf_obj_release(s->handler);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum { TF_PRED_IDLE, TF_PRED_AWAITING } predicate_eval_phase;
@@ -1046,7 +1045,7 @@ static void if_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->cond);
     tf_obj_release(s->then_b);
     if (s->has_else) tf_obj_release(s->else_b);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum { TF_WHILE_COND, TF_WHILE_BODY } while_stage;
@@ -1089,7 +1088,7 @@ static void while_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     predicate_eval_cleanup(ctx, &s->pred_eval);
     tf_obj_release(s->cond);
     tf_obj_release(s->body);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum { TF_COND_PRED, TF_COND_BODY } cond_stage;
@@ -1150,7 +1149,7 @@ static void cond_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     cond_state *s = state;
     predicate_eval_cleanup(ctx, &s->pred_eval);
     tf_obj_release(s->clauses);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -1236,7 +1235,7 @@ static void filter_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     } else if (s->vector_result) {
         tf_obj_release(s->vector_result);
     }
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum { TF_QUANT_SOME, TF_QUANT_ALL } quantifier_kind;
@@ -1296,7 +1295,7 @@ static void quantifier_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->pred);
     tf_obj_release(s->seq);
     if (s->current) tf_obj_release(s->current);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -1385,7 +1384,7 @@ static void split_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
         if (s->true_vector) tf_obj_release(s->true_vector);
         if (s->false_vector) tf_obj_release(s->false_vector);
     }
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef struct {
@@ -1499,7 +1498,7 @@ static void merge_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     } else if (s->vector_result) {
         tf_obj_release(s->vector_result);
     }
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum {
@@ -1567,12 +1566,12 @@ static void linear_rec_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->then_b);
     tf_obj_release(s->before);
     tf_obj_release(s->after);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 static tf_ret linear_rec_start(tf_ctx *ctx, tf_obj *pred, tf_obj *then_b,
                                tf_obj *before, tf_obj *after) {
-    linear_rec_state *state = control_state_acquire(sizeof(*state));
+    linear_rec_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->then_b = then_b;
     state->before = before;
@@ -1706,7 +1705,7 @@ static void binrec_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->then_b);
     tf_obj_release(s->rec1);
     tf_obj_release(s->rec2);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 typedef enum {
@@ -1805,12 +1804,12 @@ static void treerec_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
     tf_obj_release(s->leaf);
     tf_obj_release(s->node);
     if (s->mapped) tf_obj_release(s->mapped);
-    control_state_release(s, sizeof(*s));
+    control_state_release(ctx, s, sizeof(*s));
 }
 
 static void treerec_push_owned(tf_ctx *ctx, tf_obj *tree, tf_obj *leaf,
                                tf_obj *node) {
-    treerec_state *state = control_state_acquire(sizeof(*state));
+    treerec_state *state = control_state_acquire(ctx, sizeof(*state));
     state->tree = tree;
     state->leaf = leaf;
     state->node = node;
@@ -1840,7 +1839,7 @@ tf_ret tf_try(tf_ctx *ctx) {
     handler = tf_stack_pop(ctx);
     body = tf_stack_pop(ctx);
 
-    try_state *state = control_state_acquire(sizeof(*state));
+    try_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->handler = handler;
     state->stage = TF_TRY_START;
@@ -1861,7 +1860,7 @@ tf_ret tf_if(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     cond = tf_stack_pop(ctx);
 
-    if_state *state = control_state_acquire(sizeof(*state));
+    if_state *state = control_state_acquire(ctx, sizeof(*state));
     state->cond = cond;
     state->then_b = body;
     state->else_b = NULL;
@@ -1884,7 +1883,7 @@ tf_ret tf_infra(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     data = tf_stack_pop(ctx);
 
-    infra_state *state = control_state_acquire(sizeof(*state));
+    infra_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->data = data;
     state->scheduled = false;
@@ -1905,7 +1904,7 @@ tf_ret tf_cond(tf_ctx *ctx) {
     if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_VECTOR)) return TF_ERR;
     tf_obj *clauses = tf_stack_pop_type(ctx, TF_OBJ_TYPE_VECTOR);
 
-    cond_state *state = control_state_acquire(sizeof(*state));
+    cond_state *state = control_state_acquire(ctx, sizeof(*state));
     state->clauses = clauses;
     state->index = 0;
     state->stage = TF_COND_PRED;
@@ -1929,7 +1928,7 @@ static tf_ret cleave_or_construct(tf_ctx *ctx, bool construct_result) {
     branches = tf_stack_pop(ctx);
     tf_obj *value = tf_stack_pop(ctx);
 
-    cleave_state *state = control_state_acquire(sizeof(*state));
+    cleave_state *state = control_state_acquire(ctx, sizeof(*state));
     state->branches = branches;
     state->value = value;
     state->outputs = tf_obj_new_vector();
@@ -1963,7 +1962,7 @@ tf_ret tf_ifelse(tf_ctx *ctx) {
     then_b = tf_stack_pop(ctx);
     cond = tf_stack_pop(ctx);
 
-    if_state *state = control_state_acquire(sizeof(*state));
+    if_state *state = control_state_acquire(ctx, sizeof(*state));
     state->cond = cond;
     state->then_b = then_b;
     state->else_b = else_b;
@@ -1985,7 +1984,7 @@ tf_ret tf_while(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     cond = tf_stack_pop(ctx);
 
-    while_state *state = control_state_acquire(sizeof(*state));
+    while_state *state = control_state_acquire(ctx, sizeof(*state));
     state->cond = cond;
     state->body = body;
     state->stage = TF_WHILE_COND;
@@ -2004,7 +2003,7 @@ tf_ret tf_dip(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     tf_obj *saved = tf_stack_pop(ctx);
 
-    dip_state *state = control_state_acquire(sizeof(*state));
+    dip_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->saved = saved;
     state->scheduled = false;
@@ -2022,7 +2021,7 @@ tf_ret tf_keep(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     tf_obj *saved = tf_stack_pop(ctx);
 
-    keep_state *state = control_state_acquire(sizeof(*state));
+    keep_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->saved = saved;
     state->base_len = tf_stack_len(ctx);
@@ -2044,7 +2043,7 @@ tf_ret tf_bi(tf_ctx *ctx) {
     left = tf_stack_pop(ctx);
     tf_obj *saved = tf_stack_pop(ctx);
 
-    bi_state *state = control_state_acquire(sizeof(*state));
+    bi_state *state = control_state_acquire(ctx, sizeof(*state));
     state->left = left;
     state->right = right;
     state->saved = saved;
@@ -2089,7 +2088,7 @@ tf_ret tf_binrec(tf_ctx *ctx) {
     then_b = tf_stack_pop(ctx);
     pred = tf_stack_pop(ctx);
 
-    binrec_state *state = control_state_acquire(sizeof(*state));
+    binrec_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->then_b = then_b;
     state->rec1 = rec1;
@@ -2161,7 +2160,7 @@ tf_ret tf_replicate(tf_ctx *ctx) {
         return TF_ERR;
     }
 
-    replicate_state *state = control_state_acquire(sizeof(*state));
+    replicate_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->remaining = n;
     state->awaiting_body = false;
@@ -2198,7 +2197,7 @@ tf_ret tf_times(tf_ctx *ctx) {
         return TF_OK;
     }
 
-    times_state *state = control_state_acquire(sizeof(*state));
+    times_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->remaining = n;
     tf_frame_push_native(ctx, times_step, times_cleanup, state);
@@ -2215,7 +2214,7 @@ tf_ret tf_each(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     data = tf_stack_pop(ctx);
 
-    each_state *state = control_state_acquire(sizeof(*state));
+    each_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->data = data;
     tf_sequence_iter_init(&state->iter, data);
@@ -2233,7 +2232,7 @@ tf_ret tf_map(tf_ctx *ctx) {
     body = tf_stack_pop(ctx);
     data = tf_stack_pop(ctx);
 
-    map_state *state = control_state_acquire(sizeof(*state));
+    map_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->data = data;
     tf_sequence_iter_init(&state->iter, data);
@@ -2267,7 +2266,7 @@ tf_ret tf_fold(tf_ctx *ctx) {
     data = tf_stack_pop(ctx);
     tf_obj *acc = tf_stack_pop(ctx);
 
-    fold_state *state = control_state_acquire(sizeof(*state));
+    fold_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->data = data;
     tf_sequence_iter_init(&state->iter, data);
@@ -2306,7 +2305,7 @@ tf_ret tf_split(tf_ctx *ctx) {
     pred = tf_stack_pop(ctx);
     seq = tf_stack_pop(ctx);
 
-    split_state *state = control_state_acquire(sizeof(*state));
+    split_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->seq = seq;
     tf_sequence_iter_init(&state->iter, seq);
@@ -2361,7 +2360,7 @@ tf_ret tf_merge(tf_ctx *ctx) {
     l2 = tf_stack_pop(ctx);
     l1 = tf_stack_pop(ctx);
 
-    merge_state *state = control_state_acquire(sizeof(*state));
+    merge_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->l1 = l1;
     state->l2 = l2;
@@ -2398,7 +2397,7 @@ tf_ret tf_filter(tf_ctx *ctx) {
     pred = tf_stack_pop(ctx);
     seq = tf_stack_pop(ctx);
 
-    filter_state *state = control_state_acquire(sizeof(*state));
+    filter_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->seq = seq;
     tf_sequence_iter_init(&state->iter, seq);
@@ -2429,7 +2428,7 @@ tf_ret tf_some(tf_ctx *ctx) {
     pred = tf_stack_pop(ctx);
     seq = tf_stack_pop(ctx);
 
-    quantifier_state *state = control_state_acquire(sizeof(*state));
+    quantifier_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->seq = seq;
     tf_sequence_iter_init(&state->iter, seq);
@@ -2451,7 +2450,7 @@ tf_ret tf_all(tf_ctx *ctx) {
     pred = tf_stack_pop(ctx);
     seq = tf_stack_pop(ctx);
 
-    quantifier_state *state = control_state_acquire(sizeof(*state));
+    quantifier_state *state = control_state_acquire(ctx, sizeof(*state));
     state->pred = pred;
     state->seq = seq;
     tf_sequence_iter_init(&state->iter, seq);

@@ -101,8 +101,6 @@ int main(void) {
     tf_debug_set_hook(ctx, NULL, NULL);
     tf_obj_release(program);
     tf_ctx_free(ctx);
-    tf_control_state_cache_clear();
-    tf_obj_cache_clear();
 #ifdef STB_LEAKCHECK
     stb_leakcheck_dumpmem();
 #endif

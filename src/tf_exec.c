@@ -997,8 +997,8 @@ static tf_ret quickened_call_dispatch(tf_ctx *ctx, tf_frame *frame,
  * Instead of recursive C calls, it uses an explicit `call_stack` of frames.
  * This ensures deep user-defined word recursion does not overflow the C stack.
  */
-tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
-                          size_t package_index) {
+static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
+                              size_t package_index) {
     tf_ctx_clear_error(ctx);
     ctx->current_span = program ? tf_obj_span(program) : (tf_source_span){0};
     if (tf_obj_typeof(program) != TF_OBJ_TYPE_VECTOR) {
@@ -1134,6 +1134,14 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
         }
     }
     return TF_OK;
+}
+
+tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
+                          size_t package_index) {
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
+    tf_ret result = vm_exec_package(ctx, program, package_index);
+    tf_obj_pool_leave(previous_pool);
+    return result;
 }
 
 tf_ret tf_vm_exec(tf_ctx *ctx, tf_obj *program) {

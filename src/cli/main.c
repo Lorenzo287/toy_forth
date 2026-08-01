@@ -130,8 +130,6 @@ int main(int argc, char **argv) {
     signal_ctx = NULL;
     tf_ctx_free(ctx);
     free(config.eval_files);
-    tf_control_state_cache_clear();
-    tf_obj_cache_clear();
 
 #ifdef TF_ALLOC_STATS
     tf_alloc_stats_dump();

@@ -145,7 +145,9 @@ typedef struct {
     size_t word_count;
 } toy_native_package;
 
-/* A null config selects default output. States are not safe for concurrent use. */
+/* A null config selects default output. Separate states may run concurrently;
+ * the same state is not safe for concurrent use. Hosts must still coordinate
+ * shared callbacks and process-wide effects such as stdout and the environment. */
 toy_state *toy_state_new(const toy_state_config *config);
 void toy_state_free(toy_state *state);
 

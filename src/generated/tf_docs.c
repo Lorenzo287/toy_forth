@@ -46,7 +46,7 @@ static const tf_doc_entry builtin_docs[] = {
     {"nan", "-- f", "", "Push NaN as a floating-point value."},
     {"inf?", "x -- bool", "", "Check whether the input is an infinite float."},
     {"nan?", "x -- bool", "", "Check whether the input is a NaN float."},
-    {"rand", "-- n", "", "Push a random integer."},
+    {"rand", "-- n", "", "Push a per-state PCG32 pseudorandom integer in the range 0 through 4294967295; this is not a cryptographic generator."},
     {"and", "a b -- res", "", "Logical AND for booleans, bitwise AND for integers."},
     {"or", "a b -- res", "", "Logical OR for booleans, bitwise OR for integers."},
     {"xor", "a b -- res", "", "Logical XOR for booleans, bitwise XOR for integers."},

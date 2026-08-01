@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "tf_alloc.h"
 #include "tf_builtins.h"  // IWYU pragma: keep
@@ -42,8 +41,10 @@ const tf_builtin_group *tf_builtin_groups(size_t *count) {
 }
 
 tf_ctx *tf_ctx_new(int argc, char **argv) {
-    srand((unsigned int)time(NULL));
     tf_ctx *ctx = tf_xmalloc(sizeof(tf_ctx));
+    tf_obj_pool_init(&ctx->objects);
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
+    tf_random_init(&ctx->random, ctx);
     ctx->data_stack = tf_obj_new_vector();
     size_t builtin_count = builtin_word_count();
     ctx->words.entry_capacity = builtin_count + 16;
@@ -59,6 +60,8 @@ tf_ctx *tf_ctx_new(int argc, char **argv) {
     ctx->call_stack_len = 0;
     ctx->call_stack_cap = 0;
     ctx->scratch = (tf_scratch_arena){0};
+    ctx->control_state_cache = NULL;
+    ctx->control_state_cache_len = 0;
     ctx->packages.cap = 4;
     ctx->packages.len = 1;
     ctx->packages.entries = tf_xcalloc(ctx->packages.cap, sizeof(tf_package));
@@ -95,14 +98,17 @@ tf_ctx *tf_ctx_new(int argc, char **argv) {
         register_builtin_group(ctx, &groups[i]);
     }
 
+    tf_obj_pool_leave(previous_pool);
     return ctx;
 }
 
 void tf_ctx_free(tf_ctx *ctx) {
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
     tf_obj_release(ctx->data_stack);
     while (ctx->call_stack_len > 0) tf_frame_pop(ctx, TF_OK);
     free(ctx->call_stack);
     tf_scratch_clear(ctx);
+    tf_control_state_cache_clear(ctx);
     tf_quick_program_cache_clear(ctx);
     tf_dict_lookup_cache_clear(ctx);
     for (size_t i = 0; i < ctx->words.count; i++) {
@@ -126,5 +132,7 @@ void tf_ctx_free(tf_ctx *ctx) {
     free(ctx->core_package_path);
     free(ctx->last_error);
     tf_native_packages_close(ctx);
+    tf_obj_pool_clear(&ctx->objects);
+    tf_obj_pool_leave(previous_pool);
     free(ctx);
 }

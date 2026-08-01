@@ -25,12 +25,23 @@ struct tf_source_file {
     size_t package_index;
 };
 
+typedef struct {
+    tf_obj_pool *pool;
+    _Alignas(tf_obj) tf_obj object;
+} tf_obj_storage;
+
 typedef struct tf_obj_cache_node {
     struct tf_obj_cache_node *next;
 } tf_obj_cache_node;
 
-static tf_obj_cache_node *obj_cache = NULL;
-static size_t obj_cache_len = 0;
+_Static_assert(offsetof(tf_obj_storage, object) % _Alignof(tf_obj) == 0,
+               "cached object storage must preserve tf_obj alignment");
+
+#ifdef _MSC_VER
+static __declspec(thread) tf_obj_pool *current_obj_pool = NULL;
+#else
+static _Thread_local tf_obj_pool *current_obj_pool = NULL;
+#endif
 
 typedef struct tf_list_node_slab tf_list_node_slab;
 
@@ -42,6 +53,7 @@ typedef struct {
 } tf_list_node_slot;
 
 struct tf_list_node_slab {
+    tf_obj_pool *pool;
     tf_list_node_slab *prev;
     tf_list_node_slab *next;
     tf_list_node_slab *available_prev;
@@ -54,25 +66,22 @@ struct tf_list_node_slab {
 _Static_assert(offsetof(tf_list_node_slot, node) == 0,
                "list node must begin its slab slot");
 
-static tf_list_node_slab *list_node_slabs = NULL;
-static tf_list_node_slab *list_node_available_slabs = NULL;
-/* Counts only completely empty slabs retained for reuse. */
-static size_t list_node_spare_bytes = 0;
-
 static void list_node_slab_link_available(tf_list_node_slab *slab) {
+    tf_obj_pool *pool = slab->pool;
     slab->available_prev = NULL;
-    slab->available_next = list_node_available_slabs;
-    if (list_node_available_slabs) {
-        list_node_available_slabs->available_prev = slab;
+    slab->available_next = pool->list_node_available_slabs;
+    if (slab->available_next) {
+        slab->available_next->available_prev = slab;
     }
-    list_node_available_slabs = slab;
+    pool->list_node_available_slabs = slab;
 }
 
 static void list_node_slab_unlink_available(tf_list_node_slab *slab) {
+    tf_obj_pool *pool = slab->pool;
     if (slab->available_prev) {
         slab->available_prev->available_next = slab->available_next;
     } else {
-        list_node_available_slabs = slab->available_next;
+        pool->list_node_available_slabs = slab->available_next;
     }
     if (slab->available_next) {
         slab->available_next->available_prev = slab->available_prev;
@@ -82,22 +91,24 @@ static void list_node_slab_unlink_available(tf_list_node_slab *slab) {
 }
 
 static void list_node_slab_unlink(tf_list_node_slab *slab) {
+    tf_obj_pool *pool = slab->pool;
     if (slab->prev) {
         slab->prev->next = slab->next;
     } else {
-        list_node_slabs = slab->next;
+        pool->list_node_slabs = slab->next;
     }
     if (slab->next) slab->next->prev = slab->prev;
     slab->prev = NULL;
     slab->next = NULL;
 }
 
-static tf_list_node_slab *list_node_slab_new(void) {
+static tf_list_node_slab *list_node_slab_new(tf_obj_pool *pool) {
     tf_list_node_slab *slab = tf_xmalloc(sizeof(*slab));
+    slab->pool = pool;
     slab->prev = NULL;
-    slab->next = list_node_slabs;
-    if (list_node_slabs) list_node_slabs->prev = slab;
-    list_node_slabs = slab;
+    slab->next = pool->list_node_slabs;
+    if (slab->next) slab->next->prev = slab;
+    pool->list_node_slabs = slab;
     slab->available_prev = NULL;
     slab->available_next = NULL;
     slab->free_nodes = NULL;
@@ -111,16 +122,22 @@ static tf_list_node_slab *list_node_slab_new(void) {
         slab->free_nodes = &slot->node;
     }
     list_node_slab_link_available(slab);
-    list_node_spare_bytes += sizeof(*slab);
+    pool->list_node_spare_bytes += sizeof(*slab);
     return slab;
 }
 
 static tf_list_node *list_node_storage_acquire(void) {
-    if (!list_node_available_slabs) list_node_slab_new();
-    tf_list_node_slab *slab = list_node_available_slabs;
+    tf_obj_pool *pool = current_obj_pool;
+    if (!pool) {
+        tf_list_node_slot *slot = tf_xmalloc(sizeof(*slot));
+        slot->slab = NULL;
+        return &slot->node;
+    }
+    if (!pool->list_node_available_slabs) list_node_slab_new(pool);
+    tf_list_node_slab *slab = pool->list_node_available_slabs;
     if (slab->live_count == 0) {
-        assert(list_node_spare_bytes >= sizeof(*slab));
-        list_node_spare_bytes -= sizeof(*slab);
+        assert(pool->list_node_spare_bytes >= sizeof(*slab));
+        pool->list_node_spare_bytes -= sizeof(*slab);
     }
     tf_list_node *node = slab->free_nodes;
     assert(node);
@@ -133,6 +150,11 @@ static tf_list_node *list_node_storage_acquire(void) {
 static void list_node_storage_release(tf_list_node *node) {
     tf_list_node_slot *slot = (tf_list_node_slot *)node;
     tf_list_node_slab *slab = slot->slab;
+    if (!slab) {
+        free(slot);
+        return;
+    }
+    tf_obj_pool *pool = slab->pool;
     assert(slab && slab->live_count > 0);
     bool was_full = !slab->free_nodes;
     node->refcount = 0;
@@ -144,9 +166,9 @@ static void list_node_storage_release(tf_list_node *node) {
 
     if (slab->live_count != 0) return;
     if (sizeof(*slab) <= TF_LIST_NODE_SPARE_BYTE_LIMIT &&
-        list_node_spare_bytes <=
+        pool->list_node_spare_bytes <=
             TF_LIST_NODE_SPARE_BYTE_LIMIT - sizeof(*slab)) {
-        list_node_spare_bytes += sizeof(*slab);
+        pool->list_node_spare_bytes += sizeof(*slab);
         return;
     }
 
@@ -155,44 +177,52 @@ static void list_node_storage_release(tf_list_node *node) {
     free(slab);
 }
 
-static void list_node_storage_clear(void) {
-    tf_list_node_slab *slab = list_node_slabs;
+static void list_node_storage_clear(tf_obj_pool *pool) {
+    tf_list_node_slab *slab = pool->list_node_slabs;
     while (slab) {
         tf_list_node_slab *next = slab->next;
         if (slab->live_count == 0) {
             list_node_slab_unlink_available(slab);
             list_node_slab_unlink(slab);
-            assert(list_node_spare_bytes >= sizeof(*slab));
-            list_node_spare_bytes -= sizeof(*slab);
+            assert(pool->list_node_spare_bytes >= sizeof(*slab));
+            pool->list_node_spare_bytes -= sizeof(*slab);
             free(slab);
         }
         slab = next;
     }
-    assert(list_node_spare_bytes == 0);
+    assert(pool->list_node_spare_bytes == 0);
+    assert(pool->list_node_slabs == NULL);
 }
 
 static tf_obj *obj_storage_acquire(void) {
-    if (!obj_cache) {
-        tf_obj *o = tf_xmalloc(sizeof(tf_obj));
-        assert(!tf_obj_is_immediate_int(o));
-        return o;
+    tf_obj_pool *pool = current_obj_pool;
+    tf_obj_cache_node *node = pool ? pool->obj_cache : NULL;
+    if (node) {
+        pool->obj_cache = node->next;
+        pool->obj_cache_len--;
     }
-    tf_obj_cache_node *node = obj_cache;
-    obj_cache = node->next;
-    obj_cache_len--;
-    assert(!tf_obj_is_immediate_int((tf_obj *)node));
-    return (tf_obj *)node;
+    tf_obj_storage *storage =
+        node ? (tf_obj_storage *)((char *)node -
+                                  offsetof(tf_obj_storage, object))
+             : NULL;
+    if (!storage) storage = tf_xmalloc(sizeof(*storage));
+    storage->pool = pool;
+    assert(!tf_obj_is_immediate_int(&storage->object));
+    return &storage->object;
 }
 
 static void obj_storage_release(tf_obj *o) {
-    if (obj_cache_len >= TF_OBJ_CACHE_LIMIT) {
-        free(o);
+    tf_obj_storage *storage =
+        (tf_obj_storage *)((char *)o - offsetof(tf_obj_storage, object));
+    tf_obj_pool *pool = storage->pool;
+    if (pool && pool->obj_cache_len < TF_OBJ_CACHE_LIMIT) {
+        tf_obj_cache_node *node = (tf_obj_cache_node *)o;
+        node->next = pool->obj_cache;
+        pool->obj_cache = node;
+        pool->obj_cache_len++;
         return;
     }
-    tf_obj_cache_node *node = (tf_obj_cache_node *)o;
-    node->next = obj_cache;
-    obj_cache = node;
-    obj_cache_len++;
+    free(storage);
 }
 
 static void string_set_heap_capacity(tf_obj *s, size_t capacity) {
@@ -1476,14 +1506,33 @@ void tf_obj_free(tf_obj *o) {
     obj_storage_release(o);
 }
 
-void tf_obj_cache_clear(void) {
-    list_node_storage_clear();
-    while (obj_cache) {
-        tf_obj_cache_node *next = obj_cache->next;
-        free(obj_cache);
-        obj_cache = next;
+void tf_obj_pool_init(tf_obj_pool *pool) {
+    *pool = (tf_obj_pool){0};
+}
+
+void tf_obj_pool_clear(tf_obj_pool *pool) {
+    list_node_storage_clear(pool);
+    tf_obj_cache_node *node = pool->obj_cache;
+    while (node) {
+        tf_obj_cache_node *next = node->next;
+        tf_obj_storage *storage =
+            (tf_obj_storage *)((char *)node -
+                               offsetof(tf_obj_storage, object));
+        free(storage);
+        node = next;
     }
-    obj_cache_len = 0;
+    pool->obj_cache = NULL;
+    pool->obj_cache_len = 0;
+}
+
+tf_obj_pool *tf_obj_pool_enter(tf_obj_pool *pool) {
+    tf_obj_pool *previous = current_obj_pool;
+    current_obj_pool = pool;
+    return previous;
+}
+
+void tf_obj_pool_leave(tf_obj_pool *previous) {
+    current_obj_pool = previous;
 }
 
 static void fprint_escaped_string(FILE *output, const char *s, size_t len) {

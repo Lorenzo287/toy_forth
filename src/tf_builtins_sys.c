@@ -177,7 +177,7 @@ tf_ret tf_env_q(tf_ctx *ctx) {
 }
 
 tf_ret tf_rand(tf_ctx *ctx) {
-    tf_stack_push(ctx, tf_obj_new_int(rand()));
+    tf_stack_push(ctx, tf_obj_new_int((int64_t)tf_random_u32(&ctx->random)));
     return TF_OK;
 }
 

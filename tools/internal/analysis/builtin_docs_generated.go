@@ -176,7 +176,7 @@ var builtinDocs = map[string]builtinDoc{
 	},
 	"rand": {
 		StackEffect: "-- n",
-		Description: "Push a random integer.",
+		Description: "Push a per-state PCG32 pseudorandom integer in the range 0 through 4294967295; this is not a cryptographic generator.",
 	},
 	"and": {
 		StackEffect: "a b -- res",

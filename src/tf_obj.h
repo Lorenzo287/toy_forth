@@ -27,6 +27,16 @@ typedef enum {
 
 typedef struct tf_source_file tf_source_file;
 
+/* State-owned reusable storage. Fields are opaque outside the object layer;
+ * they live here so the interpreter context can embed the pool directly. */
+typedef struct {
+    void *obj_cache;
+    size_t obj_cache_len;
+    void *list_node_slabs;
+    void *list_node_available_slabs;
+    size_t list_node_spare_bytes;
+} tf_obj_pool;
+
 typedef struct {
     tf_source_file *source;
     uint32_t offset;
@@ -296,7 +306,13 @@ static inline void tf_obj_release(tf_obj *o) {
     if (o->refcount == 0) tf_obj_free(o);
 }
 
-void tf_obj_cache_clear(void);
+/* Constructors use the current thread's scoped pool. Allocation ownership is
+ * stored outside tf_obj, so release returns storage to the originating state
+ * even when another pool is current. A null current pool uses malloc/free. */
+void tf_obj_pool_init(tf_obj_pool *pool);
+void tf_obj_pool_clear(tf_obj_pool *pool);
+tf_obj_pool *tf_obj_pool_enter(tf_obj_pool *pool);
+void tf_obj_pool_leave(tf_obj_pool *previous);
 
 /* Debug, runtime-value, and source-form printers. */
 void tf_obj_print(tf_obj *o, size_t *count);

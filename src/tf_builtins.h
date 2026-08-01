@@ -10,7 +10,7 @@
 /* Helpers shared between builtin implementation groups. */
 tf_ret tf_split_string(tf_ctx *ctx);
 
-/* Release process-wide continuation storage after the last context closes. */
-void tf_control_state_cache_clear(void);
+/* Release continuation storage owned by one interpreter state. */
+void tf_control_state_cache_clear(tf_ctx *ctx);
 
 #endif  // TF_BUILTINS_H

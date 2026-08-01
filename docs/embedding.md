@@ -203,7 +203,8 @@ interruption and exit are not caught.
 
 The boundary has a few durable rules:
 
-- one state is not safe for concurrent access;
+- separate states may execute concurrently, but one state is not safe for
+  concurrent access;
 - `toy_eval()`, `toy_call()`, package loading, and retained calls require an
   idle state;
 - a native word must not re-enter the state that is currently calling it;
@@ -211,6 +212,13 @@ The boundary has a few durable rules:
 - every retained value must be released before its state;
 - allocation failure terminates the process;
 - filesystem, environment, process, and shell words remain enabled.
+
+Each state owns its boxed-object and persistent-list pools, execution
+continuations, scratch storage, dictionary caches, and pseudorandom stream.
+Closing one state therefore does not drain, invalidate, or contend on storage
+owned by another live state. Host callbacks and intentional process-wide
+effects—including default console output, environment changes, and subprocess
+I/O—remain shared and need normal host-side coordination when used concurrently.
 
 The public declarations and concise ownership comments in
 [`include/toy.h`](../include/toy.h) are the complete API reference.

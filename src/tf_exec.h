@@ -4,6 +4,7 @@
 #include <signal.h>
 #include "toy.h"
 #include "tf_obj.h"
+#include "tf_random.h"
 
 typedef toy_status tf_ret;
 typedef toy_state tf_ctx;
@@ -245,6 +246,7 @@ typedef struct {
  * Interpreter state shared by the VM and native words.
  */
 struct tf_ctx {
+    tf_obj_pool objects;
     tf_obj *data_stack;
     tf_word_table words;
     tf_quick_program *quick_programs[TF_QUICK_PROGRAM_CACHE_CAP];
@@ -252,6 +254,9 @@ struct tf_ctx {
     size_t call_stack_len;
     size_t call_stack_cap;
     tf_scratch_arena scratch;
+    void *control_state_cache;
+    size_t control_state_cache_len;
+    tf_random random;
     tf_package_table packages;
     tf_package_import_table package_imports;
     tf_native_library_table native_libraries;
