@@ -211,11 +211,25 @@ without consuming it: Toy reads the boolean result and then restores the stack
 that existed before the predicate ran. Output, file writes, and other side
 effects performed by a predicate are not undone.
 
+### Error Recovery Is Explicit
+
+An unhandled error, interruption, or exit request stops and unwinds the current
+evaluation without rolling back completed stack effects, definitions, output,
+or other side effects. Values owned only by unfinished words are released
+during that unwind, so the remaining data stack is useful for inspection but
+is not a retry snapshot.
+
+Use `try` when recovery needs a stable stack. It saves the surrounding stack,
+runs a body, and restores that stack with the error message on top before
+calling its handler. It does not catch interruption or exit, and if the handler
+itself fails, the new error propagates without another implicit rollback.
+
 The [combinator reference](./docs/combinators.md) covers the less obvious
 control, recursion, and collection combinators in more depth. The
 [idiomatic Toy guide](./docs/idioms.md) shows how to combine them with captures
 and collection representations while keeping dataflow clear and construction
-linear.
+linear. The standalone [graph examples](./examples/graphs/README.md) provide a
+larger case study using some of those choices.
 
 ### Versatile Collections
 

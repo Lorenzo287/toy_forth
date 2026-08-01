@@ -88,6 +88,38 @@ Use a capture when it removes genuinely obscure shuffling. First check whether
 `dip`, `keep`, `bi`, `app2`, `cleave`, `construct`, or a better factorization
 expresses the same relationship directly.
 
+Combinators differ in whether they thread or restore surrounding data. `dip`,
+`keep`, `bi`, `fold`, `times`, and `each` pass the current stack forward through
+their bodies. Their runtime continuations do not retain that stack merely to
+undo an unhandled error; an enclosing `try` owns recoverable restoration.
+
+Observer and projection combinators deliberately have a different contract.
+On successful execution, predicates restore the stack after reading their
+boolean, `map` and `replicate` isolate each produced result, and `app2`,
+`cleave`, and `construct` apply branches independently. Their snapshots
+implement that successful dataflow, but are released without restoration when
+an error propagates. Only `try` establishes a recoverable stack transaction.
+Side effects outside the data stack still happen.
+
+When a loop repeatedly updates several collections, order the state so the
+next collection to change is directly accessible. Put any necessary shuffling
+in a small word with an explicit stack effect, and capture only the scalar that
+needs a name:
+
+```toy
+\ order queue seen -- order queue seen node
+'dequeue-visit [
+    swap pop-front swapd | node |
+    2 roll $node push-back rot rot
+    $node
+] def
+```
+
+This is usually clearer than either repeating the shuffle or capturing all
+three collections. State order still matters for readability and for reaching
+the next operation directly, but using `dip` for that reach no longer makes the
+surrounding values shared by itself.
+
 ## Choose the Construction Representation
 
 The final representation need not be the best construction representation.
@@ -154,6 +186,14 @@ compares equivalent captured, stack-threaded, list, `infra`, and one-shot
 conversion patterns. The recorded
 [construction and JSON experiment](../benchmarks/results/2026-07-31-toy-construction-idioms.md)
 shows why the distinction matters in real Toy code.
+
+The standalone [graph-search examples](../examples/graphs/README.md) are one
+larger application of these ideas to multiple evolving values. Their
+[benchmark record](../benchmarks/results/2026-07-31-graph-state-threading.md)
+first exposed accidental snapshot retention in `dip`, then confirmed that the
+runtime fix made both BFS layouts linear. The separate
+[control-ownership experiment](../benchmarks/results/2026-07-31-control-ownership.md)
+audits the same distinction across the control vocabulary.
 
 Use those results as guidance, not as a universal ranking. Small data, required
 sharing, clearer domain structure, or a different mix of operations can change

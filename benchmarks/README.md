@@ -41,8 +41,12 @@ Current workloads:
 
 - `construction-patterns.toy`: equivalent captured, stack-threaded, list,
   `infra`, and one-shot conversion patterns for vectors, maps, and strings;
+- `control-ownership.toy`: ambient collection updates through state-threading
+  control combinators, guarding against accidental snapshot retention;
 - `dispatch.toy`: inline native calls versus user-word dispatch.
 - `deque.toy`: unique/shared endpoint updates, pops, wraparound, and projection.
+- `graph-search.toy`: BFS and Dijkstra scaling for the standalone graph
+  examples under `examples/graphs/`.
 - `list.toy`: constant-time front operations, linear traversal, and
   copy-left/share-right concatenation.
 - `json.toy`: decode and encode scaling for the Toy-written `core:json`
