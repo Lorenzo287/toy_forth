@@ -111,14 +111,13 @@
 \ Logical binrec levels grow independently of the VM frame stack.
 5000 [ 0 == ] [ drop 0 ] [ pred 0 ] [ + ] binrec 0 == check
 
-\ Exercise binrec's heap fallback with more ambient stack values than its
-\ inline rollback snapshot can hold.
+\ Deep ambient data threads through the compact binrec controller unchanged.
 0 33 range 10 push-back
 [ [ 2 < ] [] [ pred dup pred ] [ + ] binrec ] infra
 0 33 range 55 push-back == check
 
-\ An error during the first recursive branch releases a heap fallback snapshot
-\ and restores the stack seen by try.
+\ An error during the first recursive branch releases hidden branches; `try`
+\ owns the recoverable stack restoration.
 0 33 range 10 push-back [
     [
         [ dup 2 == [ "binrec rollback" error ] if 2 < ]
@@ -138,12 +137,12 @@
 [ [] [] treerec ] infra
 0 33 range [ 1 [ 2 3 ] 4 ] push-back == check
 
-\ Nested oversized snapshots use separate scratch blocks and unwind in LIFO
+\ Nested restoring combinators use separate scratch blocks and unwind in LIFO
 \ order through an error handler.
 0 600 range [
-    1 [
+    1 2 [
         [ "scratch unwind" error ] [ drop ] try
-    ] dip drop
+    ] app2 drop drop
 ] infra
 0 600 range == check
 

@@ -529,7 +529,7 @@
           "cFunction": "tf_try",
           "stackEffect": "... body handler -- ...",
           "syntax": "",
-          "description": "Execute body and, on error, restore the surrounding stack and run handler with the error message.",
+          "description": "Execute body and, if it raises a runtime error, restore the surrounding stack and run handler with the error message; handler errors, interrupts, and exit propagate without rollback.",
           "syntaxClass": "control"
         },
         {
@@ -537,7 +537,7 @@
           "cFunction": "tf_error",
           "stackEffect": "string --",
           "syntax": "",
-          "description": "Raise a runtime error using a string message.",
+          "description": "Raise a runtime error using a string message; unless caught by try, completed stack effects are not rolled back.",
           "syntaxClass": "control"
         }
       ]

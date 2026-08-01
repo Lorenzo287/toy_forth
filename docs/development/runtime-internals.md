@@ -149,10 +149,16 @@ filtering, while retaining their own command parsing and presentation.
 Unhandled diagnostics inspect the same live VM state before error unwinding.
 They print a bounded data-stack snapshot and, when execution is nested, a
 bounded call chain of Toy program frames. Native continuation frames remain an
-implementation detail in these user-facing reports. Error suppression used by
-`try` prevents handled failures from producing diagnostics, copies the stored
-error message onto the restored data stack, and clears the handled context
-before scheduling its handler.
+implementation detail in these user-facing reports. Unwind cleanup releases
+frame-owned values and snapshots without reconstructing consumed inputs, so
+unhandled errors have uniformly non-transactional stack effects.
+
+Error suppression used by `try` prevents handled failures from producing
+diagnostics, copies the stored error message onto the restored data stack, and
+clears the handled context before scheduling its handler. That restoration
+happens only when `try` catches its body error; an error from the handler
+continues unwinding from the handler's current stack. Interruption and exit use
+the same non-transactional unwind cleanup and are not caught by `try`.
 
 ## Object Layout
 
@@ -304,21 +310,25 @@ Predicate continuations keep up to 16 surrounding stack references inline and
 fall back to exact per-context scratch storage for deeper stacks. Collection
 predicates reuse an invariant surrounding-stack snapshot across iterations.
 
-Control combinators that preserve a surrounding stack for rollback keep up to
-32 references in their cached continuation state and use the same scratch
-storage for deeper stacks. Scratch allocations carry their rewind mark and must
-be released in native-frame order; nested and error-unwound continuations are
-strictly LIFO. Compile-time size checks keep inline states within the 512-byte
-control-state cache block.
+Control combinators whose successful contract restores or independently
+projects a surrounding stack keep up to 32 references in their cached
+continuation state and use the same scratch storage for deeper stacks. Scratch
+allocations carry their rewind mark and must be released in native-frame order;
+nested and error-unwound continuations are strictly LIFO. Compile-time size
+checks keep inline states within the 512-byte control-state cache block.
+
+State-threading continuations such as `dip`, `keep`, `fold`, and `bi` keep only
+the hidden inputs and stack lengths required by their successful result shape.
+They do not retain the ambient stack solely for unhandled-error cleanup. A
+`try` frame owns the snapshot when execution is recoverable.
 
 Scratch blocks larger than the spare-byte limit are freed as soon as their
 owning frame releases them, so an unusually deep stack does not become a
 permanent context high-water mark.
 
-The `binrec` controller keeps its common one-value rollback directly in each
-compact logical level. Larger active rollback snapshots share a controller-
-owned LIFO buffer, which grows geometrically and is released with the
-controller.
+The `binrec` controller keeps only the hidden second-branch value in each
+compact logical level. It does not retain the threaded stack for private error
+rollback; an enclosing `try` owns recovery state when execution is recoverable.
 
 ## Measuring Changes
 

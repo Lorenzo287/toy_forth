@@ -63,6 +63,12 @@ runtime error: '+' expected number at stack depth 0, found string
   in <program> at example.toy:9:1
 ```
 
+After reporting the failure, the REPL unwinds the unfinished call frames and
+keeps the surviving data stack for the next input. It does not roll back the
+failed input: completed stack effects remain, while values hidden only inside
+unfinished words are released. Use `.s` to inspect that stack, `empty` to
+discard it, or `try` when the program needs explicit stack restoration.
+
 ## tdb Instruction Debugger
 
 Type `tdb` to toggle the terminal debugger for subsequent REPL input. The VM
@@ -186,4 +192,5 @@ To exit:
 Use `Ctrl-C` once to interrupt a running program such as an infinite loop. The
 REPL reports this as an interrupt rather than as a generic runtime error. When
 no program is running, the first `Ctrl-C` clears the current input and prints a
-reminder that pressing `Ctrl-C` again exits.
+reminder that pressing `Ctrl-C` again exits. Interrupting running code, like an
+unhandled error or `exit`, unwinds without rolling back completed stack effects.

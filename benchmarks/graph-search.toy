@@ -1,0 +1,96 @@
+\ Scaling workloads for the graph-search examples.
+\ Graph construction and correctness checks are outside the timed region.
+
+"examples/graphs/graph" import
+
+\ An alternative state layout that reaches the queue and set beneath the
+\ order vector with `dip`. This guards `dip`'s ownership-neutral threading.
+'enqueue-unseen-with-dip [ | neighbor |
+    [
+        dup $neighbor has?
+        []
+        [
+            $neighbor insert
+            swap $neighbor push-back swap
+        ] ifelse
+    ] dip
+] def
+
+'bfs-with-dip-state [ | graph start |
+    [] >deque $start push-back
+    #{} $start insert
+    []
+    [ 2 pick empty? not ]
+    [
+        [ [ pop-front ] dip ] dip 2 roll | node |
+        $node push-back
+        $graph $node [] get-or [ enqueue-unseen-with-dip ] each
+    ] while
+    nip nip
+] def
+
+'line-graph [ | count |
+    0 $count range [ | node |
+        [] [
+            $node
+            []
+            $node 1 + $count < [ $node 1 + push-back ] if
+        ] infra
+    ] map >map
+] def
+
+'weighted-line-graph [ | count |
+    0 $count range [ | node |
+        [] [
+            $node
+            []
+            $node 1 + $count < [
+                [] [ $node 1 + 1 ] infra push-back
+            ] if
+        ] infra
+    ] map >map
+] def
+
+\ Node zero reaches every other node. This makes the priority queue grow to
+\ O(n), unlike the weighted line where it contains at most one useful entry.
+'weighted-star-graph [ | count |
+    0 $count range [ | node |
+        [] [
+            $node
+            $node 0 == [
+                1 $count range [ | neighbor |
+                    [] [ $neighbor $neighbor ] infra
+                ] map
+            ] [
+                []
+            ] ifelse
+        ] infra
+    ] map >map
+] def
+
+'verify [ not [ "graph benchmark produced the wrong result" error ] if ] def
+
+'bench-graph [ | count name builder callable |
+    $count $builder exec | graph |
+    monotonic-ns | start |
+    $graph 0 $callable exec | result |
+    monotonic-ns $start - | elapsed |
+    $result len $count == verify
+    $name $count $elapsed "{} n={}: {} ns" format print
+] def
+
+1000 "BFS line graph" 'line-graph 'graph.bfs bench-graph
+5000 "BFS line graph" 'line-graph 'graph.bfs bench-graph
+10000 "BFS line graph" 'line-graph 'graph.bfs bench-graph
+
+1000 "BFS with state beneath dip" 'line-graph 'bfs-with-dip-state bench-graph
+5000 "BFS with state beneath dip" 'line-graph 'bfs-with-dip-state bench-graph
+10000 "BFS with state beneath dip" 'line-graph 'bfs-with-dip-state bench-graph
+
+1000 "Dijkstra weighted line" 'weighted-line-graph 'graph.dijkstra bench-graph
+5000 "Dijkstra weighted line" 'weighted-line-graph 'graph.dijkstra bench-graph
+10000 "Dijkstra weighted line" 'weighted-line-graph 'graph.dijkstra bench-graph
+
+1000 "Dijkstra weighted star" 'weighted-star-graph 'graph.dijkstra bench-graph
+5000 "Dijkstra weighted star" 'weighted-star-graph 'graph.dijkstra bench-graph
+10000 "Dijkstra weighted star" 'weighted-star-graph 'graph.dijkstra bench-graph

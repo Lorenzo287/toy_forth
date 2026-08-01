@@ -149,7 +149,9 @@ typedef struct {
 toy_state *toy_state_new(const toy_state_config *config);
 void toy_state_free(toy_state *state);
 
-/* Host entry points. Calls are allowed only while the state is idle. */
+/* Host entry points. Calls are allowed only while the state is idle. Errors,
+ * interruptions, and exit requests unwind frames but do not roll back completed
+ * stack effects; the host may inspect or repair the stack before reuse. */
 toy_status toy_eval(toy_state *state, const char *source_name,
                     const char *source);
 toy_status toy_call(toy_state *state, const char *word);

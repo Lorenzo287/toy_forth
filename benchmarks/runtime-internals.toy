@@ -12,29 +12,29 @@
 
 "--- Runtime Internals ---\n" printf
 
-[ ] [ 3 4 [ 1 + ] app2 drop drop ] 200000
+[] [ 3 4 [ 1 + ] app2 drop drop ] 200000
 "app2 continuation" bench-clean
 
-[ ] [ 1 [ | x | $x ] exec drop ] 200000
+[] [ 1 [ | x | $x ] exec drop ] 200000
 "single dynamic capture" bench-clean
 
 [ 99 0 256 range ] [ dup [ 2 % 0 == ] filter drop ] 2000
 "filter with ambient stack" bench-clean
 
-[ 0 64 range ] [ dup [ 1 [ ] dip drop ] infra drop ] 100000
-"dip with oversized snapshot" bench-clean
+[ 0 64 range ] [ dup [ 1 2 [] app2 drop drop ] infra drop ] 100000
+"app2 with oversized snapshot" bench-clean
 
 [ 0 64 range ] [
     dup [ 0 16 range [ -1 == ] some drop ] infra drop
 ] 10000 "predicate with oversized snapshot" bench-clean
 
-[ ] [ 10 [ 0 == ] [ drop 1 ] [ dup pred ] [ * ] genrec drop ] 20000
+[] [ 10 [ 0 == ] [ drop 1 ] [ dup pred ] [ * ] genrec drop ] 20000
 "genrec factorial(10)" bench-clean
 
-[ ] [ 20 [ 2 < ] [ ] [ pred dup pred ] [ + ] binrec drop ] 100
+[] [ 20 [ 2 < ] [] [ pred dup pred ] [ + ] binrec drop ] 100
 "binrec fibonacci(20)" bench-clean
 
 [ 0 1 2 3 4 5 6 7 ] [
-    [ 1 2 [ 3 4 ] [ 5 [ 6 7 ] ] ] [ ] [ ] treerec drop
+    [ 1 2 [ 3 4 ] [ 5 [ 6 7 ] ] ] [] [] treerec drop
 ] 5000
 "treerec with ambient stack" bench-clean

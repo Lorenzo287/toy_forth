@@ -192,9 +192,14 @@ The main statuses are:
 - `TOY_INTERRUPTED`: `toy_interrupt()` requested an unwind;
 - `TOY_EXIT_REQUESTED`: Toy executed `exit`, leaving termination to the host.
 
-`toy_get_error()` returns the latest parser or runtime message. Errors unwind
-the current invocation but do not roll back definitions or earlier stack
-effects. The host may inspect or repair the stack and reuse the state.
+`toy_get_error()` returns the latest parser or runtime message. Errors,
+interruptions, and exit requests unwind the current invocation but do not roll
+back definitions, completed stack effects, output, or other side effects.
+Unwound frames release values they own privately, so the residual stack is
+inspectable but is not a reconstruction of the invocation's inputs. The host
+may inspect or repair it and reuse the state. Toy code that needs transactional
+recovery from a runtime error must establish it explicitly with `try`;
+interruption and exit are not caught.
 
 The boundary has a few durable rules:
 

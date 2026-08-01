@@ -252,11 +252,11 @@ var builtinDocs = map[string]builtinDoc{
 	},
 	"try": {
 		StackEffect: "... body handler -- ...",
-		Description: "Execute body and, on error, restore the surrounding stack and run handler with the error message.",
+		Description: "Execute body and, if it raises a runtime error, restore the surrounding stack and run handler with the error message; handler errors, interrupts, and exit propagate without rollback.",
 	},
 	"error": {
 		StackEffect: "string --",
-		Description: "Raise a runtime error using a string message.",
+		Description: "Raise a runtime error using a string message; unless caught by try, completed stack effects are not rolled back.",
 	},
 	"app2": {
 		StackEffect: "x y callable -- x' y'",

@@ -1,0 +1,90 @@
+\ Control-combinator ownership workloads.
+\ Each construction leaves one vector while repeatedly updating an ambient
+\ value through a different state-threading combinator.
+
+'verify [ not [ "control ownership benchmark produced the wrong value" error ] if ] def
+
+'bench-build [ | count name callable |
+    monotonic-ns | start |
+    $count $callable exec | result |
+    monotonic-ns $start - | elapsed |
+    $result len $count == verify
+    $name $count $elapsed "{} n={}: {} ns" format print
+] def
+
+'bench-sizes [ | name callable |
+    1000 $name $callable bench-build
+    5000 $name $callable bench-build
+    10000 $name $callable bench-build
+] def
+
+'direct-build [ | count |
+    [] $count [ 1 push-back ] times
+] def
+
+'dip-build [ | count |
+    [] $count [
+        0 [ 1 push-back ] dip drop
+    ] times
+] def
+
+'keep-build [ | count |
+    [] $count [
+        0 [ drop 1 push-back ] keep drop
+    ] times
+] def
+
+'fold-build [ | count |
+    [] 0 0 $count range [
+        drop swap 1 push-back swap
+    ] fold drop
+] def
+
+'bi-build [ | count |
+    [] $count [
+        0 [ drop 1 push-back ] [] bi drop
+    ] times
+] def
+
+'cond-build [ | count |
+    [] $count [
+        [ [ [ true ] [ 1 push-back ] ] ] cond
+    ] times
+] def
+
+\ The first recursive branch is itself an updated vector. Older `binrec`
+\ controllers retained that threaded branch at every active logical level.
+'binrec-build [ | count |
+    0 $count range
+    [ len 4 < ]
+    []
+    [ 0 push-back split-mid ]
+    [ concat ]
+    binrec
+] def
+
+'bench-binrec [ | count |
+    monotonic-ns | start |
+    $count binrec-build | result |
+    monotonic-ns $start - | elapsed |
+    $result len $count >= verify
+    "binrec branch" $count $elapsed "{} n={}: {} ns" format print
+] def
+
+100 direct-build len 100 == verify
+100 dip-build len 100 == verify
+100 keep-build len 100 == verify
+100 fold-build len 100 == verify
+100 bi-build len 100 == verify
+100 cond-build len 100 == verify
+100 binrec-build len 100 >= verify
+
+"direct threading" 'direct-build bench-sizes
+"dip body" 'dip-build bench-sizes
+"keep body" 'keep-build bench-sizes
+"fold body" 'fold-build bench-sizes
+"bi branch" 'bi-build bench-sizes
+"cond selected body" 'cond-build bench-sizes
+1000 bench-binrec
+5000 bench-binrec
+10000 bench-binrec

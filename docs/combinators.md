@@ -122,6 +122,15 @@ produce exactly one collected result.
 pushes the error message, then runs the handler. A handler that does not need
 the message should begin with `drop`.
 
+This restoration is explicit rather than a general property of errors.
+Without an enclosing `try`, an error unwinds the current evaluation but does
+not undo completed stack effects. Unfinished combinators release values hidden
+in their continuation state, and the surviving stack is not guaranteed to
+reconstruct their inputs. An error raised by the handler also propagates from
+the handler's current stack; `try` does not restore its snapshot a second time.
+Interruption and `exit` are not runtime errors, are not caught by `try`, and
+also unwind without rollback.
+
 ## Recursion Schemes
 
 The recursion schemes all consume callables directly.

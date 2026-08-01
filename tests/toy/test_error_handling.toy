@@ -6,6 +6,83 @@
 0 [ "intentional error" error ] [ drop 1 + ] try 1 == check
 0 [ 1 0 / ] [ drop 1 + ] try 1 == check
 
+\ `dip` does not need a private rollback snapshot. An enclosing `try` restores
+\ both the exposed stack and the value hidden by `dip`.
+[] 10 [ [ 1 push-back "dip error" error ] dip ] [] try
+"dip error" == check
+10 == check
+[] == check
+
+\ Recovery inside the body completes normally and `dip` restores its value.
+0 10 [ [ 1 0 / ] [ drop 1 + ] try ] dip
+10 == check
+1 == check
+
+\ `keep` has the same threading behavior for values beneath its input.
+[] 10 [ [ drop 1 push-back "keep error" error ] keep ] [] try
+"keep error" == check
+10 == check
+[] == check
+
+0 10 [ [ 1 0 / ] [ drop 1 + ] try ] keep
+11 == check
+10 == check
+0 == check
+
+\ `fold` threads both its accumulator and the ambient stack without retaining
+\ ambient collections solely for error cleanup.
+[] [ 0 [ 0 ] [ | accumulator item |
+        1 push-back
+        "fold error" error
+    ] fold ] [] try
+"fold error" == check
+[] == check
+
+[] 0 [ 0 ] [
+    [ "inner fold error" error ] [ drop + ] try
+] fold
+0 == check
+[] == check
+
+\ `bi` threads its ambient stack between branches. Only the duplicated input is
+\ intentionally retained.
+[] 10 [
+    [ drop 1 push-back "bi error" error ] [] bi
+] [] try
+"bi error" == check
+10 == check
+[] == check
+
+0 10 [ [ 1 0 / ] [ drop 1 + ] try ] [] bi
+10 == check
+11 == check
+0 == check
+
+\ `cond` retains its observer snapshot while selecting a clause, then releases
+\ it before the selected body updates the restored stack.
+[] [ [ [ true ] [ 1 push-back ] ] ] cond [ 1 ] == check
+
+[] [
+    [ [ [ true ] [ 1 push-back "cond error" error ] ] ] cond
+] [] try
+"cond error" == check
+[] == check
+
+\ `binrec` retains its hidden second branch, but not the threaded stack solely
+\ to reconstruct an error that an enclosing `try` already restores.
+[] [
+    1 [ 0 == ] [ "binrec error" error ] [ pred dup ] [ + ] binrec
+] [] try
+"binrec error" == check
+[] == check
+
+1
+[ 0 == ]
+[ [ "inner binrec error" error ] [ drop drop 1 ] try ]
+[ pred dup ]
+[ + ] binrec
+2 == check
+
 \ An inner handler can recover without invoking the outer handler.
 0 [
     [ "inner error" error ] [ drop 1 + ] try

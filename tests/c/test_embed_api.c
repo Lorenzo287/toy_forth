@@ -81,6 +81,11 @@ static toy_status host_fail_resource(toy_state *state) {
     return toy_fail(state, "failure after creating a resource");
 }
 
+static toy_status host_interrupt_now(toy_state *state) {
+    toy_interrupt(state);
+    return TOY_OK;
+}
+
 static const toy_native_word host_words[] = {
     {
         .name = "double",
@@ -89,6 +94,7 @@ static const toy_native_word host_words[] = {
         .description = "Double an integer supplied by the embedding host.",
     },
     {.name = "fail-resource", .callback = host_fail_resource},
+    {.name = "interrupt", .callback = host_interrupt_now},
 };
 
 static const toy_native_package host_package = {
@@ -127,6 +133,12 @@ static const toy_native_package atomic_package = {
     atomic_words,
     sizeof(atomic_words) / sizeof(atomic_words[0]),
 };
+
+static bool stack_is_single_int(toy_state *state, int64_t expected) {
+    int64_t actual = 0;
+    return toy_stack_size(state) == 1 &&
+           toy_get_int(state, 0, &actual) && actual == expected;
+}
 
 int main(void) {
     capture_buffer first_output = {0};
@@ -341,6 +353,82 @@ int main(void) {
     CHECK(toy_get_int(first, 0, &integer) && integer == 9,
           "recovery result");
     CHECK(toy_pop(first, 1), "pop recovery result");
+
+    struct {
+        const char *name;
+        const char *source;
+    } unhandled_cases[] = {
+        {"dip unwind", "1 2 [ drop 9 \"dip failure\" error ] dip"},
+        {"keep unwind",
+         "1 2 [ drop drop 9 \"keep failure\" error ] keep"},
+        {"fold unwind",
+         "1 0 [ 1 ] [ drop drop drop 9 \"fold failure\" error ] fold"},
+        {"bi unwind",
+         "1 2 [ drop drop 9 \"bi failure\" error ] [] bi"},
+        {"app2 unwind",
+         "1 2 3 [ drop drop 9 \"app2 failure\" error ] app2"},
+        {"app2 result error", "1 2 3 [ drop drop 9 ] app2"},
+        {"map unwind",
+         "1 [ 2 ] [ drop drop 9 \"map failure\" error ] map"},
+        {"replicate unwind",
+         "1 1 [ drop 9 \"replicate failure\" error ] replicate"},
+        {"infra unwind",
+         "1 [ 2 ] [ drop 9 \"infra failure\" error ] infra"},
+        {"cleave unwind",
+         "1 2 [ [ drop drop 9 \"cleave failure\" error ] ] cleave"},
+        {"construct unwind",
+         "1 2 [ [ drop drop 9 \"construct failure\" error ] ] construct"},
+        {"if predicate unwind",
+         "1 [ drop 9 \"if failure\" error ] [] if"},
+        {"predicate result error", "1 [ drop 9 ] [] if"},
+        {"while predicate unwind",
+         "1 [ drop 9 \"while failure\" error ] [] while"},
+        {"cond predicate unwind",
+         "1 [ [ [ drop 9 \"cond failure\" error ] [] ] ] cond"},
+        {"filter predicate unwind",
+         "1 [ 2 ] [ drop drop 9 \"filter failure\" error ] filter"},
+        {"binrec unwind",
+         "1 1 [ 0 == ] [ drop drop 9 \"binrec failure\" error ] "
+         "[ pred dup ] [ + ] binrec"},
+        {"treerec unwind",
+         "1 2 [ drop drop 9 \"treerec failure\" error ] [] treerec"},
+        {"try handler unwind",
+         "1 [ drop \"body failure\" error ] "
+         "[ drop drop 9 \"handler failure\" error ] try"},
+    };
+    for (size_t i = 0;
+         i < sizeof(unhandled_cases) / sizeof(unhandled_cases[0]); i++) {
+        capture_clear(&first_diagnostic);
+        CHECK(toy_eval(first, unhandled_cases[i].name,
+                       unhandled_cases[i].source) == TOY_ERROR,
+              unhandled_cases[i].name);
+        CHECK(stack_is_single_int(first, 9), unhandled_cases[i].name);
+        CHECK(toy_pop(first, 1), unhandled_cases[i].name);
+    }
+
+    CHECK(toy_eval(first, "try recovery",
+                   "1 [ drop 9 \"caught failure\" error ] "
+                   "[ drop 7 ] try") == TOY_OK,
+          "try recovery status");
+    CHECK(toy_stack_size(first) == 2 &&
+              toy_get_int(first, 0, &integer) && integer == 7 &&
+              toy_get_int(first, 1, &integer) && integer == 1,
+          "try is the explicit stack-restoring boundary");
+    CHECK(toy_pop(first, 2), "pop try recovery results");
+
+    CHECK(toy_eval(first, "try interruption",
+                   "1 [ drop 9 host.interrupt ] [] try") == TOY_INTERRUPTED,
+          "try does not catch interruption");
+    CHECK(stack_is_single_int(first, 9),
+          "interruption does not roll back completed stack effects");
+    CHECK(toy_pop(first, 1), "pop interrupted try stack");
+
+    CHECK(toy_eval(first, "try exit", "1 [ drop 9 exit ] [] try") ==
+              TOY_EXIT_REQUESTED,
+          "try does not catch exit");
+    CHECK(stack_is_single_int(first, 9),
+          "exit does not roll back completed stack effects");
+    CHECK(toy_pop(first, 1), "pop exited try stack");
 
     CHECK(toy_eval(first, "<exit>", "exit") == TOY_EXIT_REQUESTED,
           "embedded exit request");
