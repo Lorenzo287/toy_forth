@@ -421,6 +421,14 @@ NOBDEF void append_compile_flags(Cmd *command, const Build_Config *config) {
         cmd_append(command, "-std=c11", "-Wall", "-Wextra", "-Wpedantic",
                    "-Iinclude", "-Isrc", "-Ideps/linenoise",
                    "-DTOY_SHARED_SUFFIX=\"" TOY_SHARED_SUFFIX_VALUE "\"");
+#if !defined(_WIN32)
+        /*
+         * The Unix linenoise implementation uses POSIX functions such as
+         * strdup, fchmod, and fileno.  With strict C11, recent glibc headers
+         * only declare these when the POSIX feature level is selected.
+         */
+        cmd_append(command, "-D_POSIX_C_SOURCE=200809L");
+#endif
 #if defined(_WIN32)
         if (config->compiler == COMPILER_CLANG) {
             cmd_append(command, "-D_CRT_SECURE_NO_WARNINGS");
