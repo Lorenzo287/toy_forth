@@ -51,13 +51,14 @@ int main(int argc, char **argv) {
     tf_ret ret = parse_args(argc, argv, &config);
     if (ret == TF_ERR || config.help) {
         fprintf(stderr, "=== Toy Interpreter ===\n");
-        fprintf(stderr, "Usage: %s [options] [package-directory] [args...]\n",
+        fprintf(stderr,
+                "Usage: %s [options] [package-directory] [-- args...]\n",
                 argv[0]);
         fprintf(stderr,
                 "       %s [options] --file PATH [--file PATH ...] "
-                "[args...]\n",
+                "[-- args...]\n",
                 argv[0]);
-        fprintf(stderr, "       %s [options] --eval SOURCE [args...]\n",
+        fprintf(stderr, "       %s [options] --eval SOURCE [-- args...]\n",
                 argv[0]);
         fprintf(stderr, "\nRunning without a package starts the REPL\n");
         fprintf(stderr,
@@ -72,7 +73,11 @@ int main(int argc, char **argv) {
         fprintf(stderr,
                 "--parsed shows parsed eval or REPL input and the final stack\n");
         fprintf(stderr,
+                "--interactive, -i enters the REPL after successful execution\n");
+        fprintf(stderr,
                 "--tdb steps through package, file, eval, or REPL input\n");
+        fprintf(stderr,
+                "-- passes all remaining arguments to the Toy program\n");
         free(config.eval);
         free(config.eval_files);
         return ret;
@@ -104,21 +109,20 @@ int main(int argc, char **argv) {
 
     tf_ret result = TF_OK;
 
-    if (result == TF_OK) {
-        if (config.eval != NULL) {
-            result = tf_run_string(ctx, config.eval, config.show_parsed);
-            free(config.eval);
-        } else if (config.eval_file_count > 0) {
-            for (size_t i = 0; i < config.eval_file_count && result == TF_OK;
-                 i++) {
-                result = tf_run_file(ctx, config.eval_files[i],
-                                     config.show_parsed);
-            }
-        } else if (config.interactive) {
-            result = tf_run_repl(ctx, config.show_parsed);
-        } else {
-            result = tf_package_run_main(ctx, config.package_path);
+    if (config.eval != NULL) {
+        result = tf_run_string(ctx, config.eval, config.show_parsed);
+        free(config.eval);
+    } else if (config.eval_file_count > 0) {
+        for (size_t i = 0; i < config.eval_file_count && result == TF_OK;
+             i++) {
+            result = tf_run_file(ctx, config.eval_files[i],
+                                 config.show_parsed);
         }
+    } else if (config.package_path) {
+        result = tf_package_run_main(ctx, config.package_path);
+    }
+    if (result == TF_OK && config.interactive) {
+        result = tf_run_repl(ctx, config.show_parsed);
     }
     if (protocol) {
         tf_debug_protocol_install(ctx, NULL);
@@ -143,10 +147,18 @@ int main(int argc, char **argv) {
 
 static int parse_args(int argc, char **argv, cli_config *config) {
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--parsed") == 0 || strcmp(argv[i], "-p") == 0) {
+        if (strcmp(argv[i], "--") == 0) {
+            config->script_argc = argc - i - 1;
+            config->script_argv = &argv[i + 1];
+            break;
+        } else if (strcmp(argv[i], "--parsed") == 0 ||
+                   strcmp(argv[i], "-p") == 0) {
             config->show_parsed = true;
         } else if (strcmp(argv[i], "--tdb") == 0) {
             config->tdb = true;
+        } else if (strcmp(argv[i], "--interactive") == 0 ||
+                   strcmp(argv[i], "-i") == 0) {
+            config->interactive = true;
         } else if (strcmp(argv[i], "--debug-protocol") == 0) {
             config->debug_protocol = true;
         } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
@@ -183,17 +195,18 @@ static int parse_args(int argc, char **argv, cli_config *config) {
             config->eval = tf_xmalloc(strlen(argv[i + 1]) + 1);
             strcpy(config->eval, argv[i + 1]);
             i++;  // consume eval argument
+        } else if (argv[i][0] == '-') {
+            fprintf(stderr, "unknown option '%s'\n", argv[i]);
+            return TF_ERR;
+        } else if (config->package_path || config->eval ||
+                   config->eval_file_count > 0) {
+            fprintf(stderr,
+                    "unexpected argument '%s'; program arguments must follow "
+                    "'--'\n",
+                    argv[i]);
+            return TF_ERR;
         } else {
-            bool source_mode = config->eval || config->eval_file_count > 0;
-            if (!source_mode) {
-                config->package_path = argv[i];
-                config->script_argc = argc - i - 1;
-                config->script_argv = &argv[i + 1];
-            } else {
-                config->script_argc = argc - i;
-                config->script_argv = &argv[i];
-            }
-            break;
+            config->package_path = argv[i];
         }
     }
     int modes = (config->package_path != NULL) + (config->eval != NULL) +
@@ -204,13 +217,14 @@ static int parse_args(int argc, char **argv, cli_config *config) {
                 "exclusive\n");
         return TF_ERR;
     }
-    config->interactive = modes == 0;
+    config->interactive = config->interactive || modes == 0;
     if (config->debug_protocol &&
         (config->eval_file_count != 1 || config->eval || config->tdb ||
-         config->show_parsed || config->package_path)) {
+         config->show_parsed || config->package_path || config->interactive)) {
         fprintf(stderr,
                 "--debug-protocol requires exactly one --file and cannot "
-                "be combined with --parsed, --tdb, --eval, or a package\n");
+                "be combined with --parsed, --tdb, --eval, --interactive, "
+                "or a package\n");
         return TF_ERR;
     }
     return TF_OK;

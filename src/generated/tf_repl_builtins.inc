@@ -4,5 +4,14 @@ static const tf_builtin_word repl_words[] = {
     {"hints", hints_toggle},
     {"trace", trace_toggle},
     {"tdb", tdb_toggle},
+    {"load", load_file},
+    {NULL, NULL},
+};
+
+static const tf_builtin_word repl_direct_words[] = {
+    {"help", help_show},
+    {"hints", hints_toggle},
+    {"trace", trace_toggle},
+    {"tdb", tdb_toggle},
     {NULL, NULL},
 };

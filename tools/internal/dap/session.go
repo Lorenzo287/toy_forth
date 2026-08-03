@@ -77,7 +77,10 @@ func startDebugSession(config sessionConfig) (*debugSession, machineEvent, error
 	}
 
 	args := []string{"--debug-protocol", "--file", program}
-	args = append(args, config.Args...)
+	if len(config.Args) > 0 {
+		args = append(args, "--")
+		args = append(args, config.Args...)
+	}
 	cmd := exec.Command(runtimeExecutable, args...)
 	cmd.Dir = config.Cwd
 	if cmd.Dir == "" {

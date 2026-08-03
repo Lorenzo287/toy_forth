@@ -42,6 +42,7 @@ static bool hints_enabled = true;
 static bool trace_enabled = true;
 static bool debugger_enabled = false;
 static bool debugger_control_initialized = false;
+static bool repl_show_parsed = false;
 static tf_debug_control debugger_control;
 static int hints_color = 90;  // Bright black / Gray
 static int history_atexit_registered = 0;
@@ -68,6 +69,7 @@ static tf_ret help_show(tf_ctx *ctx);
 static tf_ret hints_toggle(tf_ctx *ctx);
 static tf_ret trace_toggle(tf_ctx *ctx);
 static tf_ret tdb_toggle(tf_ctx *ctx);
+static tf_ret load_file(tf_ctx *ctx);
 static tf_native_fn repl_command_for_source(tf_ctx *ctx, const char *source);
 static void print_word_grid(const char *title, const char **names, size_t count);
 static tf_debug_action repl_debug_hook(tf_ctx *ctx,
@@ -131,6 +133,63 @@ void tf_tdb_set_enabled(tf_ctx *ctx, bool enabled) {
 
 static tf_ret tdb_toggle(tf_ctx *ctx) {
     tf_tdb_set_enabled(ctx, !debugger_enabled);
+    return TF_OK;
+}
+
+static tf_ret load_file(tf_ctx *ctx) {
+    if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_STR)) return TF_ERR;
+    tf_obj *path = tf_stack_pop_type(ctx, TF_OBJ_TYPE_STR);
+
+    FILE *fp = fopen(path->str.ptr, "rb");
+    if (!fp) {
+        tf_ctx_runtime_errorf(ctx, "'load' failed to open '%s': %s\n",
+                              path->str.ptr, strerror(errno));
+        tf_obj_release(path);
+        return TF_ERR;
+    }
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        tf_ctx_runtime_errorf(ctx, "'load' failed to seek '%s': %s\n",
+                              path->str.ptr, strerror(errno));
+        fclose(fp);
+        tf_obj_release(path);
+        return TF_ERR;
+    }
+    long file_size = ftell(fp);
+    if (file_size < 0 || fseek(fp, 0, SEEK_SET) != 0) {
+        tf_ctx_runtime_errorf(ctx, "'load' failed to read '%s': %s\n",
+                              path->str.ptr, strerror(errno));
+        fclose(fp);
+        tf_obj_release(path);
+        return TF_ERR;
+    }
+
+    size_t size = (size_t)file_size;
+    char *source = tf_xmalloc(size + 1);
+    size_t n_read = fread(source, 1, size, fp);
+    if (n_read != size) {
+        tf_ctx_runtime_errorf(ctx, "'load' failed to read '%s'\n",
+                              path->str.ptr);
+        free(source);
+        fclose(fp);
+        tf_obj_release(path);
+        return TF_ERR;
+    }
+    source[n_read] = '\0';
+    fclose(fp);
+
+    tf_obj *program = tf_parse_source(ctx, path->str.ptr, source);
+    free(source);
+    tf_obj_release(path);
+    if (!program) return TF_ERR;
+
+    if (repl_show_parsed) {
+        printf("=== Parsed loaded program ===\n");
+        size_t count = 0;
+        tf_obj_print(program, &count);
+        printf("\n\n");
+    }
+    tf_frame_push_program_package(ctx, program, TF_ROOT_PACKAGE);
+    tf_obj_release(program);
     return TF_OK;
 }
 
@@ -545,8 +604,8 @@ static tf_native_fn repl_command_for_source(tf_ctx *ctx, const char *source) {
     while (end > source && isspace((unsigned char)end[-1])) end--;
     size_t len = (size_t)(end - source);
 
-    for (size_t i = 0; repl_words[i].name; i++) {
-        const tf_builtin_word *builtin = &repl_words[i];
+    for (size_t i = 0; repl_direct_words[i].name; i++) {
+        const tf_builtin_word *builtin = &repl_direct_words[i];
         if (strlen(builtin->name) == len &&
             memcmp(source, builtin->name, len) == 0 &&
             native_word_is_active(ctx, builtin)) {
@@ -703,6 +762,7 @@ tf_ret tf_run_repl(tf_ctx *ctx, bool show_parsed) {
     tf_ret repl_result = TF_OK;
 
     reset_state(&state);
+    repl_show_parsed = show_parsed;
     init_repl_ui(ctx);
     printf("%sToy REPL%s\n", tf_terminal_color(TF_CLR_RESET),
            tf_terminal_color(TF_CLR_RESET));
@@ -811,6 +871,7 @@ tf_ret tf_run_repl(tf_ctx *ctx, bool show_parsed) {
     }
 
     free_repl_ui(ctx);
+    repl_show_parsed = false;
     free(source);
     return repl_result;
 }

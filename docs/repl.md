@@ -27,6 +27,37 @@ even when they support more than one representation.
 Type `trace` to toggle the automatic stack display. Type `hints` to toggle
 syntax-aware input hints.
 
+## Continuing after execution
+
+Use `-i` or `--interactive` to enter the REPL after a package, source file, or
+`--eval` program finishes successfully. The REPL keeps the same context, so
+definitions, imported packages, and stack values remain available:
+
+```console
+toy --file experiment.toy -i
+toy --eval "'double [ 2 * ] def" --interactive
+toy --interactive examples/graphs/demo
+```
+
+The initial program still runs normally. With `--tdb`, debugging starts at its
+beginning and remains enabled when the REPL opens. To preload a file without
+stepping through it and debug only a later call, omit `--tdb`, then toggle `tdb`
+inside the REPL.
+
+The REPL also provides a `load` word for adding a source file to an existing
+session:
+
+```toy
+"experiments/helpers.toy" load
+```
+
+`load` has stack effect `path --`. It evaluates the file in the root context,
+including its top-level effects, and preserves its filename in diagnostics and
+debugger locations. Relative paths are resolved from the process working
+directory, as with `--file`. The word exists only in the REPL; standalone files
+and packages continue to use imports for reusable code. Loading a file again
+re-executes it in the current state rather than resetting the session.
+
 Definitions persist for the whole REPL session.
 
 The data stack also persists. By default, the REPL prints the stack after each

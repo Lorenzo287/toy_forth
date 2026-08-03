@@ -1,8 +1,9 @@
 
 \ System utility regressions.
 
-argc 1 == check
+argc 2 == check
 argv 0 at "toy-test-argument" == check
+argv 1 at "--toy-test-option" == check
 
 \ Testing set-env
 "TEST_VAR" "TEST_VALUE" set-env

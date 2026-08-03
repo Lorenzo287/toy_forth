@@ -225,6 +225,7 @@ static const tf_doc_entry builtin_docs[] = {
     {"hints", "--", "", "Toggle REPL inline stack-effect hints."},
     {"trace", "--", "", "Toggle REPL stack display after successful input."},
     {"tdb", "--", "", "Toggle the terminal debugger for subsequent REPL input."},
+    {"load", "path --", "", "Evaluate a Toy source file in the current REPL context."},
 };
 
 const tf_doc_entry *tf_doc_entries(size_t *count) {

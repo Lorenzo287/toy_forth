@@ -1895,6 +1895,13 @@
       "cFunction": "tdb_toggle",
       "stackEffect": "--",
       "description": "Toggle the terminal debugger for subsequent REPL input."
+    },
+    {
+      "name": "load",
+      "cFunction": "load_file",
+      "stackEffect": "path --",
+      "description": "Evaluate a Toy source file in the current REPL context.",
+      "direct": false
     }
   ]
 }

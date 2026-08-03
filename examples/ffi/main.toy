@@ -1,5 +1,5 @@
 \ Pass a C runtime library as the first argument.
-\ Windows: toy --file examples\ffi\main.toy msvcrt.dll
+\ Windows: toy --file examples\ffi\main.toy -- msvcrt.dll
 \ Common Unix names include libc.so.6 and /usr/lib/libSystem.B.dylib.
 
 "core:ffi" 'c import-as

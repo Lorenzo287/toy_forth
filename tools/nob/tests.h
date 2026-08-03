@@ -155,7 +155,8 @@ static bool run_toy_case(const Build_Config *config, const char *root,
     const char *work_absolute = temp_sprintf("%s/%s", root, work_relative);
     Nob_Log_Level previous_level = minimal_log_level;
     minimal_log_level = WARNING;
-    bool prepared = remove_tree(work_relative) && ensure_directory(work_relative);
+    bool prepared =
+        remove_tree(work_relative) && ensure_directory(work_relative);
     minimal_log_level = previous_level;
     if (!prepared) {
         return false;
@@ -176,7 +177,8 @@ static bool run_toy_case(const Build_Config *config, const char *root,
     if (!set_current_dir(work_absolute)) return false;
     Cmd command = {0};
     cmd_append(&command, toy_absolute, "--file", "testlib.toy",
-               "--file", filename, "toy-test-argument");
+               "--file", filename, "--", "toy-test-argument",
+               "--toy-test-option");
     int exit_code = 0;
     bool ran = run_captured(&command, NULL, "stdout.txt", "stderr.txt",
                             &exit_code);
@@ -237,7 +239,8 @@ static bool run_debug_protocol_test(const Build_Config *config,
     const char *work_absolute = temp_sprintf("%s/%s", root, work_relative);
     Nob_Log_Level previous_level = minimal_log_level;
     minimal_log_level = WARNING;
-    bool prepared = remove_tree(work_relative) && ensure_directory(work_relative);
+    bool prepared =
+        remove_tree(work_relative) && ensure_directory(work_relative);
     minimal_log_level = previous_level;
     if (!prepared) {
         return false;
@@ -283,6 +286,138 @@ static bool run_debug_protocol_test(const Build_Config *config,
     if (!ok) print_test_streams(&stdout_text, &stderr_text);
     da_free(stdout_text);
     da_free(stderr_text);
+    return ok;
+}
+
+static bool run_repl_interactive_load_test(const Build_Config *config,
+                                           const char *root) {
+    const char *name = "test_repl_interactive_load";
+    if (!test_matches_filter(config, name)) return true;
+
+    const char *work_relative = temp_sprintf("%s/test-work/%s",
+                                             config->build_dir, name);
+    const char *work_absolute = temp_sprintf("%s/%s", root, work_relative);
+    Nob_Log_Level previous_level = minimal_log_level;
+    minimal_log_level = WARNING;
+    bool prepared = remove_tree(work_relative) && ensure_directory(work_relative);
+    minimal_log_level = previous_level;
+    if (!prepared) return false;
+
+    const char preload[] = "'preloaded [ 40 ] def\n";
+    const char loaded[] = "'loaded [ 2 + ] def\n";
+    const char commands[] =
+        "trace\n"
+        "preloaded 2 + print\n"
+        "\"loaded.toy\" load\n"
+        "40 loaded print\n"
+        "'load word? print\n";
+    if (!write_entire_file(temp_sprintf("%s/preload.toy", work_relative),
+                           preload, sizeof(preload) - 1) ||
+        !write_entire_file(temp_sprintf("%s/loaded.toy", work_relative),
+                           loaded, sizeof(loaded) - 1) ||
+        !write_entire_file(temp_sprintf("%s/commands.txt", work_relative),
+                           commands, sizeof(commands) - 1)) {
+        return false;
+    }
+
+    const char *toy_absolute = temp_sprintf("%s/%s", root, config->toy_exe);
+    if (!set_current_dir(work_absolute)) return false;
+    Cmd command = {0};
+    cmd_append(&command, toy_absolute, "--file", "preload.toy", "-i");
+    int exit_code = 0;
+    bool ran = run_captured(&command, "commands.txt", "stdout.txt",
+                            "stderr.txt", &exit_code);
+    bool restored = set_current_dir(root);
+    if (!ran || !restored) return false;
+
+    String_Builder stdout_text = {0};
+    String_Builder stderr_text = {0};
+    bool ok = exit_code == 0 &&
+              read_normalized(temp_sprintf("%s/stdout.txt", work_relative),
+                              &stdout_text) &&
+              read_normalized(temp_sprintf("%s/stderr.txt", work_relative),
+                              &stderr_text);
+    const char *expected = "trace: off\n42\nok\nok\n42\nok\ntrue\nok\n";
+    if (ok) {
+        ok = stderr_text.count == 1 &&
+             strstr(stdout_text.items, "Toy REPL\n") != NULL &&
+             strstr(stdout_text.items, expected) != NULL;
+    }
+    fprintf(stderr, "[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    if (!ok) print_test_streams(&stdout_text, &stderr_text);
+    da_free(stdout_text);
+    da_free(stderr_text);
+    return ok;
+}
+
+static bool run_cli_argument_separator_test(const Build_Config *config,
+                                            const char *root) {
+    const char *name = "test_cli_argument_separator";
+    if (!test_matches_filter(config, name)) return true;
+
+    const char *work_relative = temp_sprintf("%s/test-work/%s",
+                                             config->build_dir, name);
+    Nob_Log_Level previous_level = minimal_log_level;
+    minimal_log_level = WARNING;
+    bool prepared =
+        remove_tree(work_relative) && ensure_directory(work_relative);
+    minimal_log_level = previous_level;
+    if (!prepared) return false;
+
+    const char *toy = temp_sprintf("%s/%s", root, config->toy_exe);
+    const char *valid_source =
+        "argc 2 == argv 0 at \"value\" == and "
+        "argv 1 at \"--program-option\" == and print";
+    Cmd valid = {0};
+    cmd_append(&valid, toy, "--eval", valid_source, "--", "value",
+               "--program-option");
+    int valid_exit = 0;
+    bool valid_ran = run_captured(
+        &valid, NULL, temp_sprintf("%s/valid.stdout", work_relative),
+        temp_sprintf("%s/valid.stderr", work_relative), &valid_exit);
+
+    String_Builder valid_output = {0};
+    String_Builder valid_diagnostic = {0};
+    bool ok = valid_ran && valid_exit == 0 &&
+              read_normalized(temp_sprintf("%s/valid.stdout", work_relative),
+                              &valid_output) &&
+              read_normalized(temp_sprintf("%s/valid.stderr", work_relative),
+                              &valid_diagnostic) &&
+              strcmp(valid_output.items, "true\n") == 0 &&
+              valid_diagnostic.count == 1;
+    da_free(valid_output);
+    da_free(valid_diagnostic);
+
+    Cmd missing_separator = {0};
+    cmd_append(&missing_separator, toy, "--eval", "argc print", "value");
+    int missing_exit = 0;
+    bool missing_ran = run_captured(
+        &missing_separator, NULL,
+        temp_sprintf("%s/missing.stdout", work_relative),
+        temp_sprintf("%s/missing.stderr", work_relative), &missing_exit);
+    String_Builder missing_diagnostic = {0};
+    ok = ok && missing_ran && missing_exit == 1 &&
+         read_normalized(temp_sprintf("%s/missing.stderr", work_relative),
+                         &missing_diagnostic) &&
+         strstr(missing_diagnostic.items,
+                "program arguments must follow '--'") != NULL;
+    da_free(missing_diagnostic);
+
+    Cmd unknown_option = {0};
+    cmd_append(&unknown_option, toy, "--eval", "argc print", "--unknown");
+    int unknown_exit = 0;
+    bool unknown_ran = run_captured(
+        &unknown_option, NULL,
+        temp_sprintf("%s/unknown.stdout", work_relative),
+        temp_sprintf("%s/unknown.stderr", work_relative), &unknown_exit);
+    String_Builder unknown_diagnostic = {0};
+    ok = ok && unknown_ran && unknown_exit == 1 &&
+         read_normalized(temp_sprintf("%s/unknown.stderr", work_relative),
+                         &unknown_diagnostic) &&
+         strstr(unknown_diagnostic.items, "unknown option '--unknown'") != NULL;
+    da_free(unknown_diagnostic);
+
+    fprintf(stderr, "[%s] %s\n", ok ? "PASS" : "FAIL", name);
     return ok;
 }
 
@@ -374,6 +509,14 @@ static bool run_toy_tests(const Build_Config *config, const char *root,
     if (test_matches_filter(config, "test_debug_protocol_transport")) {
         ++selected;
         if (!run_debug_protocol_test(config, root)) ok = false;
+    }
+    if (test_matches_filter(config, "test_repl_interactive_load")) {
+        ++selected;
+        if (!run_repl_interactive_load_test(config, root)) ok = false;
+    }
+    if (test_matches_filter(config, "test_cli_argument_separator")) {
+        ++selected;
+        if (!run_cli_argument_separator_test(config, root)) ok = false;
     }
     for (size_t i = 0; i < ARRAY_LEN(package_test_cases); ++i) {
         const Package_Test_Case *test = &package_test_cases[i];

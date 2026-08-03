@@ -74,6 +74,9 @@ function loadManifest() {
     if (!/^[a-z][a-z0-9_]*$/.test(word.cFunction)) {
       fail(`${prefix}.cFunction is not a static C function identifier`);
     }
+    if (word.direct !== undefined && typeof word.direct !== 'boolean') {
+      fail(`${prefix}.direct must be a boolean`);
+    }
     if (wordNames.has(word.name)) fail(`duplicate word: ${word.name}`);
     wordNames.add(word.name);
   }
@@ -190,6 +193,11 @@ function renderReplRegistry(manifest) {
     'static const tf_builtin_word repl_words[] = {',
   ];
   for (const word of manifest.replWords) {
+    lines.push(`    {${cString(word.name)}, ${word.cFunction}},`);
+  }
+  lines.push('    {NULL, NULL},', '};', '');
+  lines.push('static const tf_builtin_word repl_direct_words[] = {');
+  for (const word of manifest.replWords.filter((entry) => entry.direct !== false)) {
     lines.push(`    {${cString(word.name)}, ${word.cFunction}},`);
   }
   lines.push('    {NULL, NULL},', '};', '');

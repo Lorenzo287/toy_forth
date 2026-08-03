@@ -37,7 +37,7 @@ On Linux, add `-fPIC` and use `toy_clib.so`; on macOS use `-dynamiclib` and
 `toy_clib.dylib`. Run the result with:
 
 ```console
-toy --file demos/clib.toy clib
+toy --file demos/clib.toy -- clib
 ```
 
 As an optional shortcut, `toy-c-package clib clib/generated.c` performs the
@@ -64,7 +64,7 @@ Then run it. `toy-c-package stdio stdio/generated.c` is the optional helper for
 the compiler and manifest steps.
 
 ```console
-toy --file demos/stdio.toy stdio demos/stdio.toy
+toy --file demos/stdio.toy -- stdio demos/stdio.toy
 ```
 
 These standard-C functions need no additional library configuration. See
@@ -97,7 +97,7 @@ The helper equivalent is:
 
 ```console
 toy-c-package sqlite sqlite/generated.c --include path/to/sqlite/include --lib path/to/sqlite/lib/sqlite3.lib
-toy --file demos/sqlite.toy sqlite
+toy --file demos/sqlite.toy -- sqlite
 ```
 
 The compiler must match the SQLite library's ABI. The separate

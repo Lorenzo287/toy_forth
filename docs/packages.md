@@ -40,8 +40,12 @@ toy project/app
 ```
 
 An executable package is named `main` and exports a public `main` word. That
-word has no special syntax or implicit parameters. Arguments after the package
-directory are available through `argc` and `argv`.
+word has no special syntax or implicit parameters. Arguments after `--` are
+available through `argc` and `argv`:
+
+```console
+toy project/app -- first --program-option
+```
 
 ## Declarations and Visibility
 
@@ -112,9 +116,14 @@ toy --eval "1 2 + print"
 toy --file examples/factorial.toy
 ```
 
-`--file` may be repeated; all files run in the same state. Arguments after the
-last file are available through `argc` and `argv`. Root code may import
-packages, with relative imports resolved from the process working directory.
+`--file` may be repeated; all files run in the same state. Arguments after `--`
+are available through `argc` and `argv`; option-like arguments are passed
+through unchanged. Root code may import packages, with relative imports
+resolved from the process working directory.
+Add `-i` or `--interactive` to enter the REPL afterward with the same
+definitions, imports, stack, and runtime state. The REPL-only `load` word can
+evaluate another file later; it is intended for interactive exploration, not
+as an alternative package mechanism.
 
 ## Packages Backed by C
 

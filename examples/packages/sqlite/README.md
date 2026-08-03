@@ -46,7 +46,7 @@ import/shared library means SQLite's runtime library must also be discoverable
 by the operating system. Run the example package with:
 
 ```console
-toy --file demos/people.toy .
+toy --file demos/people.toy -- .
 ```
 
 The demo imports the package path passed as its first argument; no global

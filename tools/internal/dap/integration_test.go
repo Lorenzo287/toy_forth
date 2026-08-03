@@ -28,7 +28,7 @@ func TestDAPEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	program, err := filepath.Abs(filepath.Join("..", "..", "..", "..",
+	program, err := filepath.Abs(filepath.Join("..", "..", "..",
 		"tests", "toy", "test_debug_protocol.toy"))
 	if err != nil {
 		t.Fatal(err)
@@ -110,6 +110,7 @@ func TestDAPEndToEnd(t *testing.T) {
 		"program":           program,
 		"runtimeExecutable": runtimeExecutable,
 		"cwd":               filepath.Dir(program),
+		"args":              []string{"--debuggee-option"},
 		"stopOnEntry":       true,
 	})
 	expect("response", "launch")
@@ -144,7 +145,7 @@ func TestDAPEndToEnd(t *testing.T) {
 	if err := json.Unmarshal(stackTrace.Body, &stackTraceBody); err != nil {
 		t.Fatal(err)
 	}
-	if len(stackTraceBody.StackFrames) == 0 || stackTraceBody.StackFrames[0].Line != 1 {
+	if len(stackTraceBody.StackFrames) == 0 || stackTraceBody.StackFrames[0].Line != 2 {
 		t.Fatalf("unexpected entry frames: %#v", stackTraceBody.StackFrames)
 	}
 	send("scopes", map[string]any{"frameId": stackTraceBody.StackFrames[0].ID})

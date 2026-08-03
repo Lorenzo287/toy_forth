@@ -5,7 +5,7 @@ argument, and calls `strlen`. Run it directly from the SDK without changing the
 SDK. Replace `path/to/toy` with its directory:
 
 ```console
-toy --file path/to/toy/examples/ffi/main.toy msvcrt.dll
+toy --file path/to/toy/examples/ffi/main.toy -- msvcrt.dll
 ```
 
 Use the appropriate C runtime library name on other platforms. See

@@ -28,7 +28,7 @@ extension = toy_basic.dll
 Then run the demo:
 
 ```console
-toy --file demos/basic.toy .
+toy --file demos/basic.toy -- .
 ```
 
 ## Optional Helper
@@ -38,5 +38,5 @@ commands it runs:
 
 ```console
 toy-c-package . toy_basic.c
-toy --file demos/basic.toy .
+toy --file demos/basic.toy -- .
 ```

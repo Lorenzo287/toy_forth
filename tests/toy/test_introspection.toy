@@ -31,6 +31,7 @@
 'bye word? false == check
 'time word? false == check
 'clock word? false == check
+'load word? false == check
 words vector? true == check
 words [ symbol? ] all true == check
 "X" >symbol dup symbol? true == check name "X" == check

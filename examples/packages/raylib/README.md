@@ -39,8 +39,8 @@ toy-c-package . toy_raylib.c --include path/to/raylib/include --lib path/to/rayl
 Run either standalone demo, passing the package directory first:
 
 ```console
-toy --file demos/shapes.toy .
-toy --file demos/texture.toy . path/to/image.png
+toy --file demos/shapes.toy -- .
+toy --file demos/texture.toy -- . path/to/image.png
 ```
 
 Both demos import the exact package directory supplied on the command line.
