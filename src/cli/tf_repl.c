@@ -597,7 +597,7 @@ static void print_word_grid_formatted(const char *title, const char **names,
         }
         printf("\n");
     }
-    printf("\n");
+    if (strcmp(title, "Packages")) printf("\n");
 }
 
 static void print_word_grid(const char *title, const char **names,
