@@ -643,6 +643,23 @@ static tf_ret install_scan(tf_ctx *ctx, package_scan *scan,
     return TF_OK;
 }
 
+static void apply_core_package_docs(tf_ctx *ctx, size_t package_index,
+                                    const char *request) {
+    const tf_package_doc *docs = tf_core_package_doc_lookup(request);
+    const tf_package *package = tf_package_get(ctx, package_index);
+    if (!docs || !package || package->name_len != strlen(docs->name) ||
+        memcmp(package->name, docs->name, package->name_len) != 0) {
+        return;
+    }
+
+    for (size_t i = 0; i < docs->word_count; i++) {
+        const tf_doc_entry *word = &docs->words[i];
+        tf_dict_set_doc_scoped(ctx, package_index, word->name,
+                               strlen(word->name), word->stack_effect,
+                               word->description);
+    }
+}
+
 tf_ret tf_package_load(tf_ctx *ctx, const char *request,
                        size_t owner_package_index, const char *alias,
                        size_t alias_len, size_t *package_index_out) {
@@ -674,6 +691,7 @@ tf_ret tf_package_load(tf_ctx *ctx, const char *request,
             free(directory);
             return TF_ERR;
         }
+        apply_core_package_docs(ctx, existing, request);
         const char *import_name = alias ? alias : package->name;
         size_t import_len = alias ? alias_len : package->name_len;
         if (!tf_package_import_add(ctx, owner_package_index, import_name,
@@ -701,6 +719,7 @@ tf_ret tf_package_load(tf_ctx *ctx, const char *request,
     tf_ret status = install_scan(ctx, &scan, directory, package_index);
     tf_package_finish(ctx, package_index, status);
     if (status == TF_OK) {
+        apply_core_package_docs(ctx, package_index, request);
         const char *import_name = alias ? alias : scan.name;
         size_t import_len = alias ? alias_len : scan.name_len;
         if (!tf_package_import_add(ctx, owner_package_index, import_name,

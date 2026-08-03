@@ -717,9 +717,10 @@ static bool contains_ascii_casefold(const char *haystack, size_t haystack_len,
     return false;
 }
 
-static const tf_doc_entry *word_doc(tf_word *word, tf_doc_entry *scratch) {
-    if (!word || word->type != TF_WORD_NATIVE) return NULL;
-    if (word->package_index == TF_ROOT_PACKAGE) {
+const tf_doc_entry *tf_word_doc(tf_word *word, tf_doc_entry *scratch) {
+    if (!word) return NULL;
+    if (word->package_index == TF_ROOT_PACKAGE &&
+        word->type == TF_WORD_NATIVE) {
         return tf_doc_lookup(word->name);
     }
     if (!word->doc_stack_effect && !word->doc_description) return NULL;
@@ -740,7 +741,7 @@ static bool word_matches_query(tf_word *word, const char *query,
     }
 
     tf_doc_entry scratch;
-    const tf_doc_entry *doc = word_doc(word, &scratch);
+    const tf_doc_entry *doc = tf_word_doc(word, &scratch);
     return doc &&
            (contains_ascii_casefold(doc->stack_effect, strlen(doc->stack_effect),
                                     query, query_len) ||
@@ -797,25 +798,29 @@ tf_ret tf_doc(tf_ctx *ctx) {
         return TF_ERR;
     }
 
+    tf_doc_entry scratch;
+    const tf_doc_entry *entry = tf_word_doc(word, &scratch);
+    if (!entry) {
+        tf_ctx_runtime_errorf(ctx,
+                              "no documentation is available for word '%s'\n",
+                              name->str.ptr);
+        tf_obj_release(name);
+        return TF_ERR;
+    }
+
     strbuf buf;
     strbuf_init(&buf);
-    tf_doc_entry scratch;
-    const tf_doc_entry *entry = word_doc(word, &scratch);
-    if (entry) {
-        strbuf_append_cstr(&buf, name->str.ptr);
-        if (entry->stack_effect[0] != '\0') {
-            strbuf_append_cstr(&buf, "\nstack: ");
-            strbuf_append_cstr(&buf, entry->stack_effect);
-        }
-        if (entry->syntax[0] != '\0') {
-            strbuf_append_cstr(&buf, "\nsyntax: ");
-            strbuf_append_cstr(&buf, entry->syntax);
-        }
-        if (entry->description[0] != '\0') strbuf_append_char(&buf, '\n');
-        strbuf_append_cstr(&buf, entry->description);
-    } else {
-        strbuf_append_word_source(&buf, word);
+    strbuf_append_cstr(&buf, name->str.ptr);
+    if (entry->stack_effect[0] != '\0') {
+        strbuf_append_cstr(&buf, "\nstack: ");
+        strbuf_append_cstr(&buf, entry->stack_effect);
     }
+    if (entry->syntax[0] != '\0') {
+        strbuf_append_cstr(&buf, "\nsyntax: ");
+        strbuf_append_cstr(&buf, entry->syntax);
+    }
+    if (entry->description[0] != '\0') strbuf_append_char(&buf, '\n');
+    strbuf_append_cstr(&buf, entry->description);
 
     tf_stack_push(ctx, tf_obj_new_string_take(buf.ptr, buf.len));
     tf_obj_release(name);

@@ -137,6 +137,16 @@ static void dict_set_doc(tf_word *word, const char *stack_effect,
     }
 }
 
+bool tf_dict_set_doc_scoped(tf_ctx *ctx, size_t package_index,
+                            const char *name, size_t name_len,
+                            const char *stack_effect,
+                            const char *description) {
+    tf_word *word = tf_dict_lookup_scoped(ctx, package_index, name, name_len);
+    if (!word) return false;
+    dict_set_doc(word, stack_effect, description);
+    return true;
+}
+
 static void dict_set_native(tf_ctx *ctx, const char *name, tf_native_fn cb,
                             bool copy_name) {
     size_t name_len = strlen(name);

@@ -756,7 +756,7 @@ var builtinDocs = map[string]builtinDoc{
 	},
 	"doc": {
 		StackEffect: "'name -- string",
-		Description: "Push documentation for a defined word as a string.",
+		Description: "Push documentation for a documented word as a string, failing when none is available.",
 	},
 	"search-words": {
 		StackEffect: "query -- vector",

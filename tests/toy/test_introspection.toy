@@ -9,7 +9,7 @@
 'symmetric-difference doc "left-only" contains? true == check
 'proper-subset? doc "strict subset" contains? true == check
 'proper-superset? doc "strict superset" contains? true == check
-'twice doc "'twice [ dup + ] def" == check
+[ 'twice doc ] [ "no documentation" contains? ] try check
 ":" >symbol word? false == check
 "priority" search-words dup 'pq-push contains? true == check drop
 'see search-words 'see contains? true == check

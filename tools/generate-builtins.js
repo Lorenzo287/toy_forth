@@ -186,7 +186,7 @@ function renderReplRegistry(manifest) {
   return lines.join('\n');
 }
 
-function renderRuntimeDocs(manifest) {
+function renderRuntimeDocs(manifest, corePackages) {
   const words = [...nativeWords(manifest), ...manifest.replWords];
   const lines = [
     '#include "tf_docs.h"',
@@ -212,6 +212,40 @@ function renderRuntimeDocs(manifest) {
     '    if (!name) return NULL;',
     '    for (size_t i = 0; i < sizeof(builtin_docs) / sizeof(builtin_docs[0]); i++) {',
     '        if (strcmp(builtin_docs[i].name, name) == 0) return &builtin_docs[i];',
+    '    }',
+    '    return NULL;',
+    '}',
+    ''
+  );
+
+  lines.push(`/* ${coreGeneratedComment} */`);
+  for (const [packageIndex, metadata] of corePackages.entries()) {
+    lines.push(`static const tf_doc_entry core_package_${packageIndex}_docs[] = {`);
+    for (const word of metadata.words) {
+      lines.push(
+        `    {${cString(word.name)}, ${cString(word.stackEffect)}, "", ${cString(word.description)}},`
+      );
+    }
+    lines.push('};', '');
+  }
+  lines.push('static const tf_package_doc core_docs[] = {');
+  for (const [packageIndex, metadata] of corePackages.entries()) {
+    lines.push(
+      `    {${cString(metadata.locator)}, ${cString(metadata.name)}, core_package_${packageIndex}_docs, sizeof(core_package_${packageIndex}_docs) / sizeof(core_package_${packageIndex}_docs[0])},`
+    );
+  }
+  lines.push(
+    '};',
+    '',
+    'const tf_package_doc *tf_core_package_docs(size_t *count) {',
+    '    if (count) *count = sizeof(core_docs) / sizeof(core_docs[0]);',
+    '    return core_docs;',
+    '}',
+    '',
+    'const tf_package_doc *tf_core_package_doc_lookup(const char *locator) {',
+    '    if (!locator) return NULL;',
+    '    for (size_t i = 0; i < sizeof(core_docs) / sizeof(core_docs[0]); i++) {',
+    '        if (strcmp(core_docs[i].locator, locator) == 0) return &core_docs[i];',
     '    }',
     '    return NULL;',
     '}',
@@ -419,7 +453,7 @@ function main() {
     ['src/generated/tf_builtins_decls.inc', renderCDeclarations(manifest)],
     ['src/generated/tf_builtins.inc', renderCRegistry(manifest)],
     ['src/generated/tf_repl_builtins.inc', renderReplRegistry(manifest)],
-    ['src/generated/tf_docs.c', renderRuntimeDocs(manifest)],
+    ['src/generated/tf_docs.c', renderRuntimeDocs(manifest, corePackages)],
     ['tools/internal/analysis/builtin_docs_generated.go', renderLspDocs(manifest)],
     ['tools/internal/analysis/core_package_docs_generated.go', renderLspCorePackageDocs(corePackages)],
     ['tools/tree-sitter-toy/builtin-words.js', renderTreeSitterWords(manifest)],

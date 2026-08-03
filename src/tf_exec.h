@@ -3,6 +3,7 @@
 
 #include <signal.h>
 #include "toy.h"
+#include "tf_docs.h"
 #include "tf_obj.h"
 #include "tf_random.h"
 
@@ -348,6 +349,10 @@ void tf_dict_add_native_scoped(tf_ctx *ctx, const char *name, size_t name_len,
                                size_t package_index, tf_native_fn cb,
                                const char *stack_effect,
                                const char *description);
+bool tf_dict_set_doc_scoped(tf_ctx *ctx, size_t package_index,
+                            const char *name, size_t name_len,
+                            const char *stack_effect,
+                            const char *description);
 bool tf_dict_set_user(tf_ctx *ctx, tf_obj *name, tf_obj *uf);
 bool tf_dict_set_user_in_package(tf_ctx *ctx, size_t package_index,
                                  tf_obj *name, tf_obj *uf);
@@ -363,6 +368,7 @@ void tf_dict_resolution_changed(tf_ctx *ctx);
 void tf_dict_lookup_cache_clear(tf_ctx *ctx);
 void tf_dict_each_visible(tf_ctx *ctx, tf_visible_word_fn visit,
                           void *userdata);
+const tf_doc_entry *tf_word_doc(tf_word *word, tf_doc_entry *scratch);
 
 /* Package registry, imports, and active lexical package. */
 size_t tf_current_package_index(tf_ctx *ctx);

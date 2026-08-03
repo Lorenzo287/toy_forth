@@ -556,7 +556,8 @@ static tf_native_fn repl_command_for_source(tf_ctx *ctx, const char *source) {
     return NULL;
 }
 
-static void print_word_grid(const char *title, const char **names, size_t count) {
+static void print_word_grid_formatted(const char *title, const char **names,
+                                      size_t count, bool quote_names) {
     if (count == 0) return;
 
     qsort(names, count, sizeof(*names), name_ptr_cmp);
@@ -567,7 +568,8 @@ static void print_word_grid(const char *title, const char **names, size_t count)
         if (len > longest) longest = len;
     }
 
-    size_t column_width = longest + 2;
+    size_t decoration_width = quote_names ? 2 : 0;
+    size_t column_width = longest + decoration_width + 2;
     size_t console_width = tf_terminal_width();
     size_t available = console_width > 2 ? console_width - 2 : 1;
     size_t columns = available / column_width;
@@ -583,16 +585,34 @@ static void print_word_grid(const char *title, const char **names, size_t count)
             size_t index = column * rows + row;
             if (index >= count) continue;
 
+            if (quote_names) printf("\"");
             printf("%s", names[index]);
+            if (quote_names) printf("\"");
             size_t next = (column + 1) * rows + row;
             if (next < count) {
-                size_t padding = column_width - strlen(names[index]);
+                size_t padding = column_width - strlen(names[index]) -
+                                 decoration_width;
                 printf("%*s", (int)padding, "");
             }
         }
         printf("\n");
     }
     printf("\n");
+}
+
+static void print_word_grid(const char *title, const char **names,
+                            size_t count) {
+    print_word_grid_formatted(title, names, count, false);
+}
+
+static void print_core_package_catalog(void) {
+    size_t count = 0;
+    const tf_package_doc *packages = tf_core_package_docs(&count);
+    const char **locators =
+        count ? tf_xmalloc(sizeof(*locators) * count) : NULL;
+    for (size_t i = 0; i < count; i++) locators[i] = packages[i].locator;
+    print_word_grid_formatted("Core packages", locators, count, true);
+    free(locators);
 }
 
 static void print_builtin_group(tf_ctx *ctx, const tf_builtin_group *group) {
@@ -611,23 +631,61 @@ static void print_builtin_group(tf_ctx *ctx, const tf_builtin_group *group) {
     free(names);
 }
 
+static void print_imported_package(tf_ctx *ctx,
+                                   const tf_package_import *imported) {
+    const char **names =
+        ctx->words.count ? tf_xmalloc(sizeof(*names) * ctx->words.count) : NULL;
+    size_t count = 0;
+    for (size_t i = 0; i < ctx->words.count; i++) {
+        tf_word *word = &ctx->words.entries[i];
+        if (word->package_index != imported->target_package_index ||
+            !word->is_public) {
+            continue;
+        }
+        size_t len = imported->name_len + 1 + word->name_len;
+        char *qualified = tf_xmalloc(len + 1);
+        memcpy(qualified, imported->name, imported->name_len);
+        qualified[imported->name_len] = '.';
+        memcpy(qualified + imported->name_len + 1, word->name,
+               word->name_len);
+        qualified[len] = '\0';
+        names[count++] = qualified;
+    }
+
+    print_word_grid(imported->name, names, count);
+
+    for (size_t i = 0; i < count; i++) free((void *)names[i]);
+    free(names);
+}
+
 static tf_ret help_show(tf_ctx *ctx) {
     size_t group_count = 0;
     const tf_builtin_group *groups = tf_builtin_groups(&group_count);
     for (size_t i = 0; i < group_count; i++) {
         print_builtin_group(ctx, &groups[i]);
+        if (strcmp(groups[i].title, "Packages") == 0) {
+            print_core_package_catalog();
+        }
     }
 
     const tf_builtin_group repl_group = {"REPL", repl_words};
     print_builtin_group(ctx, &repl_group);
 
+    size_t current_package = tf_current_package_index(ctx);
+    for (size_t i = 0; i < ctx->package_imports.len; i++) {
+        tf_package_import *imported = &ctx->package_imports.entries[i];
+        if (imported->owner_package_index == current_package) {
+            print_imported_package(ctx, imported);
+        }
+    }
+
     const char **user_names =
         ctx->words.count ? tf_xmalloc(sizeof(*user_names) * ctx->words.count) : NULL;
     size_t user_count = 0;
-    for (size_t i = 0; i < ctx->words.capacity; i++) {
-        size_t entry = ctx->words.buckets[i];
-        tf_word *word = entry ? &ctx->words.entries[entry - 1] : NULL;
-        if (word && word->type == TF_WORD_USER) {
+    for (size_t i = 0; i < ctx->words.count; i++) {
+        tf_word *word = &ctx->words.entries[i];
+        if (word->package_index == current_package &&
+            word->type == TF_WORD_USER) {
             user_names[user_count++] = word->name;
         }
     }
@@ -859,7 +917,8 @@ static char *repl_hints(const char *buf, int *color, int *bold) {
     tf_word *f = tf_dict_lookup(completion_ctx, sym);
     tf_obj_release(sym);
 
-    const tf_doc_entry *doc = tf_doc_lookup(token);
+    tf_doc_entry scratch;
+    const tf_doc_entry *doc = tf_word_doc(f, &scratch);
     if (doc && f) {
         *color = hints_color;
         *bold = 0;

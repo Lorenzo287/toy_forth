@@ -1,0 +1,13 @@
+"core:random" 'rng import-as
+"core:json" import
+
+'rng.shuffle doc
+"rng.shuffle\nstack: sequence -- sequence\nReturn a uniformly shuffled vector, list, or string while preserving its sequence type."
+== check
+
+'json.decode doc
+"json.decode\nstack: string -- value\nDecode one strict UTF-8 JSON document or raise an error."
+== check
+
+'rng.shuffle see "'shuffle [" starts-with? check
+"uniformly shuffled" search-words 'rng.shuffle contains? check

@@ -4,7 +4,7 @@
 'square word? true == check
 'square body [ dup * ] == check
 'square see "'square [ dup * ] def" == check
-'square doc "'square [ dup * ] def" == check
+[ 'square doc ] [ "no documentation" contains? ] try check
 
 \ Repeated execution resolves the same parsed call object.
 'cache-target [ 1 ] def

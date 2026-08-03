@@ -254,7 +254,8 @@ contracts and complexity guarantees.
 
 Toy includes file and process operations, clocks, environment access, and
 introspection. These words still follow the language's value-oriented style:
-`see` and `doc` return strings instead of deciding how to display them.
+`see` returns a source-like word definition, while `doc` returns its available
+documentation. Both return strings instead of deciding how to display them.
 
 ```toy
 "todo.txt" "ship README\nrun tests\n" write-file

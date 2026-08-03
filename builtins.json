@@ -1603,7 +1603,7 @@
           "cFunction": "tf_doc",
           "stackEffect": "'name -- string",
           "syntax": "",
-          "description": "Push documentation for a defined word as a string.",
+          "description": "Push documentation for a documented word as a string, failing when none is available.",
           "syntaxClass": "builtin"
         },
         {
@@ -1900,7 +1900,7 @@
       "name": "help",
       "cFunction": "help_show",
       "stackEffect": "--",
-      "description": "Show the categorized REPL word catalog."
+      "description": "Show builtins, available core packages, imported package words, and user words."
     },
     {
       "name": "hints",
