@@ -687,3 +687,13 @@ toy_status toy_fail(toy_state *state, const char *message) {
 void toy_interrupt(toy_state *state) {
     tf_ctx_interrupt(state);
 }
+
+void toy_random_seed(toy_state *state, int64_t seed) {
+    if (!state) return;
+    tf_random_seed(&state->random, (uint64_t)seed, UINT64_C(54));
+}
+
+bool toy_random_int(toy_state *state, int64_t lower, int64_t upper,
+                    int64_t *result) {
+    return state && tf_random_int_range(&state->random, lower, upper, result);
+}

@@ -26,12 +26,15 @@ random.float
 | `random.choice` | `sequence -- item` | Select one item uniformly from a non-empty vector, list, or string. |
 | `random.shuffle` | `sequence -- sequence` | Apply a uniform Fisher-Yates shuffle and preserve the sequence type. |
 
+The package is hybrid: its C extension implements state access, bounded draws,
+and unit floats, while its Toy source builds choice and shuffling from those
+package-local words. No random implementation words are installed globally.
+
 Every new interpreter state is seeded from operating-system entropy. Streams
 belong to their state, so creating or running another state does not perturb a
 program's draws. `random.seed` replaces that automatic seed with a reproducible
 one; the same integer then produces the same sequence on every supported
-platform. It also resets the stream observed by the low-level `rand` and
-`rand-int` builtins.
+platform and resets the stream observed by every other word in `core:random`.
 
 ```toy
 'rolls [ 6 [ 1 7 random.int ] replicate ] def

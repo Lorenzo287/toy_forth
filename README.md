@@ -381,7 +381,7 @@ manifest options.
 | Category                    | Words |
 | --------------------------- | ----- |
 | Stack                       | `dup`, `drop`, `swap`, `over`, `rot`, `swapd`, `nip`, `tuck`, `pick`, `roll`, `empty` |
-| Math                        | `+`, `-`, `*`, `/`, `%`, `mod`, `neg`, `abs`, `max`, `min`, `sqrt`, `pow`, `exp`, `log`, `log10`, `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `pred`, `succ`, `square`, `cube`, `pi`, `e`, `tau`, `inf`, `nan`, `inf?`, `nan?`, `rand`, `seed-rand`, `rand-int` |
+| Math                        | `+`, `-`, `*`, `/`, `%`, `mod`, `neg`, `abs`, `max`, `min`, `sqrt`, `pow`, `exp`, `log`, `log10`, `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `pred`, `succ`, `square`, `cube`, `pi`, `e`, `tau`, `inf`, `nan`, `inf?`, `nan?` |
 | Logic / Bitwise             | `and`, `or`, `xor`, `not`, `shl`, `shr` |
 | Comparison                  | `==`, `!=`, `<`, `>`, `<=`, `>=` |
 | Control                     | `exec`, `i`, `if`, `ifelse`, `while`, `cond`, `try`, `error` |

@@ -1,20 +1,24 @@
 {
   "name": "random",
   "locator": "core:random",
-  "kind": "source",
+  "kind": "hybrid",
+  "cArray": "random_words",
   "words": [
     {
       "name": "seed",
+      "cFunction": "random_seed_word",
       "stackEffect": "seed --",
       "description": "Deterministically reseed the interpreter's pseudorandom stream from an integer."
     },
     {
       "name": "int",
+      "cFunction": "random_int_word",
       "stackEffect": "lower upper -- n",
       "description": "Return an unbiased integer from lower up to, but not including, upper."
     },
     {
       "name": "float",
+      "cFunction": "random_float_word",
       "stackEffect": "-- f",
       "description": "Return a pseudorandom float greater than or equal to zero and less than one."
     },

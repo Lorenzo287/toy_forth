@@ -125,6 +125,13 @@ void toy_clear_error(toy_state *state);
 toy_status toy_fail(toy_state *state, const char *message);
 void toy_interrupt(toy_state *state);
 
+/* State-owned deterministic generator access for native packages. Seeding
+ * accepts every signed Toy integer. Integer ranges are half-open and unbiased;
+ * invalid bounds or null arguments return false. */
+void toy_random_seed(toy_state *state, int64_t seed);
+bool toy_random_int(toy_state *state, int64_t lower, int64_t upper,
+                    int64_t *result);
+
 /* Embedding API. */
 
 typedef void (*toy_write_fn)(void *userdata, const char *data, size_t length);
@@ -171,7 +178,7 @@ toy_status toy_run_package(toy_state *state, const char *path);
 
 /* C-extension ABI. */
 
-#define TOY_EXTENSION_ABI_VERSION 2u
+#define TOY_EXTENSION_ABI_VERSION 3u
 #define TOY_EXTENSION_ENTRY_SYMBOL "toy_extension_init"
 
 #if defined(_WIN32)
@@ -216,6 +223,9 @@ typedef struct {
     void (*clear_error)(toy_state *state);
     toy_status (*fail)(toy_state *state, const char *message);
     void (*interrupt)(toy_state *state);
+    void (*random_seed)(toy_state *state, int64_t seed);
+    bool (*random_int)(toy_state *state, int64_t lower, int64_t upper,
+                       int64_t *result);
 
     toy_value *(*value_retain)(toy_state *state, size_t depth);
     void (*value_release)(toy_value *value);
@@ -349,6 +359,15 @@ toy_status toy_fail(toy_state *state, const char *message) {
 
 void toy_interrupt(toy_state *state) {
     toy_extension_host->interrupt(state);
+}
+
+void toy_random_seed(toy_state *state, int64_t seed) {
+    toy_extension_host->random_seed(state, seed);
+}
+
+bool toy_random_int(toy_state *state, int64_t lower, int64_t upper,
+                    int64_t *result) {
+    return toy_extension_host->random_int(state, lower, upper, result);
 }
 
 toy_value *toy_value_retain(toy_state *state, size_t depth) {

@@ -96,19 +96,20 @@ function loadCorePackages() {
     requireString(metadata.name, `${prefix}.name`);
     requireString(metadata.locator, `${prefix}.locator`);
     requireString(metadata.kind, `${prefix}.kind`);
-    if (metadata.kind !== 'native' && metadata.kind !== 'source') {
-      fail(`${prefix}.kind must be native or source`);
+    if (metadata.kind !== 'native' && metadata.kind !== 'source' &&
+        metadata.kind !== 'hybrid') {
+      fail(`${prefix}.kind must be native, source, or hybrid`);
     }
     if (metadata.locator !== `core:${entry.name}`) {
       fail(`${prefix}.locator must be core:${entry.name}`);
     }
-    if (metadata.kind === 'native') {
+    if (metadata.kind === 'native' || metadata.kind === 'hybrid') {
       requireString(metadata.cArray, `${prefix}.cArray`);
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(metadata.cArray)) {
         fail(`${prefix}.cArray is not a C array identifier`);
       }
     } else if (metadata.cArray !== undefined) {
-      fail(`${prefix}.cArray is only valid for native packages`);
+      fail(`${prefix}.cArray is only valid for native or hybrid packages`);
     }
     if (!Array.isArray(metadata.words) || metadata.words.length === 0) {
       fail(`${prefix}.words must be a non-empty array`);
@@ -120,16 +121,25 @@ function loadCorePackages() {
       requireString(word.name, `${wordPrefix}.name`);
       requireString(word.stackEffect, `${wordPrefix}.stackEffect`);
       requireString(word.description, `${wordPrefix}.description`);
-      if (metadata.kind === 'native') {
+      if (metadata.kind === 'native' ||
+          (metadata.kind === 'hybrid' && word.cFunction !== undefined)) {
         requireString(word.cFunction, `${wordPrefix}.cFunction`);
         if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(word.cFunction)) {
           fail(`${wordPrefix}.cFunction is not a C function identifier`);
         }
       } else if (word.cFunction !== undefined) {
-        fail(`${wordPrefix}.cFunction is only valid for native packages`);
+        fail(`${wordPrefix}.cFunction is only valid for native or hybrid package words`);
       }
       if (names.has(word.name)) fail(`duplicate word in ${prefix}: ${word.name}`);
       names.add(word.name);
+    }
+    if (metadata.kind === 'hybrid') {
+      const nativeCount = metadata.words.filter(
+        (word) => word.cFunction !== undefined
+      ).length;
+      if (nativeCount === 0 || nativeCount === metadata.words.length) {
+        fail(`${prefix}.kind hybrid requires both C-backed and Toy-written words`);
+      }
     }
     packages.push({...metadata, directory: entry.name});
   }
@@ -277,7 +287,7 @@ function renderCorePackageWords(metadata) {
     `/* ${coreGeneratedComment} */`,
     `static const toy_native_word ${metadata.cArray}[] = {`,
   ];
-  for (const word of metadata.words) {
+  for (const word of metadata.words.filter((entry) => entry.cFunction)) {
     lines.push('    {');
     lines.push(`        .name = ${cString(word.name)},`);
     lines.push(`        .callback = ${word.cFunction},`);
@@ -460,7 +470,7 @@ function main() {
     ['tools/vscode-toy/syntaxes/toy.tmLanguage.json', renderVsCodeGrammar(manifest)],
     ['README.md', renderReadme(manifest, fs.readFileSync(readmePath, 'utf8'))],
   ]);
-  for (const metadata of corePackages.filter((pkg) => pkg.kind === 'native')) {
+  for (const metadata of corePackages.filter((pkg) => pkg.kind !== 'source')) {
     targets.set(
       `core/${metadata.directory}/generated_words.inc`,
       renderCorePackageWords(metadata)

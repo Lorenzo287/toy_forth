@@ -1164,14 +1164,6 @@
     "named": false
   },
   {
-    "type": "rand",
-    "named": false
-  },
-  {
-    "type": "rand-int",
-    "named": false
-  },
-  {
     "type": "range",
     "named": false
   },
@@ -1237,10 +1229,6 @@
   },
   {
     "type": "see",
-    "named": false
-  },
-  {
-    "type": "seed-rand",
     "named": false
   },
   {

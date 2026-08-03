@@ -160,6 +160,11 @@ toy_push_string(state, "Ada", 3);
 toy_make_map(state, 1);     /* leaves {"name" "Ada"} */
 ```
 
+Native packages can draw from the interpreter's state-owned generator with
+`toy_random_int()` and deterministically reset it with `toy_random_seed()`.
+These operations do not create global Toy words; `core:random` uses them to
+provide its package-scoped API.
+
 [`examples/embedding/values.c`](../examples/embedding/values.c) builds a map,
 traverses a returned value, and retains a Toy quotation as a callback.
 

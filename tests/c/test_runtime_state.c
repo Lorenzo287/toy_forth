@@ -153,21 +153,20 @@ int main(void) {
               first->random.increment != second->random.increment,
           "states receive independent system seeds");
 
-    tf_random_seed(&first->random, UINT64_C(42), UINT64_C(54));
-    tf_random_seed(&second->random, UINT64_C(42), UINT64_C(54));
-    CHECK(toy_eval(first, "<first-random>", "rand") == TOY_OK,
-          "evaluate first random word");
-    int64_t value = 0;
-    CHECK(toy_get_int(first, 0, &value) &&
-              value == (int64_t)UINT32_C(0xa15c02b7),
-          "rand uses the state's PCG32 stream");
-    CHECK(toy_pop(first, 1), "pop first random value");
-
-    CHECK(tf_random_u32(&second->random) == UINT32_C(0xa15c02b7),
+    toy_random_seed(first, 42);
+    toy_random_seed(second, 42);
+    int64_t first_value = 0;
+    int64_t second_value = 0;
+    CHECK(toy_random_int(first, 0, 100, &first_value) && first_value == 65,
+          "public random service uses the state's PCG32 stream");
+    CHECK(toy_random_int(second, 0, 100, &second_value) &&
+              second_value == first_value,
           "advancing one state does not affect another");
     toy_state *third = toy_state_new(NULL);
     CHECK(third, "third state creation");
-    CHECK(tf_random_u32(&second->random) == UINT32_C(0x7b47f409),
+    CHECK(toy_random_int(first, 0, 100, &first_value) &&
+              toy_random_int(second, 0, 100, &second_value) &&
+              first_value == second_value,
           "creating another state does not reseed existing states");
     toy_state_free(third);
 
@@ -195,7 +194,7 @@ int main(void) {
     CHECK(first->control_state_cache_len == first_cache_len,
           "closing another state preserves the first cache");
     CHECK(toy_eval(first, "<nested-result>", "len") == TOY_OK &&
-              toy_get_int(first, 0, &value) && value == 64 &&
+              toy_get_int(first, 0, &first_value) && first_value == 64 &&
               toy_pop(first, 1),
           "caller-owned values survive nested-state teardown");
     CHECK(toy_eval(first, "<first-after-close>", "3 [ 4 ] dip empty") ==

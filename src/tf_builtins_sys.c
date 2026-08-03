@@ -176,50 +176,6 @@ tf_ret tf_env_q(tf_ctx *ctx) {
     return TF_OK;
 }
 
-tf_ret tf_rand(tf_ctx *ctx) {
-    tf_stack_push(ctx, tf_obj_new_int((int64_t)tf_random_u32(&ctx->random)));
-    return TF_OK;
-}
-
-tf_ret tf_seed_rand(tf_ctx *ctx) {
-    if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_INT)) return TF_ERR;
-    tf_obj *seed = tf_stack_pop_type(ctx, TF_OBJ_TYPE_INT);
-    tf_random_seed(&ctx->random, (uint64_t)tf_obj_int_value(seed),
-                   UINT64_C(54));
-    tf_obj_release(seed);
-    return TF_OK;
-}
-
-tf_ret tf_rand_int(tf_ctx *ctx) {
-    if (!tf_ctx_require_type(ctx, 1, TF_OBJ_TYPE_INT) ||
-        !tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_INT)) {
-        return TF_ERR;
-    }
-    tf_obj *lower_obj = tf_stack_peek(ctx, 1);
-    tf_obj *upper_obj = tf_stack_peek(ctx, 0);
-    int64_t lower = tf_obj_int_value(lower_obj);
-    int64_t upper = tf_obj_int_value(upper_obj);
-    if (lower >= upper) {
-        tf_ctx_runtime_errorf(
-            ctx, "'%s' upper bound must be greater than lower bound\n",
-            ctx->current_word);
-        return TF_ERR;
-    }
-
-    int64_t result = 0;
-    if (!tf_random_int_range(&ctx->random, lower, upper, &result)) {
-        tf_ctx_runtime_errorf(ctx, "'%s' failed to generate a random integer\n",
-                              ctx->current_word);
-        return TF_ERR;
-    }
-    upper_obj = tf_stack_pop(ctx);
-    lower_obj = tf_stack_pop(ctx);
-    tf_stack_push(ctx, tf_obj_new_int(result));
-    tf_obj_release(lower_obj);
-    tf_obj_release(upper_obj);
-    return TF_OK;
-}
-
 tf_ret tf_sleep(tf_ctx *ctx) {
     if (!tf_ctx_require_type(ctx, 0, TF_OBJ_TYPE_INT)) return TF_ERR;
     tf_obj *ms_obj = tf_stack_peek(ctx, 0);

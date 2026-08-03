@@ -311,10 +311,12 @@ cleanup frees the owning state's empty slabs without touching another state.
 
 Each interpreter also owns an explicit PCG32 random stream. State creation seeds
 it from operating-system entropy, with a mixed unique fallback if entropy is
-unavailable. Creating or executing another state never reseeds that stream;
-`rand` is suitable for ordinary randomized algorithms but not cryptographic
-material. The range helper joins two 32-bit draws and uses rejection sampling,
-so signed half-open ranges do not inherit modulo bias.
+unavailable. Creating or executing another state never reseeds that stream.
+The `core:random` C extension reaches it through the public extension host API;
+no random implementation primitives enter Toy's global word dictionary. The
+range helper joins two 32-bit draws and uses rejection sampling, so signed
+half-open ranges do not inherit modulo bias. The generator is suitable for
+ordinary randomized algorithms but not cryptographic material.
 
 Predicate continuations keep up to 16 surrounding stack references inline and
 fall back to exact per-context scratch storage for deeper stacks. Collection

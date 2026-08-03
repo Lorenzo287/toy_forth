@@ -132,6 +132,8 @@ NOBDEF bool link_executable(const Build_Config *config, const char *output, cons
 NOBDEF bool run_generator(const Build_Config *config, const char *manifest, const char *output, const char *package_name);
 NOBDEF bool write_package_manifest(const char *directory, const char *name, const char *extension_file);
 NOBDEF bool build_core_ffi(const Build_Config *config, Compile_Commands *compile_commands);
+NOBDEF bool build_core_random(const Build_Config *config,
+                              Compile_Commands *compile_commands);
 NOBDEF bool stage_core_source_package(const Build_Config *config,
                                       const char *name);
 NOBDEF bool build_core(const Build_Config *config, Compile_Commands *compile_commands);
@@ -811,6 +813,31 @@ NOBDEF bool build_core_ffi(const Build_Config *config,
     return ok;
 }
 
+NOBDEF bool build_core_random(const Build_Config *config,
+                              Compile_Commands *compile_commands) {
+    const char *directory =
+        temp_sprintf("%s/random", config->core_package_dir);
+    if (!remove_tree(directory) || !ensure_directory(directory)) return false;
+
+    bool ok = copy_sdk_file("core/random/random.toy",
+                            temp_sprintf("%s/random.toy", directory)) &&
+              copy_sdk_file("core/random/words.json",
+                            temp_sprintf("%s/words.json", directory));
+    const char *extension_file = temp_sprintf("toy_random%s",
+                                              TOY_SHARED_SUFFIX_VALUE);
+    const char *output = temp_sprintf("%s/%s", directory, extension_file);
+    Build_Config random_config = *config;
+    random_config.libraries = (File_Paths){0};
+    if (ok) {
+        ok = build_extension_source(&random_config,
+                                    "core/random/toy_random.c", output,
+                                    compile_commands);
+    }
+    if (ok) ok = write_package_manifest(directory, "random", extension_file);
+    if (ok) nob_log(INFO, "built core package %s", output);
+    return ok;
+}
+
 NOBDEF bool stage_core_source_package(const Build_Config *config,
                                       const char *name) {
     const char *source = temp_sprintf("core/%s", name);
@@ -850,7 +877,7 @@ NOBDEF bool build_core(const Build_Config *config,
     if (ok) ok = link_executable(config, config->toy_exe, &cli_objects, true);
     if (ok) ok = build_core_ffi(config, compile_commands);
     if (ok) ok = stage_core_source_package(config, "json");
-    if (ok) ok = stage_core_source_package(config, "random");
+    if (ok) ok = build_core_random(config, compile_commands);
 
     da_free(processes);
     da_free(headers);

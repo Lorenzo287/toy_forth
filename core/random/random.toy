@@ -1,36 +1,17 @@
 'random package
 
-'seed [
-    dup int? not
-    [ "'random.seed' expected an integer seed" error ] if
-    seed-rand
-] def
-
-'int [ | lower upper |
-    $lower int? $upper int? and not
-    [ "'random.int' expected two integer bounds" error ] if
-    $lower $upper >=
-    [ "'random.int' upper bound must be greater than lower bound" error ] if
-    $lower $upper rand-int
-] def
-
-'float [
-    0 9007199254740992 rand-int
-    >float 9007199254740992.0 /
-] def
-
 'choice [
     dup sequence? not
     [ "'random.choice' expected a sequence" error ] if
     dup empty?
     [ "'random.choice' expected a non-empty sequence" error ] if
     dup list? [ >vector ] if
-    dup len 0 swap rand-int
+    dup len 0 swap int
     at
 ] def
 
 'shuffle-step [ | index |
-    0 $index 1 + rand-int | other |
+    0 $index 1 + int | other |
     dup $index at
     over $other at
     $index swap rot

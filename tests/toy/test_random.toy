@@ -1,5 +1,9 @@
 "core:random" import
 
+'rand word? false == check
+'seed-rand word? false == check
+'rand-int word? false == check
+
 'seed-error [
     [ random.seed ]
     [ | seed message | $message ] try

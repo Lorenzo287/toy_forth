@@ -96,8 +96,8 @@ the importing package and are not re-exported transitively.
 The installed CLI finds `core:` packages beside the SDK. A source build also
 accepts `core` beside the executable, and `--core-path DIR` overrides that
 location. An embedder sets `toy_state_config.core_package_path` explicitly.
-Toy currently ships the Toy-written `core:json` and `core:random` packages and
-the native `core:ffi` package. Core packages use the same import and namespace
+Toy currently ships the Toy-written `core:json`, hybrid C/Toy `core:random`,
+and native `core:ffi` packages. Core packages use the same import and namespace
 rules as project packages. Their maintained word metadata is available at
 runtime after import, so expressions such as `'random.shuffle doc` return the
 same stack effects and descriptions used by editor hover.

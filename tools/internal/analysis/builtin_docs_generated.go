@@ -174,18 +174,6 @@ var builtinDocs = map[string]builtinDoc{
 		StackEffect: "x -- bool",
 		Description: "Check whether the input is a NaN float.",
 	},
-	"rand": {
-		StackEffect: "-- n",
-		Description: "Push a per-state PCG32 pseudorandom integer in the range 0 through 4294967295; this is not a cryptographic generator.",
-	},
-	"seed-rand": {
-		StackEffect: "seed --",
-		Description: "Deterministically reseed the current state's pseudorandom stream from an integer.",
-	},
-	"rand-int": {
-		StackEffect: "lower upper -- n",
-		Description: "Push an unbiased pseudorandom integer from lower up to, but not including, upper.",
-	},
 	"and": {
 		StackEffect: "a b -- res",
 		Description: "Logical AND for booleans, bitwise AND for integers.",
