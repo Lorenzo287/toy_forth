@@ -1,3 +1,5 @@
 'math package
 
+/* Double a number.
+   This documentation comes from a block comment. */
 'double [ twice-factor * ] def

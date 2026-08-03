@@ -24,6 +24,8 @@
 
 	words 'math.double contains? not [ "public package word is not visible" error ] if
 	words 'math.twice-factor contains? [ "private package word is visible" error ] if
+	'math.double doc "math.double\nDouble a number.\nThis documentation comes from a block comment." != [ "package documentation failed" error ] if
+	'numbers.double doc "numbers.double\nDouble a number.\nThis documentation comes from a block comment." != [ "aliased package documentation failed" error ] if
 	20 math.double print
 	21 numbers.double print
 ] def

@@ -407,7 +407,7 @@ func collectTopLevelDefinitions(root *tree_sitter.Node, src []byte, index *Docum
 
 		switch child.Kind() {
 		case "quoted_symbol":
-			if sym, ok := indexDefDefinition(root, i, leadingLineDoc(root, i, src), src, positions); ok {
+			if sym, ok := indexDefDefinition(root, i, leadingDoc(root, i, src), src, positions); ok {
 				index.Symbols = append(index.Symbols, sym)
 				index.Definitions[sym.Name] = sym
 			}
@@ -544,7 +544,7 @@ func decodeStringLiteral(text string) (string, bool) {
 	return value, err == nil
 }
 
-func leadingLineDoc(root *tree_sitter.Node, defIndex uint, src []byte) string {
+func leadingDoc(root *tree_sitter.Node, defIndex uint, src []byte) string {
 	if defIndex == 0 {
 		return ""
 	}
@@ -558,16 +558,22 @@ func leadingLineDoc(root *tree_sitter.Node, defIndex uint, src []byte) string {
 		if node == nil {
 			break
 		}
-		if node.Kind() != "line_comment" {
-			break
-		}
-
 		nodeEnd := int(node.EndPosition().Row)
 		if nodeEnd != expectedEndRow {
 			break
 		}
 
-		lines = append([]string{trimLineComment(node.Utf8Text(src))}, lines...)
+		var text string
+		switch node.Kind() {
+		case "line_comment":
+			text = trimLineComment(node.Utf8Text(src))
+		case "block_comment":
+			text = trimBlockComment(node.Utf8Text(src))
+		default:
+			return strings.TrimSpace(strings.Join(lines, "\n"))
+		}
+
+		lines = append([]string{text}, lines...)
 		expectedEndRow = int(node.StartPosition().Row) - 1
 	}
 
@@ -730,4 +736,15 @@ func trimLineComment(text string) string {
 		text = text[1:]
 	}
 	return strings.TrimSpace(text)
+}
+
+func trimBlockComment(text string) string {
+	if len(text) >= 4 && strings.HasPrefix(text, "/*") && strings.HasSuffix(text, "*/") {
+		text = text[2 : len(text)-2]
+	}
+	lines := strings.Split(text, "\n")
+	for i := range lines {
+		lines[i] = strings.TrimSpace(lines[i])
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }

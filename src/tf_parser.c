@@ -20,11 +20,20 @@ typedef struct {
     uint32_t col;
     int error;
     tf_ctx *ctx;
+    char *pending_doc;
+    size_t pending_doc_len;
+    size_t pending_doc_cap;
+    uint32_t pending_doc_line;
+    bool pending_doc_active;
 } tf_parser;
 
 static void parser_advance(tf_parser *parser);
 static tf_source_span parser_mark(tf_parser *parser);
 static void parser_finish_span(tf_parser *parser, tf_source_span *span);
+static void parser_clear_pending_doc(tf_parser *parser);
+static void parser_read_line_comment(tf_parser *parser);
+static int parser_read_block_comment(tf_parser *parser);
+static void parser_attach_pending_doc(tf_parser *parser, tf_obj *symbol);
 
 static void skip_spaces(tf_parser *parser) {
     while (isspace((unsigned char)parser->pos[0])) parser_advance(parser);
@@ -55,6 +64,103 @@ static tf_source_span parser_mark(tf_parser *parser) {
 
 static void parser_finish_span(tf_parser *parser, tf_source_span *span) {
     span->len = (uint32_t)(parser_offset(parser) - span->offset);
+}
+
+static void parser_clear_pending_doc(tf_parser *parser) {
+    parser->pending_doc_len = 0;
+    parser->pending_doc_line = 0;
+    parser->pending_doc_active = false;
+    if (parser->pending_doc) parser->pending_doc[0] = '\0';
+}
+
+static void parser_append_pending_doc(tf_parser *parser, const char *text,
+                                      size_t text_len) {
+    size_t separator_len = parser->pending_doc_active ? 1 : 0;
+    size_t needed = parser->pending_doc_len + separator_len + text_len + 1;
+    if (needed > parser->pending_doc_cap) {
+        size_t new_cap = parser->pending_doc_cap ? parser->pending_doc_cap : 32;
+        while (new_cap < needed) new_cap *= 2;
+        parser->pending_doc = tf_xrealloc(parser->pending_doc, new_cap);
+        parser->pending_doc_cap = new_cap;
+    }
+    if (separator_len) parser->pending_doc[parser->pending_doc_len++] = '\n';
+    if (text_len > 0) {
+        memcpy(parser->pending_doc + parser->pending_doc_len, text, text_len);
+        parser->pending_doc_len += text_len;
+    }
+    parser->pending_doc[parser->pending_doc_len] = '\0';
+}
+
+static void parser_read_line_comment(tf_parser *parser) {
+    uint32_t comment_line = parser->line;
+    parser_advance(parser);
+    const char *start = parser->pos;
+    while (parser->pos[0] != '\n' && parser->pos[0] != '\0') {
+        parser_advance(parser);
+    }
+    const char *end = parser->pos;
+    while (start < end && isspace((unsigned char)*start)) start++;
+    while (end > start && isspace((unsigned char)end[-1])) end--;
+
+    if (parser->pending_doc_active &&
+        parser->pending_doc_line + 1 != comment_line) {
+        parser_clear_pending_doc(parser);
+    }
+    parser_append_pending_doc(parser, start, (size_t)(end - start));
+    parser->pending_doc_line = comment_line;
+    parser->pending_doc_active = true;
+}
+
+static void parser_append_block_doc(tf_parser *parser, const char *start,
+                                    const char *end) {
+    char *normalized = tf_xmalloc((size_t)(end - start) + 1);
+    size_t normalized_len = 0;
+    bool first_line = true;
+
+    while (start <= end) {
+        const char *line_end = start;
+        while (line_end < end && *line_end != '\n') line_end++;
+        const char *trimmed_start = start;
+        const char *trimmed_end = line_end;
+        while (trimmed_start < trimmed_end &&
+               isspace((unsigned char)*trimmed_start)) {
+            trimmed_start++;
+        }
+        while (trimmed_end > trimmed_start &&
+               isspace((unsigned char)trimmed_end[-1])) {
+            trimmed_end--;
+        }
+
+        if (!first_line) normalized[normalized_len++] = '\n';
+        size_t line_len = (size_t)(trimmed_end - trimmed_start);
+        if (line_len > 0) {
+            memcpy(normalized + normalized_len, trimmed_start, line_len);
+            normalized_len += line_len;
+        }
+        first_line = false;
+        if (line_end == end) break;
+        start = line_end + 1;
+    }
+
+    parser_append_pending_doc(parser, normalized, normalized_len);
+    free(normalized);
+}
+
+static void parser_attach_pending_doc(tf_parser *parser, tf_obj *symbol) {
+    if (!parser->pending_doc_active || !symbol) {
+        parser_clear_pending_doc(parser);
+        return;
+    }
+
+    const char *start = parser->pending_doc;
+    const char *end = start + parser->pending_doc_len;
+    while (start < end && isspace((unsigned char)*start)) start++;
+    while (end > start && isspace((unsigned char)end[-1])) end--;
+    if (start < end) {
+        tf_source_file_add_doc(parser->source, symbol->span.offset, start,
+                               (size_t)(end - start));
+    }
+    parser_clear_pending_doc(parser);
 }
 
 static const char *source_basename(const char *path) {
@@ -140,6 +246,7 @@ tf_obj *tf_parse_source(tf_ctx *ctx, const char *filename,
                             .error = 0,
                             .ctx = ctx};
     tf_obj *result = parser_tokenize_until(&parser_state, 0);
+    free(parser_state.pending_doc);
     tf_source_file_release(source);
     if (ctx) tf_obj_pool_leave(previous_pool);
     return result;
@@ -157,18 +264,22 @@ static tf_obj *parser_tokenize_until(tf_parser *parser, int terminator) {
         if (*parser->pos == 0) break;  // end of program
 
         if (parser->pos[0] == '\\') {
-            while (parser->pos[0] != '\n' && parser->pos[0] != 0) {
-                parser_advance(parser);
-            }
+            parser_read_line_comment(parser);
             continue;
         }
         if (parser->pos[0] == '/' && parser->pos[1] == '*') {
-            if (!parser_skip_block_comment(parser)) {
+            if (!parser_read_block_comment(parser)) {
                 tf_obj_release(prg);
                 return NULL;
             }
             continue;
         }
+        if (parser->pending_doc_active &&
+            parser->pending_doc_line + 1 != parser->line) {
+            parser_clear_pending_doc(parser);
+        }
+        bool quoted_symbol = parser->pos[0] == '\'';
+        if (!quoted_symbol) parser_clear_pending_doc(parser);
         if (terminator && *parser->pos == terminator) {
             parser_advance(parser);
             parser_finish_span(parser, &vector_span);
@@ -273,6 +384,7 @@ static tf_obj *parser_tokenize_until(tf_parser *parser, int terminator) {
                 parser_finish_span(parser, &span);
                 tf_obj_set_span(o, span);
             }
+            parser_attach_pending_doc(parser, o);
             if (!o && !parser->error) {
                 parser_errorf(parser, "expected symbol name after '\''\n");
             }
@@ -659,4 +771,19 @@ static int parser_skip_block_comment(tf_parser *parser) {
     parser->col = span.col;
     parser_errorf(parser, "unterminated block comment\n");
     return 0;
+}
+
+static int parser_read_block_comment(tf_parser *parser) {
+    uint32_t comment_start_line = parser->line;
+    const char *content_start = parser->pos + 2;
+    if (!parser_skip_block_comment(parser)) return 0;
+
+    if (parser->pending_doc_active &&
+        parser->pending_doc_line + 1 != comment_start_line) {
+        parser_clear_pending_doc(parser);
+    }
+    parser_append_block_doc(parser, content_start, parser->pos - 2);
+    parser->pending_doc_line = parser->line;
+    parser->pending_doc_active = true;
+    return 1;
 }

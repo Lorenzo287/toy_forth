@@ -19,10 +19,18 @@
 #define TF_LIST_NODE_SLAB_CAPACITY 128
 #define TF_LIST_NODE_SPARE_BYTE_LIMIT (64 * 1024)
 
+typedef struct {
+    uint32_t offset;
+    char *description;
+} tf_source_doc;
+
 struct tf_source_file {
     int refcount;
     char *filename;
     size_t package_index;
+    tf_source_doc *docs;
+    size_t docs_len;
+    size_t docs_cap;
 };
 
 typedef struct {
@@ -385,6 +393,9 @@ tf_source_file *tf_source_file_new(const char *filename) {
     source->refcount = 1;
     source->filename = tf_xstrdup(filename ? filename : "<unknown>");
     source->package_index = 0;
+    source->docs = NULL;
+    source->docs_len = 0;
+    source->docs_cap = 0;
     return source;
 }
 
@@ -397,12 +408,43 @@ void tf_source_file_release(tf_source_file *source) {
     assert(source->refcount > 0);
     source->refcount--;
     if (source->refcount != 0) return;
+    for (size_t i = 0; i < source->docs_len; i++) {
+        free(source->docs[i].description);
+    }
+    free(source->docs);
     free(source->filename);
     free(source);
 }
 
 const char *tf_source_file_name(tf_source_file *source) {
     return source ? source->filename : NULL;
+}
+
+void tf_source_file_add_doc(tf_source_file *source, uint32_t offset,
+                            const char *description, size_t description_len) {
+    if (!source || !description || description_len == 0) return;
+
+    if (source->docs_len == source->docs_cap) {
+        size_t new_cap = source->docs_cap ? source->docs_cap * 2 : 4;
+        source->docs = tf_xrealloc(source->docs,
+                                   new_cap * sizeof(*source->docs));
+        source->docs_cap = new_cap;
+    }
+
+    char *copy = tf_xmalloc(description_len + 1);
+    memcpy(copy, description, description_len);
+    copy[description_len] = '\0';
+    source->docs[source->docs_len++] = (tf_source_doc){offset, copy};
+}
+
+const char *tf_source_file_doc_at(tf_source_file *source, uint32_t offset) {
+    if (!source) return NULL;
+    for (size_t i = source->docs_len; i > 0; i--) {
+        if (source->docs[i - 1].offset == offset) {
+            return source->docs[i - 1].description;
+        }
+    }
+    return NULL;
 }
 
 void tf_source_file_set_package(tf_source_file *source, size_t package_index) {

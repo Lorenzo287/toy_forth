@@ -230,6 +230,9 @@ tf_source_file *tf_source_file_new(const char *filename);
 void tf_source_file_retain(tf_source_file *source);
 void tf_source_file_release(tf_source_file *source);
 const char *tf_source_file_name(tf_source_file *source);
+void tf_source_file_add_doc(tf_source_file *source, uint32_t offset,
+                            const char *description, size_t description_len);
+const char *tf_source_file_doc_at(tf_source_file *source, uint32_t offset);
 void tf_source_file_set_package(tf_source_file *source, size_t package_index);
 size_t tf_source_file_package(tf_source_file *source);
 void tf_obj_set_span(tf_obj *o, tf_source_span span);

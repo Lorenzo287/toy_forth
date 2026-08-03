@@ -46,6 +46,35 @@ func TestDocumentSymbols(t *testing.T) {
 	}
 }
 
+func TestBlockCommentDocumentation(t *testing.T) {
+	source := `\ First line.
+/* Second line.
+   Third line. */
+'mixed [ 1 ] def
+
+/* Detached documentation. */
+
+'plain [ 2 ] def`
+
+	index := IndexDocument(source)
+	mixed := index.Definitions["mixed"]
+	if mixed.Doc != "First line.\nSecond line.\nThird line." {
+		t.Fatalf("unexpected mixed doc: %q", mixed.Doc)
+	}
+	plain := index.Definitions["plain"]
+	if plain.Doc != "" {
+		t.Fatalf("detached block comment became documentation: %q", plain.Doc)
+	}
+
+	hover, ok := LookupHover(index, Position{Line: 3, Character: 2})
+	if !ok {
+		t.Fatal("expected hover for block-documented word")
+	}
+	if hover.Contents != "```toy\nmixed\n```\nFirst line.\nSecond line.\nThird line." {
+		t.Fatalf("unexpected block-comment hover: %q", hover.Contents)
+	}
+}
+
 func TestLookupDefinition(t *testing.T) {
 	path := filepath.Join("..", "..", "testdata", "symbols.toy")
 	src, err := os.ReadFile(path)

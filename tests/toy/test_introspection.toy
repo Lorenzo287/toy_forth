@@ -1,18 +1,28 @@
 
 \ Introspection words return data suitable for programmatic checks.
 
+\ Duplicate a value and add the copies.
+\ This second line verifies multiline documentation.
 'twice [ dup + ] def
 'twice body [ dup + ] == check
 'twice see "'twice [ dup + ] def" == check
+'twice doc "twice\nDuplicate a value and add the copies.\nThis second line verifies multiline documentation." == check
+
+/* Duplicate a value three times.
+   This second line verifies block documentation. */
+'thrice [ dup dup ] def
+'thrice see "'thrice [ dup dup ] def" == check
+'thrice doc "thrice\nDuplicate a value three times.\nThis second line verifies block documentation." == check
 'dup doc "dup\nstack: x -- x x\nDuplicate the top stack item." == check
 'printf doc "placeholders" contains? true == check
 'symmetric-difference doc "left-only" contains? true == check
 'proper-subset? doc "strict subset" contains? true == check
 'proper-superset? doc "strict superset" contains? true == check
-[ 'twice doc ] [ "no documentation" contains? ] try check
 ":" >symbol word? false == check
 "priority" search-words dup 'pq-push contains? true == check drop
 'see search-words 'see contains? true == check
+"multiline documentation" search-words 'twice contains? true == check
+"block documentation" search-words 'thrice contains? true == check
 "twice" search-words 'twice contains? true == check
 
 'type-of word? true == check

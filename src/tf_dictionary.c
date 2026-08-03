@@ -201,10 +201,11 @@ bool tf_dict_set_user_in_package(tf_ctx *ctx, size_t package_index,
 
     tf_word *word = tf_dict_lookup_scoped(ctx, package_index, name->str.ptr,
                                           name->str.len);
+    const char *source_doc = tf_source_file_doc_at(name->span.source,
+                                                   name->span.offset);
     bool replacing = word != NULL;
     if (word) {
         if (word->type == TF_WORD_USER) tf_obj_release(word->user_impl);
-        dict_clear_doc(word);
     } else {
         word = dict_insert_word(ctx, package_index, name->str.ptr,
                                 name->str.len, true, true);
@@ -212,6 +213,7 @@ bool tf_dict_set_user_in_package(tf_ctx *ctx, size_t package_index,
     word->type = TF_WORD_USER;
     word->user_impl = body;
     tf_obj_retain(body);
+    dict_set_doc(word, NULL, source_doc);
     if (replacing) tf_dict_resolution_changed(ctx);
     return true;
 }

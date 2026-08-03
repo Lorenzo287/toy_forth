@@ -22,6 +22,20 @@ The catalog groups words by primary concept, not by implementation file. Shared
 words such as `push-back` or `pairs` are listed under their main language idea
 even when they support more than one representation.
 
+Consecutive `\` line comments or a `/* ... */` block comment immediately above
+a user definition become that word's documentation, including definitions
+loaded from packages:
+
+```toy
+/* Double a number. */
+'double [ 2 * ] def
+
+'double doc print
+```
+
+`doc` shows this description, while `see` shows the executable definition.
+A blank line or another expression separates a comment from the definition.
+
 ## Interactive Development Loop
 
 Type `trace` to toggle the automatic stack display. Type `hints` to toggle
