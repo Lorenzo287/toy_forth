@@ -1,5 +1,5 @@
-argv 0 at 'io import-as
+"../stdio" 'io import-as
 
-argv 1 at "rb" io.open
+argv 0 at "rb" io.open
 dup io.read-byte "first source byte: {}\n" printf
 drop \ fclose runs when the final stdio.file reference is released

@@ -1,6 +1,4 @@
-\ Import the package containing the Raylib C extension passed as the first
-\ argument.
-argv 0 at 'rl import-as
+".." 'rl import-as
 
 'background [ 245 245 245 255 rl.rgba ] def
 'accent [ 230 41 55 255 rl.rgba ] def

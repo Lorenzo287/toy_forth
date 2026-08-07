@@ -43,14 +43,14 @@ toy-c-package . toy_sqlite.c --include path/to/sqlite/include --lib path/to/sqli
 
 Using a static SQLite archive makes the Toy package self-contained. Using an
 import/shared library means SQLite's runtime library must also be discoverable
-by the operating system. Run the example package with:
+by the operating system. Run the standalone demo with:
 
 ```console
-toy --file demos/people.toy -- .
+toy --file demos/people.toy
 ```
 
-The demo imports the package path passed as its first argument; no global
-installation or search path is involved.
+The demo imports the parent package directory relative to its own source file;
+no global installation or search path is involved.
 
 `open` and `prepare` return typed Toy resources. The database uses
 `sqlite3_close_v2` and statements use `sqlite3_finalize`, so final reference

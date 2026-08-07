@@ -36,19 +36,31 @@ Keep optimization work benchmark-driven and record durable experiments under
 **Status: In progress**
 
 Embedding, C extensions, `core:ffi`, and generated bindings share one
-value and ownership model. They are usable parts of Toy; this track concerns
-how far the boundary grows and which parts need an explicit compatibility
-policy.
+value and ownership model, but serve intentionally different use cases. They
+are usable parts of Toy; this track should improve concrete interop problems
+without converging them into one universal mechanism. The C ABI is also the
+common substrate through which other languages can integrate with Toy; the
+project should not accumulate language-specific adapters as core features.
+
+During the design phase, the public C API and extension ABI may change with the
+language. The extension ABI version exists to reject mismatched binaries
+safely, not to promise backward compatibility or require compatibility shims.
 
 Priorities are:
 
-1. define the compatibility policy for the public C API and C-extension ABI;
-2. extend generated bindings to general output buffers and selected aggregate
-   types once their ownership rules are clear;
-3. add a libclang frontend that produces the same explicit manifest rather
-   than trying to infer ownership from C declarations;
-4. design callbacks and native calls into Toy without re-entering the VM or
+1. use real embedding and library adapters to find recurring usability gaps in
+   the existing boundaries;
+2. grow generated bindings only with broadly reusable shapes whose conversion
+   and ownership rules remain explicit; handwritten extensions remain the
+   escape hatch for library-specific behavior;
+3. design callbacks and native calls into Toy without re-entering the VM or
    losing its iterative execution model.
+
+`core:ffi` should remain a small exploratory package for direct scalar and
+string calls, not become privileged C syntax or a complete C interface.
+Header parsing may be reconsidered if writing explicit binding manifests
+becomes a demonstrated bottleneck, but it must not attempt to infer ownership
+from C declarations.
 
 Release SDKs should continue to carry everything needed for this boundary:
 public headers, the embedding archive, core packages, package tools, examples,

@@ -31,7 +31,7 @@ c.call print
 
 The library name is platform-specific. Common C runtime names include
 `libc.so.6` on Linux and `/usr/lib/libSystem.B.dylib` on macOS. The runnable
-[`examples/ffi/main.toy`](../examples/ffi/main.toy) accepts that name as its
+[`examples/ffi.toy`](../examples/ffi.toy) accepts that name as its
 first argument.
 
 Release SDKs include the compiled `core:ffi` package. A platform may also need
@@ -102,7 +102,9 @@ cc -Wall -Wextra -Wpedantic -shared vendor/sample/toy_sample.c -I path/to/toy/in
 
 On Linux add `-fPIC`; on macOS use `-dynamiclib`. Static foreign libraries are
 linked into the extension. Shared foreign libraries must still be discoverable
-by the operating-system loader when Toy imports the package. Header paths only
+by the operating-system loader when Toy imports the package. On Windows, Toy
+searches the extension's directory first for its dependent DLLs, so a package
+can carry them beside the extension named by `toy.package`. Header paths only
 provide declarations; they do not link the library.
 
 ## Generated Bindings

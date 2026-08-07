@@ -27,6 +27,7 @@ typedef struct {
 struct tf_source_file {
     int refcount;
     char *filename;
+    char *import_base;
     size_t package_index;
     tf_source_doc *docs;
     size_t docs_len;
@@ -392,6 +393,7 @@ tf_source_file *tf_source_file_new(const char *filename) {
     tf_source_file *source = tf_xmalloc(sizeof(*source));
     source->refcount = 1;
     source->filename = tf_xstrdup(filename ? filename : "<unknown>");
+    source->import_base = NULL;
     source->package_index = 0;
     source->docs = NULL;
     source->docs_len = 0;
@@ -412,12 +414,24 @@ void tf_source_file_release(tf_source_file *source) {
         free(source->docs[i].description);
     }
     free(source->docs);
+    free(source->import_base);
     free(source->filename);
     free(source);
 }
 
 const char *tf_source_file_name(tf_source_file *source) {
     return source ? source->filename : NULL;
+}
+
+void tf_source_file_set_import_base(tf_source_file *source,
+                                    const char *directory) {
+    if (!source) return;
+    free(source->import_base);
+    source->import_base = directory ? tf_xstrdup(directory) : NULL;
+}
+
+const char *tf_source_file_import_base(tf_source_file *source) {
+    return source ? source->import_base : NULL;
 }
 
 void tf_source_file_add_doc(tf_source_file *source, uint32_t offset,

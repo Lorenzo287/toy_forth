@@ -10,7 +10,16 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 static void *library_open(const char *path) {
-    return (void *)LoadLibraryA(path);
+    /* Package paths are absolute and normalized to '/', but the altered DLL
+       search order needs a native path to use the extension directory. */
+    char *native_path = tf_xstrdup(path);
+    for (char *cursor = native_path; *cursor; cursor++) {
+        if (*cursor == '/') *cursor = '\\';
+    }
+    HMODULE handle =
+        LoadLibraryExA(native_path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    free(native_path);
+    return (void *)handle;
 }
 
 static toy_extension_entry library_entry(void *handle) {
@@ -119,8 +128,10 @@ tf_ret tf_native_package_load(tf_ctx *ctx, size_t package_index,
                               const char *path) {
     void *handle = library_open(path);
     if (!handle) {
-        tf_ctx_runtime_errorf(ctx, "failed to open C extension '%s': %s\n",
-                              path, library_error());
+        tf_ctx_runtime_errorf(
+            ctx, "failed to open C extension '%s' or one of its "
+                 "dependencies: %s\n",
+            path, library_error());
         return TF_ERR;
     }
 

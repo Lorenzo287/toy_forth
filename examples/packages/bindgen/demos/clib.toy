@@ -1,4 +1,4 @@
-argv 0 at 'c import-as
+"../clib" 'c import-as
 
 "Toy speaks generated C" c.strlen print
 "alpha" "beta" c.strcmp 0 < print

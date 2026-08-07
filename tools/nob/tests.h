@@ -421,6 +421,51 @@ static bool run_cli_argument_separator_test(const Build_Config *config,
     return ok;
 }
 
+static bool run_file_relative_import_test(const Build_Config *config,
+                                          const char *root) {
+    const char *name = "test_file_relative_import";
+    const char *toy = temp_sprintf("%s/%s", root, config->toy_exe);
+    const char *source =
+        temp_sprintf("%s/tests/packages/file-relative/main.toy", root);
+    const char *missing =
+        temp_sprintf("%s/tests/packages/file-relative/missing.toy", root);
+    const char *stdout_path = temp_sprintf(
+        "%s/test-work/file-relative-import.stdout", config->build_dir);
+    const char *stderr_path = temp_sprintf(
+        "%s/test-work/file-relative-import.stderr", config->build_dir);
+
+    Cmd command = {0};
+    cmd_append(&command, toy, "--file", source);
+    int exit_code = 0;
+    bool ran = run_captured(&command, NULL, stdout_path, stderr_path,
+                            &exit_code);
+    String_Builder output = {0};
+    String_Builder diagnostic = {0};
+    bool ok = ran && exit_code == 0 &&
+              read_normalized(stdout_path, &output) &&
+              read_normalized(stderr_path, &diagnostic) &&
+              strcmp(output.items, "42\n") == 0 && diagnostic.count == 1;
+    da_free(output);
+    da_free(diagnostic);
+
+    Cmd missing_command = {0};
+    cmd_append(&missing_command, toy, "--file", missing);
+    int missing_exit = 0;
+    bool missing_ran = run_captured(&missing_command, NULL, stdout_path,
+                                    stderr_path, &missing_exit);
+    String_Builder missing_diagnostic = {0};
+    ok = ok && missing_ran && missing_exit == 1 &&
+         read_normalized(stderr_path, &missing_diagnostic) &&
+         strstr(missing_diagnostic.items,
+                "package import './missing' resolved from source directory") !=
+             NULL &&
+         strstr(missing_diagnostic.items, "which is not a directory") != NULL;
+    da_free(missing_diagnostic);
+
+    fprintf(stderr, "[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    return ok;
+}
+
 typedef struct {
     const char *name;
     const char *path;
@@ -518,6 +563,10 @@ static bool run_toy_tests(const Build_Config *config, const char *root,
         ++selected;
         if (!run_cli_argument_separator_test(config, root)) ok = false;
     }
+    if (test_matches_filter(config, "test_file_relative_import")) {
+        ++selected;
+        if (!run_file_relative_import_test(config, root)) ok = false;
+    }
     for (size_t i = 0; i < ARRAY_LEN(package_test_cases); ++i) {
         const Package_Test_Case *test = &package_test_cases[i];
         if (!test_matches_filter(config, test->name)) continue;
@@ -578,6 +627,10 @@ static bool build_native_loader_test(const Build_Config *config,
     const char *plugin_object = object_path(config, plugin_source);
     const char *bad_plugin_object = object_path(config, bad_plugin_source);
     const char *loader_object = object_path(config, loader_source);
+#ifdef _WIN32
+    const char *dependency_source = "tests/c/test_native_dependency.c";
+    const char *dependency_object = object_path(config, dependency_source);
+#endif
     const char *plugin_directory = temp_sprintf(
         "%s/plugin", config->test_package_dir);
     const char *bad_plugin_directory = temp_sprintf(
@@ -594,6 +647,14 @@ static bool build_native_loader_test(const Build_Config *config,
         "%s/%s", plugin_directory, plugin_file);
     const char *bad_plugin_library = temp_sprintf(
         "%s/%s", bad_plugin_directory, bad_plugin_file);
+#ifdef _WIN32
+    const char *dependency_library = temp_sprintf(
+        "%s/test_native_dependency%s", plugin_directory,
+        TOY_SHARED_SUFFIX_VALUE);
+    const char *dependency_import = temp_sprintf(
+        "%s/test_native_dependency.%s", config->object_dir,
+        is_msvc_style(config->compiler) ? "lib" : "a");
+#endif
     if (!write_package_manifest(plugin_directory, "plugin", plugin_file) ||
         !write_package_manifest(bad_plugin_directory, "bad",
                                 bad_plugin_file)) {
@@ -605,6 +666,12 @@ static bool build_native_loader_test(const Build_Config *config,
     File_Paths headers = {0};
     Procs processes = {0};
     bool ok = collect_header_dependencies(config, &headers);
+#ifdef _WIN32
+    if (ok) {
+        ok = schedule_compile_ex(config, dependency_source, dependency_object,
+                                 &headers, compile_commands, &processes, true);
+    }
+#endif
     if (ok) {
         ok = schedule_compile_ex(config, plugin_source, plugin_object,
                                  &headers, compile_commands, &processes, true);
@@ -620,8 +687,36 @@ static bool build_native_loader_test(const Build_Config *config,
     if (!procs_flush(&processes)) ok = false;
 
     File_Paths objects = {0};
+#ifdef _WIN32
+    if (ok) {
+        const char *inputs[] = {dependency_object};
+        int rebuild = needs_rebuild(dependency_library, inputs,
+                                    ARRAY_LEN(inputs));
+        if (rebuild < 0) {
+            ok = false;
+        } else if (rebuild || !file_exists(dependency_import)) {
+            Cmd command = {0};
+            cmd_append(&command, compiler_executable(config->compiler));
+            if (is_msvc_style(config->compiler)) {
+                cmd_append(&command, "/nologo", "/LD", dependency_object,
+                           temp_sprintf("/Fe:%s", dependency_library),
+                           "/link",
+                           temp_sprintf("/IMPLIB:%s", dependency_import));
+            } else {
+                cmd_append(&command, "-shared", dependency_object, "-o",
+                           dependency_library,
+                           temp_sprintf("-Wl,--out-implib,%s",
+                                        dependency_import));
+            }
+            ok = cmd_run(&command, .dont_reset = false);
+        }
+    }
+#endif
     if (ok) {
         da_append(&objects, plugin_object);
+#ifdef _WIN32
+        da_append(&objects, dependency_import);
+#endif
         ok = link_shared_package(config, plugin_library, &objects, false);
         objects.count = 0;
     }

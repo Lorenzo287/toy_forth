@@ -1,4 +1,4 @@
-argv 0 at 'db import-as
+"../sqlite" 'db import-as
 
 ":memory:" db.open
 dup "CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT NOT NULL)" db.exec

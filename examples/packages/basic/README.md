@@ -3,9 +3,6 @@
 This is the smallest complete Toy package with a C extension. It has no
 foreign-library dependency: `toy_basic.c` exports one `twice` word.
 
-Work from a writable copy of this directory. The commands below assume it is
-the current directory; replace `path/to/toy` with the SDK directory.
-
 ## Manual Build
 
 Compile the C file as a shared library. It includes only the SDK's standalone
@@ -28,7 +25,7 @@ extension = toy_basic.dll
 Then run the demo:
 
 ```console
-toy --file demos/basic.toy -- .
+toy --file demo/main.toy
 ```
 
 ## Optional Helper
@@ -38,5 +35,5 @@ commands it runs:
 
 ```console
 toy-c-package . toy_basic.c
-toy --file demos/basic.toy -- .
+toy --file demo/main.toy
 ```

@@ -106,7 +106,9 @@ static bool is_regular_file(const char *path) {
 #endif
 }
 
-static char *canonical_directory(tf_ctx *ctx, const char *path) {
+static char *canonical_directory(tf_ctx *ctx, const char *path,
+                                 const char *request,
+                                 const char *base_kind, const char *base) {
     char *resolved = NULL;
 #ifdef _WIN32
     DWORD needed = GetFullPathNameA(path, 0, NULL, NULL);
@@ -121,14 +123,24 @@ static char *canonical_directory(tf_ctx *ctx, const char *path) {
 #else
     resolved = realpath(path, NULL);
 #endif
+    for (char *cursor = resolved; cursor && *cursor; cursor++) {
+        if (*cursor == '\\') *cursor = '/';
+    }
     if (!resolved || !is_directory(resolved)) {
-        tf_ctx_runtime_errorf(ctx, "package path '%s' is not a directory\n",
-                              path);
+        if (base_kind && base) {
+            tf_ctx_runtime_errorf(
+                ctx,
+                "package import '%s' resolved from %s '%s' to '%s', "
+                "which is not a directory\n",
+                request, base_kind, base, resolved ? resolved : path);
+        } else {
+            tf_ctx_runtime_errorf(
+                ctx,
+                "package import '%s' resolved to '%s', which is not a directory\n",
+                request, resolved ? resolved : path);
+        }
         free(resolved);
         return NULL;
-    }
-    for (char *cursor = resolved; *cursor; cursor++) {
-        if (*cursor == '\\') *cursor = '/';
     }
     size_t len = strlen(resolved);
     while (len > 1 && resolved[len - 1] == '/') resolved[--len] = '\0';
@@ -162,6 +174,8 @@ static char *resolve_request(tf_ctx *ctx, const char *request,
     }
 
     char *candidate = NULL;
+    const char *base = NULL;
+    const char *base_kind = NULL;
     if (strncmp(request, "core:", 5) == 0) {
         const char *relative = request + 5;
         if (!ctx->core_package_path) {
@@ -175,7 +189,9 @@ static char *resolve_request(tf_ctx *ctx, const char *request,
                                   request);
             return NULL;
         }
-        candidate = join_path(ctx->core_package_path, relative);
+        base = ctx->core_package_path;
+        base_kind = "core package directory";
+        candidate = join_path(base, relative);
     } else if (strchr(request, ':') && !path_is_absolute(request)) {
         tf_ctx_runtime_errorf(ctx, "unknown package path prefix in '%s'\n",
                               request);
@@ -184,11 +200,25 @@ static char *resolve_request(tf_ctx *ctx, const char *request,
         candidate = tf_xstrdup(request);
     } else {
         const tf_package *owner = tf_package_get(ctx, owner_package_index);
-        const char *base = owner && owner->path ? owner->path : ".";
+        const char *source_base =
+            owner_package_index == TF_ROOT_PACKAGE && ctx->current_span.source
+                ? tf_source_file_import_base(ctx->current_span.source)
+                : NULL;
+        if (source_base) {
+            base = source_base;
+            base_kind = "source directory";
+        } else if (owner && owner->path) {
+            base = owner->path;
+            base_kind = "package directory";
+        } else {
+            base = ".";
+            base_kind = "working directory";
+        }
         candidate = join_path(base, request);
     }
 
-    char *resolved = canonical_directory(ctx, candidate);
+    char *resolved = canonical_directory(ctx, candidate, request, base_kind,
+                                         base);
     free(candidate);
     return resolved;
 }
@@ -508,8 +538,8 @@ static bool scan_program(tf_ctx *ctx, package_scan *scan, tf_obj *program) {
     return true;
 }
 
-static bool scan_directory(tf_ctx *ctx, const char *directory,
-                           package_scan *scan) {
+static bool scan_directory(tf_ctx *ctx, const char *request,
+                           const char *directory, package_scan *scan) {
     if (!read_manifest(ctx, directory, &scan->manifest)) return false;
 
     char **names = NULL;
@@ -557,9 +587,10 @@ static bool scan_directory(tf_ctx *ctx, const char *directory,
         }
     }
     if (!scan->name) {
-        tf_ctx_runtime_errorf(ctx,
-                              "package directory '%s' contains no .toy files or toy.package manifest\n",
-                              directory);
+        tf_ctx_runtime_errorf(
+            ctx,
+            "package import '%s' resolved to directory '%s', but it contains no .toy files or toy.package manifest\n",
+            request, directory);
         return false;
     }
     return true;
@@ -708,7 +739,7 @@ tf_ret tf_package_load(tf_ctx *ctx, const char *request,
     }
 
     package_scan scan = {0};
-    if (!scan_directory(ctx, directory, &scan)) {
+    if (!scan_directory(ctx, request, directory, &scan)) {
         scan_dispose(&scan);
         free(directory);
         return TF_ERR;

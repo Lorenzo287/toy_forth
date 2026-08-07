@@ -50,7 +50,7 @@ definitions, imported packages, and stack values remain available:
 ```console
 toy --file experiment.toy -i
 toy --eval "'double [ 2 * ] def" --interactive
-toy --interactive examples/graphs/demo
+toy --interactive examples/graphs/app
 ```
 
 The initial program still runs normally. With `--tdb`, debugging starts at its

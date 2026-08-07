@@ -73,6 +73,15 @@ int main(int argc, char **argv) {
           "C extension integer result");
     CHECK(toy_pop(state, 4), "release native results");
 
+#ifdef _WIN32
+    CHECK(toy_eval(state, "<native-loader-dependency>",
+                   "p.dependency-value") == TOY_OK,
+          "load a dependency beside the C extension");
+    CHECK(toy_get_int(state, 0, &integer) && integer == 42,
+          "C extension dependency result");
+    CHECK(toy_pop(state, 1), "release C extension dependency result");
+#endif
+
     CHECK(toy_import_package(state, plugin_path, NULL) == TOY_OK,
           "import the same package under its declared name");
     CHECK(toy_eval(state, "<native-loader-repeat>",

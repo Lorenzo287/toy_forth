@@ -7,9 +7,6 @@ Toy SDK.
 - `callbacks.c` captures normal output and diagnostics separately.
 - `values.c` exchanges collections and a retained quotation across the API.
 
-Work from a writable copy of this directory. The commands below assume it is
-the current directory; replace `path/to/toy` with the SDK directory.
-
 ## Windows
 
 Use the compiler ABI that matches the SDK archive. A GCC-style SDK can build

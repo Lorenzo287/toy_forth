@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "tf_repl.h"
 #include <ctype.h>
 #include <stdarg.h>
@@ -5,6 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 #include "tf_alloc.h"
 #include "tf_terminal.h"
 #include "tf_debug_control.h"
@@ -26,7 +34,8 @@ typedef struct {
 } repl_state;
 
 static tf_ret run_source(tf_ctx *ctx, const char *filename, const char *source,
-                         bool show_parsed);
+                         const char *import_base, bool show_parsed);
+static char *file_parent_directory(const char *filename);
 static char *read_repl_line(bool complete);
 static bool append_text(char **buf, size_t *len, size_t *cap, const char *text);
 static void reset_state(repl_state *state);
@@ -94,9 +103,46 @@ tf_ret tf_run_file(tf_ctx *ctx, const char *filename, bool show_parsed) {
     prg_text[n_read] = '\0';
     fclose(fp);
 
-    tf_ret result = run_source(ctx, filename, prg_text, show_parsed);
+    char *import_base = file_parent_directory(filename);
+    tf_ret result = run_source(ctx, filename, prg_text, import_base,
+                               show_parsed);
+    free(import_base);
     free(prg_text);
     return result;
+}
+
+static char *file_parent_directory(const char *filename) {
+    char *absolute = NULL;
+#ifdef _WIN32
+    DWORD needed = GetFullPathNameA(filename, 0, NULL, NULL);
+    if (needed > 0) {
+        absolute = tf_xmalloc(needed);
+        DWORD written = GetFullPathNameA(filename, needed, absolute, NULL);
+        if (written == 0 || written >= needed) {
+            free(absolute);
+            absolute = NULL;
+        }
+    }
+#else
+    absolute = realpath(filename, NULL);
+#endif
+    if (!absolute) return NULL;
+
+    for (char *cursor = absolute; *cursor; cursor++) {
+        if (*cursor == '\\') *cursor = '/';
+    }
+    char *separator = strrchr(absolute, '/');
+    if (!separator) {
+        free(absolute);
+        return tf_xstrdup(".");
+    }
+    if (separator == absolute ||
+        (separator == absolute + 2 && absolute[1] == ':')) {
+        separator[1] = '\0';
+    } else {
+        *separator = '\0';
+    }
+    return absolute;
 }
 
 static tf_ret hints_toggle(tf_ctx *ctx) {
@@ -837,7 +883,7 @@ tf_ret tf_run_repl(tf_ctx *ctx, bool show_parsed) {
             result = repl_command(ctx);
             ctx->suppress_repl_status = true;
         } else {
-            result = run_source(ctx, "<repl>", source, show_parsed);
+            result = run_source(ctx, "<repl>", source, NULL, show_parsed);
         }
         if (result == TF_EXIT_REQUESTED) {
             repl_result = result;
@@ -877,9 +923,10 @@ tf_ret tf_run_repl(tf_ctx *ctx, bool show_parsed) {
 }
 
 static tf_ret run_source(tf_ctx *ctx, const char *filename, const char *source,
-                         bool show_parsed) {
+                         const char *import_base, bool show_parsed) {
     tf_obj *prg = tf_parse_source(ctx, filename, source);
     if (!prg) return TF_ERR;
+    tf_source_file_set_import_base(prg->span.source, import_base);
 
     if (show_parsed) {
         printf("=== Parsed program ===\n");
@@ -911,7 +958,7 @@ static tf_ret run_source(tf_ctx *ctx, const char *filename, const char *source,
 }
 
 tf_ret tf_run_string(tf_ctx *ctx, const char *source, bool show_parsed) {
-    return run_source(ctx, "<eval>", source, show_parsed);
+    return run_source(ctx, "<eval>", source, NULL, show_parsed);
 }
 
 typedef struct {

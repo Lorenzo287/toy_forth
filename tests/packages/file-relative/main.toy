@@ -1,0 +1,3 @@
+"./dependency" import
+
+21 dependency.twice print

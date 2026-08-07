@@ -1,5 +1,5 @@
-\ Pass the package directory and an image path as arguments.
-argv 0 at 'rl import-as
+\ Pass an image path as the first argument.
+".." 'rl import-as
 
 'background [ 245 245 245 255 rl.rgba ] def
 'white [ 255 255 255 255 rl.rgba ] def
@@ -8,7 +8,7 @@ argv 0 at 'rl import-as
 800 450 "Toy texture resource" rl.init-window
 60 rl.set-target-fps
 
-argv 1 at rl.load-texture
+argv 0 at rl.load-texture
 
 [
 	rl.window-should-close? not

@@ -2,8 +2,8 @@
 
 These standalone examples implement graph-search algorithms in Toy. They also
 provide useful design evidence for combinations of stacks, combinators,
-captures, and specialized collections, but the programs are examples rather
-than a canonical definition of idiomatic Toy.
+captures, and specialized collections, and in general the organization of a
+small package.
 
 ## Graph Search
 
@@ -17,7 +17,7 @@ The `graph` package currently provides:
 Run the demonstration from the SDK or repository root:
 
 ```console
-toy examples/graphs/demo
+toy examples/graphs/app
 ```
 
 Both algorithms exercise more than one evolving value. BFS threads a deque,
@@ -40,15 +40,9 @@ explicit, while two small private words give the remaining shuffles clear
 stack effects. An alternative BFS state layout remains in
 [`benchmarks/graph-search.toy`](../../benchmarks/graph-search.toy). The recorded
 [graph-state experiment](../../benchmarks/results/2026-07-31-graph-state-threading.md)
-describes the runtime ownership issue that comparison exposed; it is supporting
-evidence rather than a prescription for arranging every graph algorithm.
+describes the runtime ownership issue that comparison exposed.
 
 Dijkstra permits duplicate queue entries and ignores stale entries when they
 are popped. This standard formulation avoids requiring a decrease-key API and
 keeps the priority queue interface small. Negative reachable edge weights are
 rejected.
-
-The implementations live in a source package so the demonstration and
-automated package test execute the exact same words. See
-[Writing Idiomatic Toy](../../docs/idioms.md) for broader guidance on the
-source patterns demonstrated here.

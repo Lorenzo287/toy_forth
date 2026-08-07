@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+__declspec(dllimport) int test_native_dependency_value(void);
+#endif
+
 static toy_status plugin_double(toy_state *state) {
     int64_t value = 0;
     if (!toy_get_int(state, 0, &value)) {
@@ -59,11 +63,20 @@ static toy_status plugin_make_pair(toy_state *state) {
     return status;
 }
 
+#ifdef _WIN32
+static toy_status plugin_dependency_value(toy_state *state) {
+    return toy_push_int(state, test_native_dependency_value());
+}
+#endif
+
 static const toy_native_word plugin_words[] = {
     {.name = "double", .callback = plugin_double},
     {.name = "make-resource", .callback = plugin_make_resource},
     {.name = "sequence-size", .callback = plugin_sequence_size},
     {.name = "make-pair", .callback = plugin_make_pair},
+#ifdef _WIN32
+    {.name = "dependency-value", .callback = plugin_dependency_value},
+#endif
 };
 
 static const toy_extension extension = {

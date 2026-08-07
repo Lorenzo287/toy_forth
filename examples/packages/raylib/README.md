@@ -26,7 +26,10 @@ extension = toy_raylib.dll
 
 On Linux use `-fPIC -shared` and `toy_raylib.so`; on macOS use `-dynamiclib`
 and `toy_raylib.dylib`. Link the Raylib and system libraries listed by the
-Raylib distribution for that platform.
+Raylib distribution for that platform. A dynamic Windows build can place
+`raylib.dll` beside `toy_raylib.dll`; Toy searches the extension directory for
+runtime dependencies. Linking Raylib's static archive instead makes the
+extension self-contained.
 
 ## Optional Helper
 
@@ -36,11 +39,12 @@ Raylib distribution for that platform.
 toy-c-package . toy_raylib.c --include path/to/raylib/include --lib path/to/raylib/lib/raylib.lib --lib opengl32 --lib gdi32 --lib winmm --lib shell32
 ```
 
-Run either standalone demo, passing the package directory first:
+Run either standalone demo. The texture demo also takes an image path:
 
 ```console
-toy --file demos/shapes.toy -- .
-toy --file demos/texture.toy -- . path/to/image.png
+toy --file demos/shapes.toy
+toy --file demos/texture.toy -- path/to/image.png
 ```
 
-Both demos import the exact package directory supplied on the command line.
+Both demos import the parent package directory relative to their own source
+files.

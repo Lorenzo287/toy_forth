@@ -118,8 +118,11 @@ toy --file examples/factorial.toy
 
 `--file` may be repeated; all files run in the same state. Arguments after `--`
 are available through `argc` and `argv`; option-like arguments are passed
-through unchanged. Root code may import packages, with relative imports
-resolved from the process working directory.
+through unchanged. Root code may import packages. A relative import in a
+`--file` source is resolved from that source file's directory; each repeated
+file retains its own import base. Relative imports from `--eval` and the REPL,
+which have no source-file directory, resolve from the process working
+directory.
 Add `-i` or `--interactive` to enter the REPL afterward with the same
 definitions, imports, stack, and runtime state. The REPL-only `load` word can
 evaluate another file later; it is intended for interactive exploration, not
