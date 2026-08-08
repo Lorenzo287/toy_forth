@@ -894,7 +894,6 @@ static bool frame_handle_error(tf_ctx *ctx, size_t entry_depth,
                 continue;
             }
             if (handled) {
-                ctx->program_error = false;
                 return true;
             }
         }
@@ -1113,7 +1112,6 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
     size_t entry_depth = ctx->call_stack_len;
     bool debug_continuing = false;
     ctx->error_reported = false;
-    ctx->program_error = false;
     frame_push_program_kind(ctx, program, TF_FRAME_PROGRAM_ROOT,
                             package_index);
 

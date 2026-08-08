@@ -11,6 +11,23 @@ _Static_assert((TF_WORD_LOOKUP_CACHE_CAP &
                 (TF_WORD_LOOKUP_CACHE_CAP - 1)) == 0,
                "word lookup cache capacity must be a power of two");
 
+static size_t word_table_capacity_for(size_t count) {
+    size_t capacity = 8;
+    while (count >= capacity * 7 / 10) capacity *= 2;
+    return capacity;
+}
+
+void tf_dict_init(tf_ctx *ctx, size_t initial_word_count) {
+    ctx->words = (tf_word_table){0};
+    ctx->words.entry_capacity = initial_word_count + 16;
+    ctx->words.entries =
+        tf_xmalloc(sizeof(tf_word) * ctx->words.entry_capacity);
+    ctx->words.capacity = word_table_capacity_for(initial_word_count);
+    ctx->words.buckets =
+        tf_xcalloc(ctx->words.capacity, sizeof(size_t));
+    ctx->words.resolution_generation = 1;
+}
+
 static unsigned long dict_hash(size_t package_index, const char *name,
                                size_t len) {
     unsigned long hash = 5381;
@@ -32,6 +49,21 @@ void tf_dict_lookup_cache_clear(tf_ctx *ctx) {
         }
     }
     memset(ctx->words.lookup_cache, 0, sizeof(ctx->words.lookup_cache));
+}
+
+void tf_dict_free(tf_ctx *ctx) {
+    if (!ctx) return;
+    tf_dict_lookup_cache_clear(ctx);
+    for (size_t i = 0; i < ctx->words.count; i++) {
+        tf_word *word = &ctx->words.entries[i];
+        if (word->owns_name) free((char *)word->name);
+        free(word->doc_stack_effect);
+        free(word->doc_description);
+        if (word->type == TF_WORD_USER) tf_obj_release(word->user_impl);
+    }
+    free(ctx->words.entries);
+    free(ctx->words.buckets);
+    ctx->words = (tf_word_table){0};
 }
 
 void tf_dict_resolution_changed(tf_ctx *ctx) {

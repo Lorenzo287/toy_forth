@@ -249,9 +249,12 @@ typedef struct tf_deferred_call tf_deferred_call;
  * Interpreter state shared by the VM and native words.
  */
 struct tf_ctx {
+    /* Values and dictionary. */
     tf_obj_pool objects;
     tf_obj *data_stack;
     tf_word_table words;
+
+    /* Iterative execution and its context-local caches. */
     tf_quick_program *quick_programs[TF_QUICK_PROGRAM_CACHE_CAP];
     tf_frame *call_stack;  // explicit execution stack
     size_t call_stack_len;
@@ -263,24 +266,30 @@ struct tf_ctx {
     tf_scratch_arena scratch;
     void *control_state_cache;
     size_t control_state_cache_len;
+
+    /* State services, packages, and loaded native libraries. */
     tf_random random;
     tf_package_table packages;
     tf_package_import_table package_imports;
     tf_native_library_table native_libraries;
     char *core_package_path;
 
+    /* Host inputs and execution status. */
     int argc;
     char **argv;
     size_t error_suppression_depth;
     bool error_reported;
-    bool program_error;
     bool suppress_repl_status;
     volatile sig_atomic_t interrupted;
     char *last_error;
     tf_source_span current_span;
     const char *current_word;
+
+    /* Debugger integration. */
     tf_debug_hook_fn debug_hook;
     void *debug_userdata;
+
+    /* Output and diagnostic destinations. */
     toy_write_fn output;
     void *output_userdata;
     toy_write_fn diagnostic;
@@ -355,6 +364,8 @@ bool tf_ctx_output_is_console(tf_ctx *ctx);
 const tf_builtin_group *tf_builtin_groups(size_t *count);
 
 /* Global word dictionary. */
+void tf_dict_init(tf_ctx *ctx, size_t initial_word_count);
+void tf_dict_free(tf_ctx *ctx);
 void tf_dict_set_native(tf_ctx *ctx, const char *name, tf_native_fn cb);
 void tf_dict_set_native_copy(tf_ctx *ctx, const char *name, tf_native_fn cb);
 void tf_dict_add_native_scoped(tf_ctx *ctx, const char *name, size_t name_len,
@@ -383,6 +394,8 @@ void tf_dict_each_visible(tf_ctx *ctx, tf_visible_word_fn visit,
 const tf_doc_entry *tf_word_doc(tf_word *word, tf_doc_entry *scratch);
 
 /* Package registry, imports, and active lexical package. */
+void tf_packages_init(tf_ctx *ctx);
+void tf_packages_free(tf_ctx *ctx);
 size_t tf_current_package_index(tf_ctx *ctx);
 bool tf_package_name_valid(const char *name, size_t name_len);
 bool tf_package_word_name_valid(const char *name, size_t name_len);

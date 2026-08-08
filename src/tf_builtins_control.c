@@ -874,7 +874,6 @@ static tf_ret try_error(tf_ctx *ctx, void *state, tf_ret status, bool *handled) 
     tf_stack_push(ctx, error);
     tf_ctx_clear_error(ctx);
     ctx->error_reported = false;
-    ctx->program_error = false;
     s->stage = TF_TRY_HANDLER;
 
     tf_ret res = tf_vm_call_callable(ctx, s->handler);
@@ -1825,7 +1824,6 @@ tf_ret tf_error(tf_ctx *ctx) {
     tf_obj *msg = tf_stack_pop(ctx);
     tf_ctx_program_errorf(ctx, "%s\n", msg->str.ptr);
     tf_obj_release(msg);
-    ctx->program_error = true;
     return TF_ERR;
 }
 

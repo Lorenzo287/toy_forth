@@ -6,6 +6,42 @@
 
 #include "tf_alloc.h"
 
+void tf_packages_init(tf_ctx *ctx) {
+    ctx->packages = (tf_package_table){0};
+    ctx->packages.cap = 4;
+    ctx->packages.len = 1;
+    ctx->packages.entries =
+        tf_xcalloc(ctx->packages.cap, sizeof(tf_package));
+    ctx->packages.entries[TF_ROOT_PACKAGE].name = tf_xstrdup("");
+    ctx->packages.entries[TF_ROOT_PACKAGE].state = TF_PACKAGE_LOADED;
+
+    ctx->package_imports = (tf_package_import_table){0};
+    ctx->package_imports.cap = 4;
+    ctx->package_imports.entries =
+        tf_xcalloc(ctx->package_imports.cap, sizeof(tf_package_import));
+    ctx->core_package_path = NULL;
+}
+
+void tf_packages_free(tf_ctx *ctx) {
+    if (!ctx) return;
+
+    for (size_t i = 0; i < ctx->packages.len; i++) {
+        free(ctx->packages.entries[i].name);
+        free(ctx->packages.entries[i].path);
+    }
+    free(ctx->packages.entries);
+
+    for (size_t i = 0; i < ctx->package_imports.len; i++) {
+        free(ctx->package_imports.entries[i].name);
+    }
+    free(ctx->package_imports.entries);
+    free(ctx->core_package_path);
+
+    ctx->packages = (tf_package_table){0};
+    ctx->package_imports = (tf_package_import_table){0};
+    ctx->core_package_path = NULL;
+}
+
 bool tf_package_name_valid(const char *name, size_t name_len) {
     if (!name || name_len == 0) return false;
     unsigned char first = (unsigned char)name[0];
