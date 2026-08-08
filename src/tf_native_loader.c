@@ -112,6 +112,9 @@ static const toy_extension_api extension_api = {
     .make_vector = toy_make_vector,
     .make_map = toy_make_map,
     .call_value = toy_call_value,
+    .defer_call = toy_defer_call,
+    .deferred_count = toy_deferred_count,
+    .run_deferred = toy_run_deferred,
 };
 
 static void remember_library(tf_ctx *ctx, void *handle) {

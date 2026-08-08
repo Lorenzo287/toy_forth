@@ -55,23 +55,26 @@ int main(int argc, char **argv) {
     CHECK(toy_eval(state, "<native-loader>",
                    "21 p.double p.make-resource "
                    "[ 1 2 3 ] p.sequence-size "
-                   "p.make-pair [ 7 9 ] ==") == TOY_OK,
+                   "p.make-pair [ 7 9 ] == "
+                   "6 [ 2 * ] p.defer") == TOY_OK,
           "load and call C extension");
 
     const char *resource_type = NULL;
     int64_t integer = 0;
     bool boolean = false;
-    CHECK(toy_stack_size(state) == 4, "native result stack size");
-    CHECK(toy_get_bool(state, 0, &boolean) && boolean,
+    CHECK(toy_stack_size(state) == 5, "native result stack size");
+    CHECK(toy_get_int(state, 0, &integer) && integer == 12,
+          "C extension deferred callback result");
+    CHECK(toy_get_bool(state, 1, &boolean) && boolean,
           "C extension collection construction");
-    CHECK(toy_get_int(state, 1, &integer) && integer == 3,
+    CHECK(toy_get_int(state, 2, &integer) && integer == 3,
           "C extension retained sequence access");
-    CHECK(toy_get_resource_type(state, 2, &resource_type) &&
+    CHECK(toy_get_resource_type(state, 3, &resource_type) &&
               strcmp(resource_type, "test.plugin.resource") == 0,
           "C extension resource result");
-    CHECK(toy_get_int(state, 3, &integer) && integer == 42,
+    CHECK(toy_get_int(state, 4, &integer) && integer == 42,
           "C extension integer result");
-    CHECK(toy_pop(state, 4), "release native results");
+    CHECK(toy_pop(state, 5), "release native results");
 
 #ifdef _WIN32
     CHECK(toy_eval(state, "<native-loader-dependency>",

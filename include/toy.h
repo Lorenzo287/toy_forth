@@ -118,6 +118,19 @@ toy_status toy_make_map(toy_state *state, size_t pair_count);
  * Like host evaluation calls, this requires an idle state. */
 toy_status toy_call_value(toy_state *state, const toy_value *callable);
 
+/* Queue a retained callable without executing it synchronously. On success,
+ * the deepest-to-top range of `argument_count` stack values transfers to the
+ * queued call. Calls queued during execution start FIFO after the current
+ * native word returns. Calls queued while idle run on the next host execution
+ * or through `toy_run_deferred`. The state remains single-threaded. */
+toy_status toy_defer_call(toy_state *state, const toy_value *callable,
+                          size_t argument_count);
+/* Number of queued calls that have not started. */
+size_t toy_deferred_count(toy_state *state);
+/* Run queued calls while the state is idle. Stops on the first non-OK status;
+ * calls that have not started remain queued. */
+toy_status toy_run_deferred(toy_state *state);
+
 /* Diagnostics and cooperative interruption. */
 const char *toy_get_error(toy_state *state);
 void toy_clear_error(toy_state *state);
@@ -178,7 +191,7 @@ toy_status toy_run_package(toy_state *state, const char *path);
 
 /* C-extension ABI. */
 
-#define TOY_EXTENSION_ABI_VERSION 3u
+#define TOY_EXTENSION_ABI_VERSION 4u
 #define TOY_EXTENSION_ENTRY_SYMBOL "toy_extension_init"
 
 #if defined(_WIN32)
@@ -248,6 +261,10 @@ typedef struct {
     toy_status (*make_vector)(toy_state *state, size_t item_count);
     toy_status (*make_map)(toy_state *state, size_t pair_count);
     toy_status (*call_value)(toy_state *state, const toy_value *callable);
+    toy_status (*defer_call)(toy_state *state, const toy_value *callable,
+                             size_t argument_count);
+    size_t (*deferred_count)(toy_state *state);
+    toy_status (*run_deferred)(toy_state *state);
 } toy_extension_api;
 
 /* Returned by the exported toy_extension_init entry point. */
@@ -441,6 +458,19 @@ toy_status toy_make_map(toy_state *state, size_t pair_count) {
 
 toy_status toy_call_value(toy_state *state, const toy_value *callable) {
     return toy_extension_host->call_value(state, callable);
+}
+
+toy_status toy_defer_call(toy_state *state, const toy_value *callable,
+                          size_t argument_count) {
+    return toy_extension_host->defer_call(state, callable, argument_count);
+}
+
+size_t toy_deferred_count(toy_state *state) {
+    return toy_extension_host->deferred_count(state);
+}
+
+toy_status toy_run_deferred(toy_state *state) {
+    return toy_extension_host->run_deferred(state);
 }
 
 #endif  // TOY_EXTENSION_IMPLEMENTATION

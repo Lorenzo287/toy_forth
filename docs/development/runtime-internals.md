@@ -35,6 +35,11 @@ the C call stack. The main loop keeps processing frames until no work remains.
   types, underflow, and overflow fall back to the canonical native word so
   diagnostics and mixed-number behavior stay unchanged.
 - Native continuation frames resume C native words after a callable has run.
+- Deferred C calls retain a callable and an argument vector in a context-local
+  FIFO. Between instructions, the VM moves one call's arguments onto the data
+  stack and places a completion continuation below its callable frame. That
+  continuation prevents later events from overtaking the active handler and
+  clears the active marker on success or unwind, without recursive VM entry.
 - `linrec` and `genrec` keep one continuation plus a pending-unwind count
   instead of pushing one native frame per logical recursion level. `binrec`
   similarly keeps compact logical levels in one controller, retaining its four
@@ -98,11 +103,12 @@ but remain state-bound, so C cannot expose or transfer `tf_obj` layouts between
 runtimes. Typed resource access wraps external pointers in ordinary refcounted
 objects with copied tags and exactly-once destructors, while keeping the
 pointer and object layout opaque to Toy code.
-The same header defines C-extension ABI version 2: an exported
+The same header defines C-extension ABI version 4: an exported
 descriptor entry point, a size-tagged host function table, and an
 implementation-macro forwarding layer for the familiar public stack/resource
-calls. A C extension defines `TOY_EXTENSION_IMPLEMENTATION` before including
-`toy.h` and does not link a second runtime or a separate Toy support library.
+and deferred-call APIs. A C extension defines `TOY_EXTENSION_IMPLEMENTATION`
+before including `toy.h` and does not link a second runtime or a separate Toy
+support library.
 Internal headers continue to expose implementation structures only to the
 runtime and bundled frontends. See the [embedding guide](../embedding.md) for
 the current ownership and execution contracts.

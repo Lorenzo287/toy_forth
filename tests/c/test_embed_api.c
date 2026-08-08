@@ -86,6 +86,37 @@ static toy_status host_interrupt_now(toy_state *state) {
     return TOY_OK;
 }
 
+static toy_status host_defer(toy_state *state) {
+    toy_value *callable = toy_value_retain(state, 0);
+    if (!callable) return toy_fail(state, "host.defer expected a callable");
+    if (!toy_pop(state, 1)) {
+        toy_value_release(callable);
+        return toy_fail(state, "host.defer could not pop its callable");
+    }
+    toy_status status = toy_defer_call(state, callable, 1);
+    toy_value_release(callable);
+    return status;
+}
+
+static toy_status host_defer_twice(toy_state *state) {
+    toy_value *callable = toy_value_retain(state, 0);
+    if (!callable) {
+        return toy_fail(state, "host.defer-twice expected a callable");
+    }
+    if (!toy_pop(state, 1)) {
+        toy_value_release(callable);
+        return toy_fail(state,
+                        "host.defer-twice could not pop its callable");
+    }
+
+    toy_status status = toy_push_int(state, 3);
+    if (status == TOY_OK) status = toy_defer_call(state, callable, 1);
+    if (status == TOY_OK) status = toy_push_int(state, 4);
+    if (status == TOY_OK) status = toy_defer_call(state, callable, 1);
+    toy_value_release(callable);
+    return status;
+}
+
 static const toy_native_word host_words[] = {
     {
         .name = "double",
@@ -95,6 +126,8 @@ static const toy_native_word host_words[] = {
     },
     {.name = "fail-resource", .callback = host_fail_resource},
     {.name = "interrupt", .callback = host_interrupt_now},
+    {.name = "defer", .callback = host_defer},
+    {.name = "defer-twice", .callback = host_defer_twice},
 };
 
 static const toy_native_package host_package = {
@@ -231,6 +264,20 @@ int main(void) {
     CHECK(toy_get_int(first, 0, &integer) && integer == 42,
           "native word result");
     CHECK(toy_pop(first, 1), "pop native result");
+    CHECK(toy_eval(first, "<deferred-native>",
+                   "5 [ 3 * ] host.defer 1 +") == TOY_OK,
+          "native word defers a Toy quotation without VM re-entry");
+    CHECK(stack_is_single_int(first, 16),
+          "deferred quotation runs before the next Toy instruction");
+    CHECK(toy_pop(first, 1), "pop deferred native result");
+    CHECK(toy_eval(first, "<deferred-fifo>",
+                   "[ 10 * ] host.defer-twice") == TOY_OK,
+          "native word queues multiple deferred calls");
+    CHECK(toy_stack_size(first) == 2 &&
+              toy_get_int(first, 0, &integer) && integer == 40 &&
+              toy_get_int(first, 1, &integer) && integer == 30,
+          "multiple deferred calls run FIFO with owned arguments");
+    CHECK(toy_pop(first, 2), "pop deferred FIFO results");
     CHECK(toy_register_package(first, &host_tools_package) == TOY_OK,
           "register second package");
     CHECK(toy_eval(first, "<second-native>", "21 tools.double") == TOY_OK,
@@ -591,10 +638,96 @@ int main(void) {
     CHECK(toy_pop(first, 1), "pop callable result");
     CHECK(toy_call_value(second, triple) == TOY_ERROR,
           "reject cross-state callable");
+    CHECK(toy_defer_call(first, triple, 1) == TOY_ERROR &&
+              toy_deferred_count(first) == 0 && toy_stack_size(first) == 0,
+          "deferred argument underflow preserves stack and queue");
+
+    CHECK(toy_push_int(first, 7) == TOY_OK,
+          "push idle deferred argument");
+    CHECK(toy_defer_call(first, triple, 1) == TOY_OK,
+          "queue retained quotation while idle");
+    CHECK(toy_deferred_count(first) == 1 && toy_stack_size(first) == 0,
+          "queued call owns its transferred argument");
+    CHECK(toy_run_deferred(first) == TOY_OK,
+          "run deferred calls from an idle host");
+    CHECK(toy_deferred_count(first) == 0 &&
+              stack_is_single_int(first, 21),
+          "idle deferred call returns its normal stack result");
+    CHECK(toy_pop(first, 1), "pop idle deferred result");
+    CHECK(toy_push_int(first, 2) == TOY_OK &&
+              toy_defer_call(first, triple, 1) == TOY_OK,
+          "queue call for next host execution");
+    CHECK(toy_eval(first, "<implicit-deferred>", "1 +") == TOY_OK &&
+              stack_is_single_int(first, 7),
+          "next host execution starts an idle deferred call first");
+    CHECK(toy_pop(first, 1), "pop implicit deferred result");
+    CHECK(toy_eval(first, "<named-deferred>",
+                   "'host.double 'host.double >call") == TOY_OK,
+          "create retained symbol and call values");
+    toy_value *deferred_symbol = toy_value_retain(first, 1);
+    toy_value *deferred_call = toy_value_retain(first, 0);
+    CHECK(deferred_symbol && deferred_call && toy_pop(first, 2),
+          "retain named deferred callables");
+    CHECK(toy_push_int(first, 8) == TOY_OK &&
+              toy_defer_call(first, deferred_symbol, 1) == TOY_OK &&
+              toy_push_int(first, 9) == TOY_OK &&
+              toy_defer_call(first, deferred_call, 1) == TOY_OK &&
+              toy_run_deferred(first) == TOY_OK,
+          "run deferred symbols and explicit calls");
+    CHECK(toy_stack_size(first) == 2 &&
+              toy_get_int(first, 0, &integer) && integer == 18 &&
+              toy_get_int(first, 1, &integer) && integer == 16,
+          "named deferred callables preserve FIFO order");
+    CHECK(toy_pop(first, 2), "pop named deferred results");
+    toy_value_release(deferred_call);
+    toy_value_release(deferred_symbol);
+
+    CHECK(toy_push_int(second, 5) == TOY_OK,
+          "push cross-state deferred argument");
+    CHECK(toy_defer_call(second, triple, 1) == TOY_ERROR,
+          "reject cross-state deferred callable");
+    CHECK(stack_is_single_int(second, 5) && toy_deferred_count(second) == 0,
+          "rejected deferred call preserves arguments and queue");
+    CHECK(toy_pop(second, 1), "pop rejected deferred argument");
+
+    CHECK(toy_eval(first, "<deferred-errors>",
+                   "[ \"deferred failure\" error ] [ 2 * ]") == TOY_OK,
+          "create deferred error handlers");
+    toy_value *failing_deferred = toy_value_retain(first, 1);
+    toy_value *double_deferred = toy_value_retain(first, 0);
+    CHECK(failing_deferred && double_deferred,
+          "retain deferred error handlers");
+    CHECK(toy_pop(first, 2), "pop deferred error handlers");
+    CHECK(toy_defer_call(first, failing_deferred, 0) == TOY_OK,
+          "queue failing deferred call");
+    CHECK(toy_push_int(first, 6) == TOY_OK &&
+              toy_defer_call(first, double_deferred, 1) == TOY_OK,
+          "queue deferred call after failure");
+    CHECK(toy_deferred_count(first) == 2,
+          "count queued deferred calls");
+    CHECK(toy_run_deferred(first) == TOY_ERROR,
+          "deferred drain stops on handler error");
+    CHECK(toy_get_error(first) &&
+              strcmp(toy_get_error(first), "deferred failure") == 0 &&
+              toy_deferred_count(first) == 1,
+          "unstarted deferred call survives earlier error");
+    CHECK(toy_run_deferred(first) == TOY_OK &&
+              toy_deferred_count(first) == 0 &&
+              stack_is_single_int(first, 12),
+          "resume deferred drain after handling an error");
+    CHECK(toy_pop(first, 1), "pop resumed deferred result");
+    toy_value_release(double_deferred);
+    toy_value_release(failing_deferred);
 
     score = toy_sequence_get(scores, 0);
     CHECK(score && toy_call_value(first, score) == TOY_ERROR,
           "reject retained non-callable");
+    CHECK(toy_push_int(first, 9) == TOY_OK &&
+              toy_defer_call(first, score, 1) == TOY_ERROR,
+          "reject retained non-callable for deferred execution");
+    CHECK(stack_is_single_int(first, 9),
+          "invalid deferred callable preserves arguments");
+    CHECK(toy_pop(first, 1), "pop invalid deferred argument");
     toy_value_release(score);
 
     CHECK(toy_make_vector(first, 1) == TOY_ERROR,
@@ -742,13 +875,23 @@ int main(void) {
                             destroy_test_resource,
                             &shutdown_destroy_count) == TOY_OK,
           "push state-owned shutdown resource");
+    CHECK(toy_eval(second, "<shutdown-deferred>", "[ drop ]") == TOY_OK,
+          "create shutdown deferred callable");
+    toy_value *shutdown_callable = toy_value_retain(second, 0);
+    CHECK(shutdown_callable && toy_pop(second, 1),
+          "retain shutdown deferred callable");
+    CHECK(toy_defer_call(second, shutdown_callable, 1) == TOY_OK &&
+              toy_deferred_count(second) == 1 &&
+              toy_stack_size(second) == 0,
+          "queue resource as an owned deferred argument");
+    toy_value_release(shutdown_callable);
 
     CHECK(toy_eval(first, "<live-list-slab>", "0 1000 range >list") == TOY_OK,
           "create list spanning several slabs");
 
     toy_state_free(second);
     CHECK(shutdown_destroy_count == 1,
-          "state shutdown destroys its remaining resources");
+          "state shutdown destroys resources owned by deferred calls");
     CHECK(toy_eval(first, "<list-after-cache-clear>",
                    "dup 999 contains?") == TOY_OK,
           "list remains valid after another state clears empty caches");

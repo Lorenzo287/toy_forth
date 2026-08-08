@@ -218,6 +218,17 @@ reference disappears. This makes handles usable in ordinary collections
 without exposing pointers to Toy code. Borrowed pointers returned by
 `toy_get_resource()` remain valid only while their resource value is alive.
 
+A handwritten extension may retain a Toy callable and queue it with
+`toy_defer_call()` when a same-thread foreign callback fires during a native
+word. The VM runs the calls FIFO after native code returns, avoiding recursive
+execution. Queueing transfers an explicit number of top stack arguments;
+callbacks that have not started remain owned by the state across handler
+errors. This mechanism is fire-and-forget and single-threaded, so foreign APIs
+that require an immediate callback result or invoke callbacks on worker threads
+still need a library-specific adapter. The
+[embedding callback contract](./embedding.md#deferred-calls) and buildable
+[`deferred.c`](../examples/embedding/deferred.c) show the complete lifecycle.
+
 The dependency-free [`basic`](../examples/packages/basic/) package is the
 smallest complete extension. The handwritten
 [`Raylib`](../examples/packages/raylib/) and

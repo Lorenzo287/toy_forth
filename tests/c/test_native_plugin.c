@@ -63,6 +63,18 @@ static toy_status plugin_make_pair(toy_state *state) {
     return status;
 }
 
+static toy_status plugin_defer(toy_state *state) {
+    toy_value *callable = toy_value_retain(state, 0);
+    if (!callable) return toy_fail(state, "plugin.defer expected a callable");
+    if (!toy_pop(state, 1)) {
+        toy_value_release(callable);
+        return toy_fail(state, "plugin.defer failed to pop its callable");
+    }
+    toy_status status = toy_defer_call(state, callable, 1);
+    toy_value_release(callable);
+    return status;
+}
+
 #ifdef _WIN32
 static toy_status plugin_dependency_value(toy_state *state) {
     return toy_push_int(state, test_native_dependency_value());
@@ -74,6 +86,7 @@ static const toy_native_word plugin_words[] = {
     {.name = "make-resource", .callback = plugin_make_resource},
     {.name = "sequence-size", .callback = plugin_sequence_size},
     {.name = "make-pair", .callback = plugin_make_pair},
+    {.name = "defer", .callback = plugin_defer},
 #ifdef _WIN32
     {.name = "dependency-value", .callback = plugin_dependency_value},
 #endif

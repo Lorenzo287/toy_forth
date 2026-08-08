@@ -27,6 +27,12 @@ struct tf_scratch_block {
     max_align_t alignment;
 };
 
+struct tf_deferred_call {
+    tf_obj *callable;
+    tf_obj *arguments;
+    tf_deferred_call *next;
+};
+
 typedef union {
     struct {
         tf_scratch_block *block;
@@ -177,6 +183,59 @@ tf_obj *tf_stack_peek(tf_ctx *ctx, size_t depth) {
     size_t len = tf_stack_len(ctx);
     if (depth >= len) return NULL;
     return ctx->data_stack->vector.elem[len - 1 - depth];
+}
+
+/* === Deferred Calls === */
+
+void tf_deferred_call_enqueue(tf_ctx *ctx, tf_obj *callable,
+                              size_t argument_count) {
+    assert(ctx);
+    assert(callable);
+    assert(tf_obj_is_callable(callable));
+    assert(tf_stack_len(ctx) >= argument_count);
+
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
+    tf_deferred_call *call = tf_xmalloc(sizeof(*call));
+    call->callable = callable;
+    tf_obj_retain(callable);
+    call->arguments = tf_obj_new_vector_with_capacity(argument_count);
+    call->next = NULL;
+
+    size_t first_argument = tf_stack_len(ctx) - argument_count;
+    for (size_t i = 0; i < argument_count; i++) {
+        tf_obj *argument = ctx->data_stack->vector.elem[first_argument + i];
+        tf_obj_retain(argument);
+        tf_vector_push(call->arguments, argument);
+    }
+    for (size_t i = 0; i < argument_count; i++) {
+        tf_obj_release(tf_stack_pop(ctx));
+    }
+
+    if (ctx->deferred_tail) {
+        ctx->deferred_tail->next = call;
+    } else {
+        ctx->deferred_head = call;
+    }
+    ctx->deferred_tail = call;
+    ctx->deferred_count++;
+    tf_obj_pool_leave(previous_pool);
+}
+
+size_t tf_deferred_call_count(tf_ctx *ctx) {
+    return ctx ? ctx->deferred_count : 0;
+}
+
+void tf_deferred_calls_clear(tf_ctx *ctx) {
+    if (!ctx) return;
+    while (ctx->deferred_head) {
+        tf_deferred_call *call = ctx->deferred_head;
+        ctx->deferred_head = call->next;
+        tf_obj_release(call->callable);
+        tf_obj_release(call->arguments);
+        free(call);
+    }
+    ctx->deferred_tail = NULL;
+    ctx->deferred_count = 0;
 }
 
 /* === Execution Frames === */
@@ -392,6 +451,48 @@ static void frame_unwind_to(tf_ctx *ctx, size_t entry_depth, tf_ret status) {
     while (ctx->call_stack_len > entry_depth) {
         tf_frame_pop(ctx, status);
     }
+}
+
+static tf_ret deferred_call_finish(tf_ctx *ctx, void *state, bool *done) {
+    (void)ctx;
+    (void)state;
+    *done = true;
+    return TF_OK;
+}
+
+static void deferred_call_cleanup(tf_ctx *ctx, void *state, tf_ret status) {
+    (void)state;
+    (void)status;
+    ctx->deferred_active = false;
+}
+
+static tf_ret deferred_call_start_next(tf_ctx *ctx) {
+    assert(!ctx->deferred_active);
+    assert(ctx->deferred_head);
+
+    tf_deferred_call *call = ctx->deferred_head;
+    ctx->deferred_head = call->next;
+    if (!ctx->deferred_head) ctx->deferred_tail = NULL;
+    ctx->deferred_count--;
+    ctx->deferred_active = true;
+
+    tf_obj *callable = call->callable;
+    tf_source_span previous_span = ctx->current_span;
+    ctx->current_span = tf_obj_span(callable);
+    tf_frame_push_native(ctx, deferred_call_finish, deferred_call_cleanup,
+                         NULL);
+
+    for (size_t i = 0; i < call->arguments->vector.len; i++) {
+        tf_stack_push(ctx, call->arguments->vector.elem[i]);
+    }
+    call->arguments->vector.len = 0;
+    tf_obj_release(call->arguments);
+
+    free(call);
+    tf_ret result = tf_vm_call_callable(ctx, callable);
+    tf_obj_release(callable);
+    ctx->current_span = previous_span;
+    return result;
 }
 
 static tf_source_span ctx_best_span(tf_ctx *ctx) {
@@ -1021,6 +1122,24 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
             frame_unwind_to(ctx, entry_depth, TF_INTERRUPTED);
             ctx->interrupted = 0;  // reset for next run
             return TF_INTERRUPTED;
+        }
+
+        if (!ctx->deferred_active && ctx->deferred_head) {
+            tf_ret deferred_res = deferred_call_start_next(ctx);
+            if (deferred_res == TF_INTERRUPTED ||
+                deferred_res == TF_EXIT_REQUESTED) {
+                frame_unwind_to(ctx, entry_depth, deferred_res);
+                return deferred_res;
+            }
+            if (deferred_res == TF_ERR) {
+                if (!ctx->error_reported) {
+                    tf_ctx_runtime_errorf(ctx,
+                                          "execution of deferred call failed\n");
+                }
+                if (frame_handle_error(ctx, entry_depth, TF_ERR)) continue;
+                return TF_ERR;
+            }
+            continue;
         }
 
         tf_frame *f = &ctx->call_stack[ctx->call_stack_len - 1];

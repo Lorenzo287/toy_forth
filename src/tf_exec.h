@@ -243,6 +243,8 @@ typedef struct {
     tf_obj *body;
 } tf_debug_word_info;
 
+typedef struct tf_deferred_call tf_deferred_call;
+
 /*
  * Interpreter state shared by the VM and native words.
  */
@@ -254,6 +256,10 @@ struct tf_ctx {
     tf_frame *call_stack;  // explicit execution stack
     size_t call_stack_len;
     size_t call_stack_cap;
+    tf_deferred_call *deferred_head;
+    tf_deferred_call *deferred_tail;
+    size_t deferred_count;
+    bool deferred_active;
     tf_scratch_arena scratch;
     void *control_state_cache;
     size_t control_state_cache_len;
@@ -317,6 +323,12 @@ void tf_frame_push_native_handler(tf_ctx *ctx, tf_frame_step_fn step,
                                   tf_frame_error_fn on_error, void *state);
 void tf_frame_pop(tf_ctx *ctx, tf_ret status);
 void tf_quick_program_cache_clear(tf_ctx *ctx);
+
+/* Same-thread calls owned by the VM and started between instructions. */
+void tf_deferred_call_enqueue(tf_ctx *ctx, tf_obj *callable,
+                              size_t argument_count);
+size_t tf_deferred_call_count(tf_ctx *ctx);
+void tf_deferred_calls_clear(tf_ctx *ctx);
 
 /* Strict-LIFO scratch storage owned by native continuation frames. */
 void *tf_scratch_alloc(tf_ctx *ctx, size_t size);

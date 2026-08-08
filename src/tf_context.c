@@ -59,6 +59,10 @@ tf_ctx *tf_ctx_new(int argc, char **argv) {
     ctx->call_stack = NULL;
     ctx->call_stack_len = 0;
     ctx->call_stack_cap = 0;
+    ctx->deferred_head = NULL;
+    ctx->deferred_tail = NULL;
+    ctx->deferred_count = 0;
+    ctx->deferred_active = false;
     ctx->scratch = (tf_scratch_arena){0};
     ctx->control_state_cache = NULL;
     ctx->control_state_cache_len = 0;
@@ -104,6 +108,7 @@ tf_ctx *tf_ctx_new(int argc, char **argv) {
 
 void tf_ctx_free(tf_ctx *ctx) {
     tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
+    tf_deferred_calls_clear(ctx);
     tf_obj_release(ctx->data_stack);
     while (ctx->call_stack_len > 0) tf_frame_pop(ctx, TF_OK);
     free(ctx->call_stack);

@@ -349,7 +349,7 @@ evaluation, and native-library workflows.
 A C program can embed the runtime, evaluate source, call Toy words,
 exchange values, and add its own words. The
 [embedding guide](./docs/embedding.md) explains the complete minimal host,
-values, ownership, callbacks, and errors.
+values, ownership, deferred callbacks, and errors.
 
 A Toy package can contain Toy source, a C extension, or both. An extension uses the
 same single `toy.h` header as an embedding host and compiles to a shared library

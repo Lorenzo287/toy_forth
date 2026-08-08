@@ -670,6 +670,46 @@ toy_status toy_call_value(toy_state *state, const toy_value *callable) {
     return toy_call(state, "exec");
 }
 
+toy_status toy_defer_call(toy_state *state, const toy_value *callable,
+                          size_t argument_count) {
+    if (!state || !callable) return TOY_ERROR;
+    if (callable->state != state) {
+        return api_errorf(state,
+                          "cannot defer a value retained by another state");
+    }
+    if (!tf_obj_is_callable(callable->object)) {
+        return api_errorf(state, "retained value is not callable");
+    }
+    size_t stack_size = tf_stack_len(state);
+    if (stack_size < argument_count) {
+        return api_errorf(
+            state,
+            "cannot defer a call with %zu argument%s from a stack of %zu",
+            argument_count, argument_count == 1 ? "" : "s", stack_size);
+    }
+
+    tf_deferred_call_enqueue(state, callable->object, argument_count);
+    return TOY_OK;
+}
+
+size_t toy_deferred_count(toy_state *state) {
+    return tf_deferred_call_count(state);
+}
+
+toy_status toy_run_deferred(toy_state *state) {
+    if (!state) return TOY_ERROR;
+    if (!state_is_idle(state)) return TOY_ERROR;
+
+    tf_obj_pool *previous_pool = tf_obj_pool_enter(&state->objects);
+    tf_obj *program = tf_obj_new_vector();
+    tf_ret result = tf_vm_exec(state, program);
+    tf_obj_release(program);
+    tf_obj_pool_leave(previous_pool);
+    state->current_span = (tf_source_span){0};
+    state->current_word = NULL;
+    return result;
+}
+
 const char *toy_get_error(toy_state *state) {
     return tf_ctx_last_error(state);
 }

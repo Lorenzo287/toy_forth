@@ -5,6 +5,8 @@ Toy SDK.
 
 - `embed.c` registers a C word, evaluates Toy code, and calls a Toy word.
 - `callbacks.c` captures normal output and diagnostics separately.
+- `deferred.c` queues owned callback arguments from a native word and an idle
+  host, then runs the Toy handlers without VM re-entry.
 - `values.c` exchanges collections and a retained quotation across the API.
 
 ## Windows
@@ -15,6 +17,7 @@ each host directly:
 ```console
 gcc embed.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -luser32 -o embed.exe
 gcc callbacks.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -luser32 -o callbacks.exe
+gcc deferred.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -luser32 -o deferred.exe
 gcc values.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -luser32 -o values.exe
 ```
 
@@ -29,6 +32,7 @@ links `dl`; macOS does not:
 ```console
 cc embed.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -lm -ldl -o embed
 cc callbacks.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -lm -ldl -o callbacks
+cc deferred.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -lm -ldl -o deferred
 cc values.c -I path/to/toy/include path/to/toy/lib/libtoy_runtime.a -lm -ldl -o values
 ```
 

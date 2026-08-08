@@ -168,6 +168,55 @@ provide its package-scoped API.
 [`examples/embedding/values.c`](../examples/embedding/values.c) builds a map,
 traverses a returned value, and retains a Toy quotation as a callback.
 
+## Deferred Calls
+
+`toy_call_value()` executes synchronously and therefore requires an idle state.
+Use `toy_defer_call()` when a same-thread C callback occurs while a native word
+is running, or when an idle host wants to queue events before entering Toy:
+
+```c
+toy_push_string(state, message, message_length);
+if (toy_defer_call(state, handler, 1) != TOY_OK) {
+    /* The argument remains on the stack when validation fails. */
+    fprintf(stderr, "%s\n", toy_get_error(state));
+}
+```
+
+On success, the call owns the top `argument_count` stack values and an internal
+reference to the retained callable. Arguments keep their deepest-to-top order,
+so the handler receives the same stack shape later. The caller may release its
+`toy_value` immediately after queueing.
+
+Calls queued during execution run FIFO after the current native word returns
+and before the next Toy instruction. This lets a synchronous C library notify
+Toy without recursively entering the VM. Calls queued while idle run at the
+start of the next host evaluation or explicitly through
+`toy_run_deferred()`. `toy_deferred_count()` reports calls that have not
+started:
+
+```c
+while (toy_deferred_count(state) > 0) {
+    if (toy_run_deferred(state) != TOY_OK) break;
+}
+```
+
+A handler runs with its captured arguments above the surrounding data stack
+and otherwise follows ordinary Toy stack semantics. Its outputs remain on the
+stack. An error, interruption, or exit request stops the current drain; calls
+that have not started remain queued, while the failing handler's completed
+stack effects are not rolled back. State teardown releases every queued
+callable and argument.
+
+Deferred calls are fire-and-forget: the originating C callback returns before
+the Toy handler runs and cannot synchronously receive its result. They suit
+notifications, timers, input, and completed I/O. A C API that requires an
+immediate callback result needs a different adapter. The state remains
+single-threaded; a worker-thread callback must first transfer its event to the
+state owner's thread before using any Toy API.
+
+The buildable [`deferred.c`](../examples/embedding/deferred.c) demonstrates
+both a native word queueing two callbacks and an idle host draining an event.
+
 ## Foreign Handles
 
 A host can wrap an external handle without exposing its pointer to Toy:
@@ -212,7 +261,8 @@ The boundary has a few durable rules:
   concurrent access;
 - `toy_eval()`, `toy_call()`, package loading, and retained calls require an
   idle state;
-- a native word must not re-enter the state that is currently calling it;
+- a native word must not re-enter the state that is currently calling it; it
+  may queue fire-and-forget work with `toy_defer_call()`;
 - borrowed strings and pointers do not survive arbitrary mutation;
 - every retained value must be released before its state;
 - allocation failure terminates the process;
