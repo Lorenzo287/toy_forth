@@ -1,6 +1,7 @@
 ".." 'db import-as
 
 ":memory:" db.open
+[ "change: {}\n" printf ] db.on-update
 dup "CREATE TABLE people (id INTEGER PRIMARY KEY, name TEXT NOT NULL)" db.exec
 
 dup "INSERT INTO people (id, name) VALUES (?, ?)" db.prepare
@@ -24,4 +25,5 @@ dup "SELECT id, name FROM people ORDER BY id" db.prepare
 ] while
 
 drop \ statement is finalized
+db.clear-update-handler
 drop \ database is closed

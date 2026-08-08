@@ -53,10 +53,12 @@ Priorities are:
 2. grow generated bindings only with broadly reusable shapes whose conversion
    and ownership rules remain explicit; handwritten extensions remain the
    escape hatch for library-specific behavior;
-3. validate deferred, fire-and-forget Toy callbacks in real adapters, and add
-   result-bearing native continuations only when a synchronous C API
-   demonstrates the need; neither path may re-enter the VM or lose its
-   iterative execution model.
+3. validate deferred, fire-and-forget Toy callbacks in real adapters without
+   re-entering the VM or losing its iterative execution model.
+
+Result-bearing native continuations are explicitly deferred. Revisit them only
+when a concrete synchronous C callback requires a return value and supplies
+enough lifecycle constraints to design and test the boundary.
 
 `core:ffi` should remain a small exploratory package for direct scalar and
 string calls, not become privileged C syntax or a complete C interface.

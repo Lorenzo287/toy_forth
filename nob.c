@@ -220,8 +220,10 @@ int main(int argc, char **argv) {
         ok = build_distribution(&config, root);
     }
     if (ok && strcmp(command, "benchmark") == 0) {
-        ok = run_benchmarks(custom_benchmark ? benchmark_toy : config.toy_exe,
-                            &benchmark_names, benchmark_runs);
+        ok = run_benchmarks(custom_benchmark ? NULL : &config,
+                            custom_benchmark ? benchmark_toy : config.toy_exe,
+                            &benchmark_names, benchmark_runs,
+                            &compile_commands);
     }
     if (ok && needs_core) ok = write_compile_commands(&compile_commands);
 

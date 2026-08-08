@@ -496,6 +496,14 @@ static const Package_Test_Case package_test_cases[] = {
      "invalid core package path"},
     {"fail_package_nontransitive", "tests/packages/nontransitive/app", 1,
      NULL, "undefined word 'leaf.value'"},
+    {"fail_package_manifest_invalid", "tests/packages/manifest-invalid", 1,
+     NULL, "invalid package manifest declaration"},
+    {"fail_package_manifest_duplicate",
+     "tests/packages/manifest-duplicate", 1, NULL,
+     "duplicate package manifest key 'name'"},
+    {"fail_package_manifest_missing_extension",
+     "tests/packages/manifest-missing-extension", 1, NULL,
+     "package manifest requires an exact 'extension' library path"},
 };
 
 static bool run_package_case(const Build_Config *config, const char *root,

@@ -22,9 +22,11 @@ nob benchmark dispatch --toy path/to/toy
 ```
 
 The Toy scripts use `monotonic-ns` and print integer nanosecond durations for
-individual operations. The runner also reports wall time for each fresh process
-and its median. Compare results
-only across the same machine, compiler, build configuration, and workload.
+individual operations. C workloads are compiled against the matching runtime
+and report their own operation timings in the same way. The runner also reports
+wall time for each fresh process and its median. A custom `--toy` executable can
+run only Toy-script workloads. Compare results only across the same machine,
+compiler, build configuration, and workload.
 Use the `alloc` build mode from `docs/development/build.md` when a change is
 expected to reduce allocation calls or requested bytes.
 Before drawing a conclusion:
@@ -43,6 +45,8 @@ Current workloads:
   `infra`, and one-shot conversion patterns for vectors, maps, and strings;
 - `control-ownership.toy`: ambient collection updates through state-threading
   control combinators, guarding against accidental snapshot retention;
+- `deferred.c`: public C API queueing and VM draining for a burst of deferred
+  callback arguments;
 - `dispatch.toy`: inline native calls versus user-word dispatch.
 - `deque.toy`: unique/shared endpoint updates, pops, wraparound, and projection.
 - `graph-search.toy`: BFS and Dijkstra scaling for the standalone graph

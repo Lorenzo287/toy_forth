@@ -16,10 +16,14 @@
 
 typedef struct {
     sqlite3 *handle;
+    toy_state *state;
+    toy_value *update_handler;
+    toy_status update_status;
 } toy_sqlite_database;
 
 typedef struct {
     sqlite3_stmt *handle;
+    toy_value *database;
     bool has_row;
 } toy_sqlite_statement;
 
@@ -92,9 +96,77 @@ static bool get_column(toy_state *state, size_t statement_depth, size_t index_de
     return *index < sqlite3_column_count((*statement)->handle);
 }
 
+static bool callable_type(toy_type type) {
+    return type == TOY_TYPE_VECTOR || type == TOY_TYPE_SYMBOL ||
+           type == TOY_TYPE_CALL;
+}
+
+static const char *update_operation_name(int operation) {
+    switch (operation) {
+    case SQLITE_INSERT:
+        return "insert";
+    case SQLITE_UPDATE:
+        return "update";
+    case SQLITE_DELETE:
+        return "delete";
+    default:
+        return "unknown";
+    }
+}
+
+static void restore_stack_size(toy_state *state, size_t size) {
+    size_t current = toy_stack_size(state);
+    if (current > size) (void)toy_pop(state, current - size);
+}
+
+static void queue_update_notification(void *userdata, int operation,
+                                      const char *database_name,
+                                      const char *table_name,
+                                      sqlite3_int64 rowid) {
+    toy_sqlite_database *database = userdata;
+    if (!database->state || !database->update_handler ||
+        database->update_status != TOY_OK) {
+        return;
+    }
+
+    toy_state *state = database->state;
+    size_t stack_size = toy_stack_size(state);
+    const char *operation_name = update_operation_name(operation);
+    const char *source_name = database_name ? database_name : "";
+    const char *source_table = table_name ? table_name : "";
+
+    toy_status status =
+        toy_push_string(state, operation_name, strlen(operation_name));
+    if (status == TOY_OK) {
+        status = toy_push_string(state, source_name, strlen(source_name));
+    }
+    if (status == TOY_OK) {
+        status = toy_push_string(state, source_table, strlen(source_table));
+    }
+    if (status == TOY_OK) status = toy_push_int(state, (int64_t)rowid);
+    if (status == TOY_OK) status = toy_make_vector(state, 4);
+    if (status == TOY_OK) {
+        status = toy_defer_call(state, database->update_handler, 1);
+    }
+    if (status != TOY_OK) {
+        restore_stack_size(state, stack_size);
+        database->update_status = status;
+    }
+}
+
+static void clear_update_handler(toy_sqlite_database *database) {
+    sqlite3_update_hook(database->handle, NULL, NULL);
+    toy_value *handler = database->update_handler;
+    database->state = NULL;
+    database->update_handler = NULL;
+    database->update_status = TOY_OK;
+    toy_value_release(handler);
+}
+
 static void destroy_database(void *resource, void *userdata) {
     (void)userdata;
     toy_sqlite_database *database = resource;
+    clear_update_handler(database);
     sqlite3_close_v2(database->handle);
     free(database);
 }
@@ -103,6 +175,7 @@ static void destroy_statement(void *resource, void *userdata) {
     (void)userdata;
     toy_sqlite_statement *statement = resource;
     sqlite3_finalize(statement->handle);
+    toy_value_release(statement->database);
     free(statement);
 }
 
@@ -141,6 +214,9 @@ static toy_status sqlite_open(toy_state *state) {
         return toy_fail(state, "sqlite.open could not allocate its database handle");
     }
     database->handle = handle;
+    database->state = NULL;
+    database->update_handler = NULL;
+    database->update_status = TOY_OK;
     toy_status status = toy_push_resource(state, SQLITE_DATABASE_TYPE, database,
                                           destroy_database, NULL);
     if (status != TOY_OK) destroy_database(database, NULL);
@@ -163,8 +239,10 @@ static toy_status sqlite_exec(toy_state *state) {
         return toy_fail(state, "sqlite.exec could not copy the SQL string");
     }
 
+    database->update_status = TOY_OK;
     char *sqlite_message = NULL;
     int result = sqlite3_exec(database->handle, sql, NULL, NULL, &sqlite_message);
+    toy_status update_status = database->update_status;
     free(sql);
     char message[512] = {0};
     if (result != SQLITE_OK) {
@@ -175,7 +253,45 @@ static toy_status sqlite_exec(toy_state *state) {
     if (!toy_pop(state, 2)) {
         return toy_fail(state, "sqlite.exec failed to pop its inputs");
     }
-    return result == SQLITE_OK ? TOY_OK : toy_fail(state, message);
+    if (result != SQLITE_OK) return toy_fail(state, message);
+    return update_status;
+}
+
+static toy_status sqlite_on_update(toy_state *state) {
+    toy_sqlite_database *database = NULL;
+    if (!get_database(state, 1, &database) ||
+        !callable_type(toy_stack_type(state, 0))) {
+        return toy_fail(state,
+                        "sqlite.on-update expected a database and callable");
+    }
+
+    toy_value *handler = toy_value_retain(state, 0);
+    if (!handler) {
+        return toy_fail(state, "sqlite.on-update could not retain its handler");
+    }
+    if (!toy_pop(state, 1)) {
+        toy_value_release(handler);
+        return toy_fail(state, "sqlite.on-update failed to pop its handler");
+    }
+
+    toy_value *previous = database->update_handler;
+    database->state = state;
+    database->update_handler = handler;
+    database->update_status = TOY_OK;
+    sqlite3_update_hook(database->handle, queue_update_notification, database);
+    toy_value_release(previous);
+    return TOY_OK;
+}
+
+static toy_status sqlite_clear_update_handler(toy_state *state) {
+    toy_sqlite_database *database = NULL;
+    if (!get_database(state, 0, &database)) {
+        return toy_fail(
+            state,
+            "sqlite.clear-update-handler expected a database");
+    }
+    clear_update_handler(database);
+    return TOY_OK;
 }
 
 static toy_status sqlite_prepare(toy_state *state) {
@@ -217,23 +333,34 @@ static toy_status sqlite_prepare(toy_state *state) {
             result = SQLITE_ERROR;
         }
     }
+    toy_value *database_value =
+        result == SQLITE_OK ? toy_value_retain(state, 1) : NULL;
+    if (result == SQLITE_OK && !database_value) {
+        snprintf(message, sizeof(message),
+                 "sqlite.prepare could not retain its database");
+        result = SQLITE_ERROR;
+    }
     free(sql);
     if (!toy_pop(state, 2)) {
         if (handle) sqlite3_finalize(handle);
+        toy_value_release(database_value);
         return toy_fail(state, "sqlite.prepare failed to pop its inputs");
     }
     if (result != SQLITE_OK) {
         if (handle) sqlite3_finalize(handle);
+        toy_value_release(database_value);
         return toy_fail(state, message);
     }
 
     toy_sqlite_statement *statement = malloc(sizeof(*statement));
     if (!statement) {
         sqlite3_finalize(handle);
+        toy_value_release(database_value);
         return toy_fail(state,
                         "sqlite.prepare could not allocate its statement handle");
     }
     statement->handle = handle;
+    statement->database = database_value;
     statement->has_row = false;
     toy_status status = toy_push_resource(state, SQLITE_STATEMENT_TYPE, statement,
                                           destroy_statement, NULL);
@@ -247,7 +374,15 @@ static toy_status sqlite_step(toy_state *state) {
         return toy_fail(state, "sqlite.step expected a statement");
     }
 
+    void *database_resource = NULL;
+    if (!toy_value_get_resource(statement->database, SQLITE_DATABASE_TYPE,
+                                &database_resource)) {
+        return toy_fail(state, "sqlite.step lost its database");
+    }
+    toy_sqlite_database *database = database_resource;
+    database->update_status = TOY_OK;
     int result = sqlite3_step(statement->handle);
+    toy_status update_status = database->update_status;
     bool has_row = result == SQLITE_ROW;
     statement->has_row = has_row;
     char message[512] = {0};
@@ -261,6 +396,7 @@ static toy_status sqlite_step(toy_state *state) {
     if (result != SQLITE_ROW && result != SQLITE_DONE) {
         return toy_fail(state, message);
     }
+    if (update_status != TOY_OK) return update_status;
     return toy_push_bool(state, has_row);
 }
 
@@ -522,6 +658,9 @@ static toy_status sqlite_last_insert_rowid(toy_state *state) {
 static const toy_native_word sqlite_words[] = {
     {.name = "open", .callback = sqlite_open},
     {.name = "exec", .callback = sqlite_exec},
+    {.name = "on-update", .callback = sqlite_on_update},
+    {.name = "clear-update-handler",
+     .callback = sqlite_clear_update_handler},
     {.name = "prepare", .callback = sqlite_prepare},
     {.name = "step", .callback = sqlite_step},
     {.name = "reset", .callback = sqlite_reset},

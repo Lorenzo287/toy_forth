@@ -54,13 +54,45 @@ no global installation or search path is involved.
 
 `open` and `prepare` return typed Toy resources. The database uses
 `sqlite3_close_v2` and statements use `sqlite3_finalize`, so final reference
-release and state shutdown clean them up automatically. Words implemented by
-the extension consume their inputs like ordinary Toy words; use `dup` when a
-database or statement is needed again.
+release and state shutdown clean them up automatically. A prepared statement
+retains its database until it is finalized. Words implemented by the extension
+consume their inputs like ordinary Toy words; use `dup` when a database or
+statement is needed again.
+
+## Deferred Update Notifications
+
+`on-update` registers a Toy callable for SQLite row changes and returns the
+database. Each insert, update, or delete queues one event vector without
+re-entering the VM:
+
+```toy
+":memory:" db.open
+[ "change: {}\n" printf ] db.on-update
+dup "CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT)" db.exec
+dup "INSERT INTO items VALUES (1, 'first')" db.exec
+db.clear-update-handler
+drop
+```
+
+The handler receives
+`[ operation database-name table-name rowid ]`, where `operation` is
+`"insert"`, `"update"`, or `"delete"`. Notifications run FIFO after the
+native `exec` or `step` word returns. Re-registering replaces and releases the
+previous retained handler. `clear-update-handler` disables and releases it
+while returning the database unchanged.
+
+SQLite does not issue update-hook events for every possible database change,
+and the hook's timing relative to the final change is intentionally
+unspecified. See the
+[SQLite update-hook contract](https://sqlite.org/c3ref/update_hook.html) for
+the exact exclusions. A handler should not capture its own database resource;
+that would create a reference cycle. Clear the handler before dropping the
+database when such a capture cannot be avoided.
 
 The package exposes a deliberately small slice:
 
-- databases: `open`, `exec`, `changes`, and `last-insert-rowid`;
+- databases: `open`, `exec`, `on-update`, `clear-update-handler`, `changes`,
+  and `last-insert-rowid`;
 - statements: `prepare`, `step`, `reset`, and `clear-bindings`;
 - parameters: `bind-int`, `bind-float`, `bind-text`, and `bind-null`;
 - rows: `column-count`, `column-name`, `column-null?`, `column-int`,
