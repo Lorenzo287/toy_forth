@@ -17,6 +17,8 @@ struct toy_value {
     tf_obj *object;
 };
 
+/* === Shared API Helpers === */
+
 static bool state_is_idle(toy_state *state) {
     if (!state) return false;
     if (state->call_stack_len == 0) return true;
@@ -47,7 +49,12 @@ static toy_status api_errorf(toy_state *state, const char *format, ...) {
     return TOY_ERROR;
 }
 
-static toy_type value_type(tf_obj *value) {
+static void state_reset_execution_location(toy_state *state) {
+    state->current_span = (tf_source_span){0};
+    state->current_word = NULL;
+}
+
+static toy_type object_type(tf_obj *value) {
     if (!value) return TOY_TYPE_MISSING;
 
     switch (tf_obj_typeof(value)) {
@@ -84,6 +91,66 @@ static toy_type value_type(tf_obj *value) {
     return TOY_TYPE_INTERNAL;
 }
 
+static bool object_get_bool(tf_obj *object, bool *result) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_BOOL || !result) {
+        return false;
+    }
+    *result = object->b;
+    return true;
+}
+
+static bool object_get_int(tf_obj *object, int64_t *result) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_INT || !result) {
+        return false;
+    }
+    *result = tf_obj_int_value(object);
+    return true;
+}
+
+static bool object_get_float(tf_obj *object, double *result) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_FLOAT || !result) {
+        return false;
+    }
+    *result = object->f;
+    return true;
+}
+
+static bool object_get_string(tf_obj *object, const char **data,
+                              size_t *length) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_STR || !data ||
+        !length) {
+        return false;
+    }
+    *data = object->str.ptr;
+    *length = object->str.len;
+    return true;
+}
+
+static bool object_get_resource(tf_obj *object, const char *expected_type,
+                                void **resource) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_RESOURCE ||
+        !expected_type || expected_type[0] == '\0' || !resource) {
+        return false;
+    }
+    size_t expected_len = strlen(expected_type);
+    if (object->resource.type_len != expected_len ||
+        memcmp(object->resource.type_name, expected_type, expected_len) != 0) {
+        return false;
+    }
+    *resource = object->resource.pointer;
+    return true;
+}
+
+static bool object_get_resource_type(tf_obj *object,
+                                     const char **type_name) {
+    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_RESOURCE ||
+        !type_name) {
+        return false;
+    }
+    *type_name = object->resource.type_name;
+    return true;
+}
+
 static toy_value *value_retain_object(toy_state *state, tf_obj *object) {
     if (!state || !object) return NULL;
     toy_value *value = tf_xmalloc(sizeof(*value));
@@ -100,6 +167,8 @@ static toy_value *value_take_object(toy_state *state, tf_obj *object) {
     value->object = object;
     return value;
 }
+
+/* === State and Execution === */
 
 toy_state *toy_state_new(const toy_state_config *config) {
     toy_state *state = tf_ctx_new(0, NULL);
@@ -132,8 +201,7 @@ toy_status toy_eval(toy_state *state, const char *source_name,
 
     toy_status result = tf_vm_exec(state, program);
     tf_obj_release(program);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     return result;
 }
 
@@ -147,10 +215,11 @@ toy_status toy_call(toy_state *state, const char *word) {
     tf_ret result = tf_vm_exec(state, program);
     tf_obj_release(program);
     tf_obj_pool_leave(previous_pool);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     return result;
 }
+
+/* === Native Registration and Packages === */
 
 toy_status toy_register_word(toy_state *state, const char *name,
                              toy_native_fn function) {
@@ -278,25 +347,23 @@ toy_status toy_import_package(toy_state *state, const char *path,
                               const char *alias) {
     if (!state || !path || !state_is_idle(state)) return TOY_ERROR;
     tf_ctx_clear_error(state);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     toy_status result = tf_package_load(state, path, TF_ROOT_PACKAGE, alias,
                                         alias ? strlen(alias) : 0, NULL);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     return result;
 }
 
 toy_status toy_run_package(toy_state *state, const char *path) {
     if (!state || !path || !state_is_idle(state)) return TOY_ERROR;
     tf_ctx_clear_error(state);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     toy_status result = tf_package_run_main(state, path);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     return result;
 }
+
+/* === Stack Access === */
 
 size_t toy_stack_size(toy_state *state) {
     return state ? tf_stack_len(state) : 0;
@@ -304,73 +371,38 @@ size_t toy_stack_size(toy_state *state) {
 
 toy_type toy_stack_type(toy_state *state, size_t depth) {
     tf_obj *value = state ? tf_stack_peek(state, depth) : NULL;
-    return value_type(value);
+    return object_type(value);
 }
 
 bool toy_get_bool(toy_state *state, size_t depth, bool *value) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_BOOL || !value) {
-        return false;
-    }
-    *value = object->b;
-    return true;
+    return object_get_bool(state ? tf_stack_peek(state, depth) : NULL, value);
 }
 
 bool toy_get_int(toy_state *state, size_t depth, int64_t *value) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_INT || !value) {
-        return false;
-    }
-    *value = tf_obj_int_value(object);
-    return true;
+    return object_get_int(state ? tf_stack_peek(state, depth) : NULL, value);
 }
 
 bool toy_get_float(toy_state *state, size_t depth, double *value) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_FLOAT || !value) {
-        return false;
-    }
-    *value = object->f;
-    return true;
+    return object_get_float(state ? tf_stack_peek(state, depth) : NULL,
+                            value);
 }
 
 bool toy_get_string(toy_state *state, size_t depth, const char **data,
                     size_t *length) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_STR || !data ||
-        !length) {
-        return false;
-    }
-    *data = object->str.ptr;
-    *length = object->str.len;
-    return true;
+    return object_get_string(state ? tf_stack_peek(state, depth) : NULL,
+                             data, length);
 }
 
 bool toy_get_resource(toy_state *state, size_t depth,
                       const char *expected_type, void **resource) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_RESOURCE ||
-        !expected_type || expected_type[0] == '\0' || !resource) {
-        return false;
-    }
-    size_t expected_len = strlen(expected_type);
-    if (object->resource.type_len != expected_len ||
-        memcmp(object->resource.type_name, expected_type, expected_len) != 0) {
-        return false;
-    }
-    *resource = object->resource.pointer;
-    return true;
+    return object_get_resource(state ? tf_stack_peek(state, depth) : NULL,
+                               expected_type, resource);
 }
 
 bool toy_get_resource_type(toy_state *state, size_t depth,
                            const char **type_name) {
-    tf_obj *object = state ? tf_stack_peek(state, depth) : NULL;
-    if (!object || tf_obj_typeof(object) != TF_OBJ_TYPE_RESOURCE ||
-        !type_name) {
-        return false;
-    }
-    *type_name = object->resource.type_name;
-    return true;
+    return object_get_resource_type(
+        state ? tf_stack_peek(state, depth) : NULL, type_name);
 }
 
 bool toy_pop(toy_state *state, size_t count) {
@@ -380,6 +412,8 @@ bool toy_pop(toy_state *state, size_t count) {
     }
     return true;
 }
+
+/* === Stack Construction === */
 
 toy_status toy_push_bool(toy_state *state, bool value) {
     if (!state) return TOY_ERROR;
@@ -452,6 +486,8 @@ toy_status toy_push_resource(toy_state *state, const char *type_name,
     return TOY_OK;
 }
 
+/* === Retained Values === */
+
 toy_value *toy_value_retain(toy_state *state, size_t depth) {
     return value_retain_object(state,
                                state ? tf_stack_peek(state, depth) : NULL);
@@ -464,71 +500,35 @@ void toy_value_release(toy_value *value) {
 }
 
 toy_type toy_value_type(const toy_value *value) {
-    return value ? value_type(value->object) : TOY_TYPE_MISSING;
+    return object_type(value ? value->object : NULL);
 }
 
 bool toy_value_get_bool(const toy_value *value, bool *result) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_BOOL ||
-        !result) {
-        return false;
-    }
-    *result = value->object->b;
-    return true;
+    return object_get_bool(value ? value->object : NULL, result);
 }
 
 bool toy_value_get_int(const toy_value *value, int64_t *result) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_INT ||
-        !result) {
-        return false;
-    }
-    *result = tf_obj_int_value(value->object);
-    return true;
+    return object_get_int(value ? value->object : NULL, result);
 }
 
 bool toy_value_get_float(const toy_value *value, double *result) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_FLOAT ||
-        !result) {
-        return false;
-    }
-    *result = value->object->f;
-    return true;
+    return object_get_float(value ? value->object : NULL, result);
 }
 
 bool toy_value_get_string(const toy_value *value, const char **data,
                           size_t *length) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_STR || !data ||
-        !length) {
-        return false;
-    }
-    *data = value->object->str.ptr;
-    *length = value->object->str.len;
-    return true;
+    return object_get_string(value ? value->object : NULL, data, length);
 }
 
 bool toy_value_get_resource(const toy_value *value,
                             const char *expected_type, void **resource) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_RESOURCE ||
-        !expected_type || expected_type[0] == '\0' || !resource) {
-        return false;
-    }
-    size_t expected_len = strlen(expected_type);
-    if (value->object->resource.type_len != expected_len ||
-        memcmp(value->object->resource.type_name, expected_type,
-               expected_len) != 0) {
-        return false;
-    }
-    *resource = value->object->resource.pointer;
-    return true;
+    return object_get_resource(value ? value->object : NULL, expected_type,
+                               resource);
 }
 
 bool toy_value_get_resource_type(const toy_value *value,
                                  const char **type_name) {
-    if (!value || tf_obj_typeof(value->object) != TF_OBJ_TYPE_RESOURCE ||
-        !type_name) {
-        return false;
-    }
-    *type_name = value->object->resource.type_name;
-    return true;
+    return object_get_resource_type(value ? value->object : NULL, type_name);
 }
 
 toy_status toy_push_value(toy_state *state, const toy_value *value) {
@@ -540,6 +540,8 @@ toy_status toy_push_value(toy_state *state, const toy_value *value) {
     tf_stack_push(state, value->object);
     return TOY_OK;
 }
+
+/* === Collection Views and Construction === */
 
 bool toy_sequence_size(const toy_value *sequence, size_t *size) {
     if (!sequence || !size) return false;
@@ -655,6 +657,8 @@ toy_status toy_make_map(toy_state *state, size_t pair_count) {
     return TOY_OK;
 }
 
+/* === Callable Values and Deferred Calls === */
+
 toy_status toy_call_value(toy_state *state, const toy_value *callable) {
     if (!state || !callable) return TOY_ERROR;
     if (!state_is_idle(state)) return TOY_ERROR;
@@ -705,10 +709,11 @@ toy_status toy_run_deferred(toy_state *state) {
     tf_ret result = tf_vm_exec(state, program);
     tf_obj_release(program);
     tf_obj_pool_leave(previous_pool);
-    state->current_span = (tf_source_span){0};
-    state->current_word = NULL;
+    state_reset_execution_location(state);
     return result;
 }
+
+/* === Diagnostics, Interruption, and Randomness === */
 
 const char *toy_get_error(toy_state *state) {
     return tf_ctx_last_error(state);

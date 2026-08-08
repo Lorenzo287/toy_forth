@@ -277,6 +277,11 @@ static bool append_name(char ***names, size_t *len, size_t *cap,
     return true;
 }
 
+static void free_names(char **names, size_t len) {
+    for (size_t i = 0; i < len; i++) free(names[i]);
+    free(names);
+}
+
 static bool collect_source_names(tf_ctx *ctx, const char *directory,
                                  char ***names, size_t *len) {
     size_t cap = 0;
@@ -348,6 +353,7 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
     manifest->present = true;
 
     size_t line_number = 0;
+    bool valid = true;
     for (char *line = text; line;) {
         line_number++;
         char *next = strchr(line, '\n');
@@ -361,9 +367,8 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
                 tf_ctx_runtime_errorf(ctx,
                                       "invalid package manifest declaration at %s:%zu\n",
                                       path, line_number);
-                free(text);
-                free(path);
-                return false;
+                valid = false;
+                break;
             }
             *equals = '\0';
             char *key = trim(content);
@@ -372,9 +377,8 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
                 tf_ctx_runtime_errorf(ctx,
                                       "empty package manifest value for '%s' at %s:%zu\n",
                                       key, path, line_number);
-                free(text);
-                free(path);
-                return false;
+                valid = false;
+                break;
             }
             char **slot = NULL;
             if (strcmp(key, "name") == 0) slot = &manifest->name;
@@ -385,17 +389,15 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
                 tf_ctx_runtime_errorf(ctx,
                                       "unknown package manifest key '%s' at %s:%zu\n",
                                       key, path, line_number);
-                free(text);
-                free(path);
-                return false;
+                valid = false;
+                break;
             }
             if (*slot) {
                 tf_ctx_runtime_errorf(ctx,
                                       "duplicate package manifest key '%s' at %s:%zu\n",
                                       key, path, line_number);
-                free(text);
-                free(path);
-                return false;
+                valid = false;
+                break;
             }
             *slot = tf_xstrdup(value);
         }
@@ -403,6 +405,7 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
     }
     free(text);
     free(path);
+    if (!valid) return false;
 
     if (!manifest->name || !tf_package_name_valid(manifest->name,
                                                    strlen(manifest->name))) {
@@ -418,6 +421,12 @@ static bool read_manifest(tf_ctx *ctx, const char *directory,
     return true;
 }
 
+static void manifest_dispose(package_manifest *manifest) {
+    free(manifest->name);
+    free(manifest->extension);
+    *manifest = (package_manifest){0};
+}
+
 static void scan_dispose(package_scan *scan) {
     for (size_t i = 0; i < scan->source_len; i++) {
         free(scan->sources[i].path);
@@ -426,8 +435,7 @@ static void scan_dispose(package_scan *scan) {
     free(scan->sources);
     free(scan->decls);
     free(scan->name);
-    free(scan->manifest.name);
-    free(scan->manifest.extension);
+    manifest_dispose(&scan->manifest);
     memset(scan, 0, sizeof(*scan));
 }
 
@@ -544,34 +552,35 @@ static bool scan_directory(tf_ctx *ctx, const char *request,
 
     char **names = NULL;
     size_t name_len = 0;
-    if (!collect_source_names(ctx, directory, &names, &name_len)) return false;
+    if (!collect_source_names(ctx, directory, &names, &name_len)) {
+        free_names(names, name_len);
+        return false;
+    }
+
+    bool valid = true;
     for (size_t i = 0; i < name_len; i++) {
         char *path = join_path(directory, names[i]);
         char *text = read_text_file(ctx, path);
         if (!text) {
             free(path);
-            for (size_t j = i; j < name_len; j++) free(names[j]);
-            for (size_t j = 0; j < i; j++) free(names[j]);
-            free(names);
-            return false;
+            valid = false;
+            break;
         }
         tf_obj *program = tf_parse_source(ctx, path, text);
         free(text);
         if (!program) {
             free(path);
-            for (size_t j = 0; j < name_len; j++) free(names[j]);
-            free(names);
-            return false;
+            valid = false;
+            break;
         }
         scan_add_source(scan, path, program);
         if (!scan_program(ctx, scan, program)) {
-            for (size_t j = 0; j < name_len; j++) free(names[j]);
-            free(names);
-            return false;
+            valid = false;
+            break;
         }
     }
-    for (size_t i = 0; i < name_len; i++) free(names[i]);
-    free(names);
+    free_names(names, name_len);
+    if (!valid) return false;
 
     if (scan->manifest.present) {
         if (scan->name && strcmp(scan->name, scan->manifest.name) != 0) {
