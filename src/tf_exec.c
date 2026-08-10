@@ -21,6 +21,12 @@
 _Static_assert((TF_QUICK_PROGRAM_CACHE_CAP &
                 (TF_QUICK_PROGRAM_CACHE_CAP - 1)) == 0,
                "quick-program cache capacity must be a power of two");
+_Static_assert((TF_QUICK_PROGRAM_CACHE_WAYS &
+                (TF_QUICK_PROGRAM_CACHE_WAYS - 1)) == 0,
+               "quick-program cache ways must be a power of two");
+_Static_assert(TF_QUICK_PROGRAM_CACHE_WAYS <=
+                   TF_QUICK_PROGRAM_CACHE_CAP,
+               "quick-program cache ways exceed its capacity");
 
 struct tf_scratch_block {
     tf_scratch_block *prev;
@@ -288,12 +294,18 @@ void tf_quick_program_cache_clear(tf_ctx *ctx) {
     }
 }
 
-static size_t quick_program_slot(tf_obj *program, size_t package_index) {
+static size_t quick_program_set(tf_obj *program, size_t package_index) {
     uintptr_t mixed = (uintptr_t)program >> 4;
     mixed ^= (uintptr_t)package_index;
     mixed ^= mixed >> 7;
     mixed ^= mixed >> 13;
-    return (size_t)mixed & (TF_QUICK_PROGRAM_CACHE_CAP - 1);
+    return (size_t)mixed & (TF_QUICK_PROGRAM_CACHE_SETS - 1);
+}
+
+static size_t quick_program_slot(size_t set, size_t way) {
+    if (way == 0) return set;
+    return TF_QUICK_PROGRAM_CACHE_SETS +
+           set * (TF_QUICK_PROGRAM_CACHE_WAYS - 1) + way - 1;
 }
 
 static bool program_contains_call(tf_obj *program) {
@@ -309,11 +321,29 @@ static tf_quick_program *quick_program_acquire(tf_ctx *ctx, tf_obj *program,
                                                size_t package_index) {
     if (program->vector.len == 0) return NULL;
 
-    size_t slot = quick_program_slot(program, package_index);
-    tf_quick_program *quick = ctx->quick_programs[slot];
+    size_t set = quick_program_set(program, package_index);
+    size_t first_slot = quick_program_slot(set, 0);
+    /* Primary ways stay compact; overflow ways preserve MRU order. */
+    tf_quick_program *quick = ctx->quick_programs[first_slot];
     if (quick && quick->program == program &&
         quick->package_index == package_index) {
         TF_METRIC_INC(ctx, quick_program_cache_hits);
+        quick->refcount++;
+        return quick;
+    }
+    for (size_t way = 1; way < TF_QUICK_PROGRAM_CACHE_WAYS; way++) {
+        size_t slot = quick_program_slot(set, way);
+        quick = ctx->quick_programs[slot];
+        if (!quick || quick->program != program ||
+            quick->package_index != package_index) {
+            continue;
+        }
+        TF_METRIC_INC(ctx, quick_program_cache_hits);
+        for (size_t i = way; i > 0; i--) {
+            ctx->quick_programs[quick_program_slot(set, i)] =
+                ctx->quick_programs[quick_program_slot(set, i - 1)];
+        }
+        ctx->quick_programs[first_slot] = quick;
         quick->refcount++;
         return quick;
     }
@@ -333,11 +363,17 @@ static tf_quick_program *quick_program_acquire(tf_ctx *ctx, tf_obj *program,
     quick->len = program->vector.len;
     memset(quick->calls, 0, quick->len * sizeof(tf_quick_call));
 
-    if (ctx->quick_programs[slot]) {
+    size_t last_slot =
+        quick_program_slot(set, TF_QUICK_PROGRAM_CACHE_WAYS - 1);
+    if (ctx->quick_programs[last_slot]) {
         TF_METRIC_INC(ctx, quick_program_cache_evictions);
     }
-    quick_program_release(ctx->quick_programs[slot]);
-    ctx->quick_programs[slot] = quick;
+    quick_program_release(ctx->quick_programs[last_slot]);
+    for (size_t way = TF_QUICK_PROGRAM_CACHE_WAYS - 1; way > 0; way--) {
+        ctx->quick_programs[quick_program_slot(set, way)] =
+            ctx->quick_programs[quick_program_slot(set, way - 1)];
+    }
+    ctx->quick_programs[first_slot] = quick;
     quick->refcount++;
     return quick;
 }

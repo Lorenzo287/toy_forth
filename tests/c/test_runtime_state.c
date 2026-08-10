@@ -26,6 +26,83 @@
 
 static toy_state *nested_target = NULL;
 
+static tf_obj *new_quick_cache_program(void) {
+    tf_obj *program = tf_obj_new_vector();
+    tf_vector_push(program, tf_obj_new_call("+", 1));
+    return program;
+}
+
+static void cache_quick_program(tf_ctx *ctx, tf_obj *program) {
+    tf_frame_push_program(ctx, program);
+    tf_frame_pop(ctx, TF_OK);
+}
+
+static size_t quick_cache_find_set(tf_ctx *ctx, tf_obj *program) {
+    for (size_t set = 0; set < TF_QUICK_PROGRAM_CACHE_SETS; set++) {
+        for (size_t way = 0; way < TF_QUICK_PROGRAM_CACHE_WAYS; way++) {
+            size_t slot = way == 0
+                              ? set
+                              : TF_QUICK_PROGRAM_CACHE_SETS +
+                                    set * (TF_QUICK_PROGRAM_CACHE_WAYS - 1) +
+                                    way - 1;
+            tf_quick_program *quick = ctx->quick_programs[slot];
+            if (quick && quick->program == program) return set;
+        }
+    }
+    return SIZE_MAX;
+}
+
+static int check_quick_program_cache(void) {
+    tf_ctx *ctx = tf_ctx_new(0, NULL);
+    CHECK(ctx, "quick-program cache state creation");
+
+    tf_obj *owned[TF_QUICK_PROGRAM_CACHE_SETS * 16] = {0};
+    tf_obj *members[TF_QUICK_PROGRAM_CACHE_WAYS] = {0};
+    size_t owned_len = 0;
+    size_t target_set = SIZE_MAX;
+    size_t member_count = 0;
+
+    while (owned_len < sizeof(owned) / sizeof(owned[0]) &&
+           member_count < TF_QUICK_PROGRAM_CACHE_WAYS) {
+        tf_obj *program = new_quick_cache_program();
+        owned[owned_len++] = program;
+        cache_quick_program(ctx, program);
+
+        size_t set = quick_cache_find_set(ctx, program);
+        CHECK(set != SIZE_MAX, "new quick program remains cached");
+        if (target_set == SIZE_MAX) target_set = set;
+        if (set == target_set) members[member_count++] = program;
+    }
+    CHECK(member_count == TF_QUICK_PROGRAM_CACHE_WAYS,
+          "fill every way in one cache set");
+    for (size_t i = 0; i < member_count; i++) {
+        CHECK(quick_cache_find_set(ctx, members[i]) != SIZE_MAX,
+              "cache retains programs in every way");
+    }
+
+    cache_quick_program(ctx, members[0]);
+    tf_obj *replacement = NULL;
+    while (owned_len < sizeof(owned) / sizeof(owned[0]) && !replacement) {
+        tf_obj *program = new_quick_cache_program();
+        owned[owned_len++] = program;
+        cache_quick_program(ctx, program);
+        size_t set = quick_cache_find_set(ctx, program);
+        CHECK(set != SIZE_MAX, "replacement quick program remains cached");
+        if (set == target_set) {
+            replacement = program;
+        }
+    }
+    CHECK(replacement, "find one more program sharing the full cache set");
+    CHECK(quick_cache_find_set(ctx, members[0]) != SIZE_MAX &&
+              quick_cache_find_set(ctx, members[1]) == SIZE_MAX &&
+              quick_cache_find_set(ctx, replacement) != SIZE_MAX,
+          "cache evicts the least-recently-used way");
+
+    for (size_t i = 0; i < owned_len; i++) tf_obj_release(owned[i]);
+    tf_ctx_free(ctx);
+    return 0;
+}
+
 #ifdef TF_OBSERVE
 static int check_runtime_metrics(void) {
     toy_state *state = toy_state_new(NULL);
@@ -192,6 +269,7 @@ int main(void) {
 #ifdef TF_OBSERVE
     CHECK(check_runtime_metrics() == 0, "runtime metrics");
 #endif
+    CHECK(check_quick_program_cache() == 0, "quick-program cache");
     CHECK(check_pcg_sequence() == 0, "PCG32 implementation");
     CHECK(check_random_ranges() == 0, "unbiased integer ranges");
 
