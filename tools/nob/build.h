@@ -505,6 +505,11 @@ NOBDEF void append_link_flags(Cmd *command, const Build_Config *config,
         }
 #ifdef _WIN32
         cmd_append(command, "-luser32");
+        if (config->compiler == COMPILER_CLANG &&
+            (config->mode == MODE_PROFILE || config->mode == MODE_DEBUG ||
+             config->mode == MODE_LEAK)) {
+            cmd_append(command, "-Xlinker", "/DEBUG");
+        }
 #else
         cmd_append(command, "-lm");
 #ifndef __APPLE__
