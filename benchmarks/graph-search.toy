@@ -1,7 +1,7 @@
 \ Scaling workloads for the graph-search examples.
 \ Graph construction and correctness checks are outside the timed region.
 
-"examples/graphs/graph" import
+"../examples/graphs/graph" import
 
 \ An alternative state layout that reaches the queue and set beneath the
 \ order vector with `dip`. This guards `dip`'s ownership-neutral threading.
