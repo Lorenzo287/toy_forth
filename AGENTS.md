@@ -13,56 +13,22 @@ navigation and development rules.
 
 - `builtins.json`: canonical builtin metadata used to generate registry, docs,
   runtime help, LSP data, Tree-sitter word lists, and VS Code grammar data.
-- `src/`: interpreter implementation and private `tf_*.h` APIs; read the
-  relevant private headers before engine, parser, object, or native edits.
+- `src/`: interpreter implementation and private `tf_*.h` APIs.
 - `src/cli/`: standalone executable, REPL, and debugger-protocol frontend.
 - `src/generated/`: generated builtin declarations/registry, runtime docs, and
   REPL word tables; do not hand-edit.
 - `include/toy.h`: single public embedding and standalone C-extension header.
-- `examples/`: standalone Toy programs run with `toy --file`; formatting-
-  sensitive quines live under `examples/quines/`.
-- `examples/graphs/`: executable, tested BFS and Dijkstra examples and their
-  demonstration package.
-- `examples/embedding/`: C hosts that embed and call the Toy runtime.
-- `examples/ffi/`, `examples/packages/`: dynamic FFI, generated binding, and
-  handwritten C-extension examples. Library-specific adapters are test
-  cases for the general boundary, not built-in integrations.
-- `core/`: official packages maintained and built with Toy.
-- `core/json/`: strict Toy-written JSON codec and generated editor metadata.
-- `core/random/`: hybrid C/Toy random ranges, choices, and shuffling over the
-  state-owned generator.
-- `tests/packages/`: source, core, and C-extension integration fixtures.
+- `core/`: official Toy and hybrid C/Toy packages.
+- `examples/`: standalone programs, embedding hosts, FFI, and package examples.
 - `tests/toy/`, `tests/c/`: language cases and C API regressions. Toy test
   prefixes declare behavior: `test_`, `fail_`, `output_`, and `manual_`.
-- `docs/`: user-facing language, package, interop, and editor docs.
-- `docs/core/`: focused references for official core packages.
-- `docs/development/`: source build, testing, and runtime implementation notes.
-- `docs/combinators.md`: examples for nontrivial control, recursion, and
-  collection combinator usage.
-- `docs/idioms.md`: preferred source patterns for combinators, captures,
-  construction state, sharing, and collection choice.
-- `docs/data-model.md`: collection syntax, interop, complexity, equality, and
-  hashing reference.
-- `docs/packages.md`: directory packages, exact imports, executable entry
-  points, and C-backed package shape.
-- `docs/c-libraries.md`: user guide for dynamic FFI, generated bindings, and
-  handwritten C extensions.
-- `docs/development/runtime-internals.md`: VM/object/allocation implementation
-  notes.
-- `docs/development/observability.md`: compile-gated metrics, allocation,
-  profiling, and performance-measurement workflow.
-- `docs/embedding.md`: C embedding and native-word API.
-- `docs/editor.md`: formatter, LSP, DAP, Tree-sitter, VS Code, and editor setup.
+- `tests/packages/`: source, core, and C-extension integration fixtures.
+- `docs/`: user-facing references; `docs/development/` covers building,
+  testing, runtime internals, and observability.
 - `benchmarks/`: reproducible performance workloads run by `nob benchmark`.
 - `benchmarks/results/`: benchmark result notes and comparison templates.
-- `tools/generate-builtins.js`: builtin metadata generator and consistency
-  checker.
-- `tools/tree-sitter-toy/`: Tree-sitter grammar, tracked generated parser,
-  queries, Go binding, and grammar tests.
-- `tools/go.mod`, `tools/cmd/`, `tools/internal/`: Go module containing the
-  installed LSP, DAP, formatter, C-extension, and binding frontends plus their
-  shared implementations.
-- `tools/vscode-toy/`: VS Code extension and generated grammar metadata.
+- `tools/`: generators, Go editor/build frontends, Tree-sitter grammar, and
+  VS Code extension.
 - `.github/workflows/release.yml`: tag-driven release automation.
 - `tools/install.ps1`, `tools/install.sh`: general installers copied
   into staged release SDKs; they consume built artifacts and must not rebuild
@@ -75,8 +41,6 @@ navigation and development rules.
 
 ## Fast Context
 
-- Builtin source of truth: `builtins.json`; run
-  `node tools/generate-builtins.js` after edits and use `--check` in validation.
 - Native word registry: generated grouped tables in
   `src/generated/tf_builtins.inc`,
   included by `src/tf_context.c` and registered by `tf_ctx_new()`.
@@ -112,25 +76,23 @@ navigation and development rules.
 - Terminal capability and ANSI color handling: `src/tf_terminal.h`,
   `src/tf_terminal.c`.
 - REPL: `src/cli/tf_repl.h`, `src/cli/tf_repl.c`.
-- Language plan: `docs/ROADMAP.md`.
-- Package model: `docs/packages.md`.
-- C library boundaries: `docs/c-libraries.md`.
-- Data model reference: `docs/data-model.md`.
-- Toy source idioms: `docs/idioms.md`.
-- Test conventions: `docs/development/testing.md`.
-- Performance measurement: `docs/development/observability.md`.
-- Editor tooling and formatter behavior: `docs/editor.md`.
+- Focused references: `docs/data-model.md`, `docs/idioms.md`,
+  `docs/packages.md`, `docs/c-libraries.md`, `docs/embedding.md`, and
+  `docs/editor.md`.
+- Development references: `docs/development/testing.md`,
+  `docs/development/runtime-internals.md`, and
+  `docs/development/observability.md`.
 
 ## Workflow
 
-- Start with `git status --short`; do not overwrite user changes.
-- For language behavior, check `README.md`, then the relevant C files and tests.
-- For roadmap work, read `docs/ROADMAP.md` first. For collection or
-  data-structure work, read `docs/data-model.md` too.
-- For native word changes, update `builtins.json`, declarations, and focused
-  `tests/toy/` cases, then regenerate and commit all generated metadata.
+- Preserve existing work and keep unrelated changes intact.
+- Consult the relevant user-facing reference and tests before changing language
+  behavior. Keep roadmap work in `docs/ROADMAP.md`.
+- For native word changes, keep `builtins.json`, declarations, focused tests,
+  and generated metadata in sync. Run `node tools/generate-builtins.js` after
+  metadata edits and use `--check` in validation.
 - Bootstrap the build with `clang nob.c -o nob.exe`; use
-  `.\nob.exe build` and run `.\nob.exe test` for the default suite. Use
+  `.\nob.exe build` and `.\nob.exe test` for the default suite. Use
   `--mode leak` for ownership, stack-effect, or execution-flow changes.
 - Use `.\nob.exe dist` to stage the consumer SDK at `dist/toy`. User-facing docs and examples
   invoke `toy`, `toy-c-package`, `toy-bindgen`, and the installed editor tools;
@@ -140,8 +102,6 @@ navigation and development rules.
 
 ## Development Rules
 
-- C style: snake_case, 4-space indentation. Use `tf_` for exported/project-wide
-  symbols; file-local `static` helpers may use unprefixed file-local names.
 - Memory: `tf_obj_retain` when storing references, `tf_obj_release` when done,
   use `tf_xmalloc` helpers.
 - Native callable runners should schedule frames or native continuations and
@@ -179,5 +139,3 @@ navigation and development rules.
   behavior; AGENTS contains repository navigation and durable development
   rules; the roadmap contains only current status, sequencing, and future work.
   Use Git history rather than the roadmap as a changelog.
-- Shell: assume Windows PowerShell; use familiar aliases such as `cd` where
-  available and do not output Bash-only syntax.
