@@ -70,7 +70,9 @@ int main(int argc, char **argv) {
             }
         } else if (strcmp(argument, "--mode") == 0) {
             if (argc == 0 || !parse_mode(shift(argv, argc), &config.mode)) {
-                nob_log(ERROR, "--mode requires release, debug, alloc, leak, or profile");
+                nob_log(ERROR,
+                        "--mode requires release, debug, alloc, leak, "
+                        "observe, or profile");
                 return 1;
             }
         } else if (starts_with(argument, "--mode=")) {

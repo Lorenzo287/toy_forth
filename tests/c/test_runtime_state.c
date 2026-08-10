@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#ifdef TF_OBSERVE
+#include <string.h>
+#endif
 
 #include "tf_random.h"
 
@@ -22,6 +25,51 @@
     } while (0)
 
 static toy_state *nested_target = NULL;
+
+#ifdef TF_OBSERVE
+static int check_runtime_metrics(void) {
+    toy_state *state = toy_state_new(NULL);
+    CHECK(state, "metrics state creation");
+    CHECK(toy_eval(state, "<metrics>", "1 2 +") == TOY_OK,
+          "metrics program execution");
+
+    tf_runtime_metrics *metrics = &state->metrics;
+    CHECK(metrics->instructions == 3 && metrics->call_instructions == 1 &&
+              metrics->native_continuation_steps == 0 &&
+              metrics->native_word_calls == 1 &&
+              metrics->user_word_calls == 0 && metrics->program_frames == 1 &&
+              metrics->native_frames == 0 && metrics->max_frame_depth == 1 &&
+              metrics->max_data_stack_depth == 2 &&
+              metrics->dictionary_lookups == 1 &&
+              metrics->dictionary_cache_hits == 0 &&
+              metrics->dictionary_cache_misses == 1 &&
+              metrics->quick_program_cache_hits == 0 &&
+              metrics->quick_program_cache_misses == 1 &&
+              metrics->quick_program_cache_evictions == 0 &&
+              metrics->quickened_lookup_hits == 0 &&
+              metrics->quickened_lookup_misses == 1 &&
+              metrics->specialized_dispatches == 1 &&
+              metrics->general_dispatches == 0,
+          "deterministic metrics counters");
+
+    FILE *output = tmpfile();
+    CHECK(output, "metrics temporary output");
+    CHECK(tf_metrics_write_json(state, output), "write metrics JSON");
+    CHECK(fflush(output) == 0 && fseek(output, 0, SEEK_SET) == 0,
+          "rewind metrics JSON");
+    char json[2048];
+    size_t length = fread(json, 1, sizeof(json) - 1, output);
+    json[length] = '\0';
+    CHECK(!ferror(output) &&
+              strstr(json, "\"schema\": \"toy.runtime-metrics\"") &&
+              strstr(json, "\"instructions\": 3") &&
+              strstr(json, "\"specialized_dispatches\": 1"),
+          "metrics JSON schema and values");
+    fclose(output);
+    toy_state_free(state);
+    return 0;
+}
+#endif
 
 static toy_status run_nested_state(toy_state *state) {
     (void)state;
@@ -141,6 +189,9 @@ static int check_concurrent_states(void) {
 #endif
 
 int main(void) {
+#ifdef TF_OBSERVE
+    CHECK(check_runtime_metrics() == 0, "runtime metrics");
+#endif
     CHECK(check_pcg_sequence() == 0, "PCG32 implementation");
     CHECK(check_random_ranges() == 0, "unbiased integer ranges");
 

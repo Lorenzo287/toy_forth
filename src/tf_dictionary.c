@@ -336,6 +336,7 @@ tf_word *tf_dict_lookup_from(tf_ctx *ctx, size_t current_package,
                   tf_obj_typeof(name) != TF_OBJ_TYPE_CALL)) {
         return NULL;
     }
+    TF_METRIC_INC(ctx, dictionary_lookups);
 
     uintptr_t mixed_key = (uintptr_t)name >> 4;
     mixed_key ^= (uintptr_t)current_package;
@@ -346,8 +347,10 @@ tf_word *tf_dict_lookup_from(tf_ctx *ctx, size_t current_package,
     if (cached->key == name && cached->package_index == current_package &&
         cached->generation == ctx->words.resolution_generation &&
         cached->entry_index < ctx->words.count) {
+        TF_METRIC_INC(ctx, dictionary_cache_hits);
         return &ctx->words.entries[cached->entry_index];
     }
+    TF_METRIC_INC(ctx, dictionary_cache_misses);
 
     tf_word *word = dict_lookup_uncached(ctx, current_package, name->str.ptr,
                                          name->str.len);

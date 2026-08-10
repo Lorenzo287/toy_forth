@@ -15,6 +15,7 @@ typedef enum {
     MODE_DEBUG,
     MODE_ALLOC,
     MODE_LEAK,
+    MODE_OBSERVE,
     MODE_PROFILE,
 } Build_Mode;
 
@@ -186,6 +187,7 @@ NOBDEF const char *mode_name(Build_Mode mode) {
     case MODE_DEBUG: return "debug";
     case MODE_ALLOC: return "alloc";
     case MODE_LEAK: return "leak";
+    case MODE_OBSERVE: return "observe";
     case MODE_PROFILE: return "profile";
     }
     return "unknown";
@@ -219,7 +221,9 @@ NOBDEF void print_usage(const char *program) {
     fprintf(stderr, "  help                  Show this help\n\n");
     fprintf(stderr, "Build options:\n");
     fprintf(stderr, "  --cc <compiler>       clang, gcc, msvc, or clang-cl\n");
-    fprintf(stderr, "  --mode <mode>         release (default), debug, alloc, leak, profile\n");
+    fprintf(stderr,
+            "  --mode <mode>         release (default), debug, alloc, leak, "
+            "observe, profile\n");
     fprintf(stderr, "  -j, --jobs <count>    Maximum parallel compiler processes\n");
     fprintf(stderr, "  --filter <text>       Run matching tests only\n\n");
     fprintf(stderr, "Benchmark options:\n");
@@ -254,6 +258,7 @@ NOBDEF bool parse_mode(const char *value, Build_Mode *mode) {
     else if (strcmp(value, "debug") == 0) *mode = MODE_DEBUG;
     else if (strcmp(value, "alloc") == 0) *mode = MODE_ALLOC;
     else if (strcmp(value, "leak") == 0) *mode = MODE_LEAK;
+    else if (strcmp(value, "observe") == 0) *mode = MODE_OBSERVE;
     else if (strcmp(value, "profile") == 0) *mode = MODE_PROFILE;
     else return false;
     return true;
@@ -384,6 +389,9 @@ NOBDEF void append_mode_compile_flags(Cmd *command,
         case MODE_LEAK:
             cmd_append(command, "/Od", "/Z7", "/DSTB_LEAKCHECK", "/Ideps");
             break;
+        case MODE_OBSERVE:
+            cmd_append(command, "/O2", "/DNDEBUG", "/DTF_OBSERVE");
+            break;
         case MODE_PROFILE:
             cmd_append(command, "/O2", "/Z7", "/Oy-");
             break;
@@ -402,6 +410,9 @@ NOBDEF void append_mode_compile_flags(Cmd *command,
             cmd_append(command, "-O0", "-g", "-fsanitize=leak",
                        "-fno-omit-frame-pointer");
 #endif
+            break;
+        case MODE_OBSERVE:
+            cmd_append(command, "-O3", "-DNDEBUG", "-DTF_OBSERVE");
             break;
         case MODE_PROFILE:
             cmd_append(command, "-O2", "-g", "-fno-omit-frame-pointer");

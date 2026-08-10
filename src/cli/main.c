@@ -32,11 +32,28 @@ typedef struct {
     int script_argc;
     char **script_argv;
     bool show_parsed, tdb, debug_protocol, help, interactive;
+#ifdef TF_OBSERVE
+    const char *metrics_path;
+#endif
 } cli_config;
 
 static int parse_args(int argc, char **argv, cli_config *config);
 static char *default_core_path(const char *argv0);
 static tf_ctx *signal_ctx = NULL;
+
+#ifdef TF_OBSERVE
+static bool write_metrics_file(tf_ctx *ctx, const char *path) {
+    FILE *output = fopen(path, "wb");
+    if (!output) {
+        fprintf(stderr, "could not open metrics file '%s'\n", path);
+        return false;
+    }
+    bool ok = tf_metrics_write_json(ctx, output);
+    if (fclose(output) != 0) ok = false;
+    if (!ok) fprintf(stderr, "could not write metrics file '%s'\n", path);
+    return ok;
+}
+#endif
 
 static void handle_sigint(int sig) {
     (void)sig;
@@ -76,6 +93,10 @@ int main(int argc, char **argv) {
                 "--interactive, -i enters the REPL after successful execution\n");
         fprintf(stderr,
                 "--tdb steps through package, file, eval, or REPL input\n");
+#ifdef TF_OBSERVE
+        fprintf(stderr,
+                "--metrics-json PATH writes deterministic runtime counters\n");
+#endif
         fprintf(stderr,
                 "-- passes all remaining arguments to the Toy program\n");
         free(config.eval);
@@ -131,6 +152,12 @@ int main(int argc, char **argv) {
     } else {
         tf_tdb_set_enabled(ctx, false);
     }
+#ifdef TF_OBSERVE
+    if (config.metrics_path &&
+        !write_metrics_file(ctx, config.metrics_path)) {
+        result = TF_ERR;
+    }
+#endif
     signal_ctx = NULL;
     tf_ctx_free(ctx);
     free(config.eval_files);
@@ -161,6 +188,14 @@ static int parse_args(int argc, char **argv, cli_config *config) {
             config->interactive = true;
         } else if (strcmp(argv[i], "--debug-protocol") == 0) {
             config->debug_protocol = true;
+#ifdef TF_OBSERVE
+        } else if (strcmp(argv[i], "--metrics-json") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "--metrics-json requires an argument\n");
+                return TF_ERR;
+            }
+            config->metrics_path = argv[++i];
+#endif
         } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             config->help = true;
         } else if (strcmp(argv[i], "--core-path") == 0) {

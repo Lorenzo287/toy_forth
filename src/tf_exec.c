@@ -1,5 +1,8 @@
 #include "tf_exec.h"
 #include <assert.h>
+#ifdef TF_OBSERVE
+#include <inttypes.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -163,6 +166,7 @@ size_t tf_stack_len(tf_ctx *ctx) {
 
 void tf_stack_push(tf_ctx *ctx, tf_obj *o) {
     tf_vector_push(ctx->data_stack, o);
+    TF_METRIC_MAX(ctx, max_data_stack_depth, ctx->data_stack->vector.len);
 }
 
 tf_obj *tf_stack_pop(tf_ctx *ctx) {
@@ -309,10 +313,12 @@ static tf_quick_program *quick_program_acquire(tf_ctx *ctx, tf_obj *program,
     tf_quick_program *quick = ctx->quick_programs[slot];
     if (quick && quick->program == program &&
         quick->package_index == package_index) {
+        TF_METRIC_INC(ctx, quick_program_cache_hits);
         quick->refcount++;
         return quick;
     }
     if (!program_contains_call(program)) return NULL;
+    TF_METRIC_INC(ctx, quick_program_cache_misses);
     if (program->vector.len >
         (SIZE_MAX - sizeof(*quick)) / sizeof(tf_quick_call)) {
         return NULL;
@@ -327,6 +333,9 @@ static tf_quick_program *quick_program_acquire(tf_ctx *ctx, tf_obj *program,
     quick->len = program->vector.len;
     memset(quick->calls, 0, quick->len * sizeof(tf_quick_call));
 
+    if (ctx->quick_programs[slot]) {
+        TF_METRIC_INC(ctx, quick_program_cache_evictions);
+    }
     quick_program_release(ctx->quick_programs[slot]);
     ctx->quick_programs[slot] = quick;
     quick->refcount++;
@@ -339,8 +348,10 @@ static tf_word *quickened_call_lookup(tf_ctx *ctx, tf_frame *frame,
     tf_quick_call *cached = quick && pc < quick->len ? &quick->calls[pc] : NULL;
     if (cached && cached->generation == ctx->words.resolution_generation &&
         cached->entry_index < ctx->words.count) {
+        TF_METRIC_INC(ctx, quickened_lookup_hits);
         return &ctx->words.entries[cached->entry_index];
     }
+    TF_METRIC_INC(ctx, quickened_lookup_misses);
 
     tf_word *word = tf_dict_lookup_from(
         ctx, frame->as.program.package_index, call);
@@ -397,6 +408,8 @@ static void frame_push_program_kind(tf_ctx *ctx, tf_obj *program,
     ctx->call_stack[ctx->call_stack_len].call_site = ctx->current_span;
     tf_obj_retain(program);
     ctx->call_stack_len++;
+    TF_METRIC_INC(ctx, program_frames);
+    TF_METRIC_MAX(ctx, max_frame_depth, ctx->call_stack_len);
 }
 
 void tf_frame_push_program(tf_ctx *ctx, tf_obj *program) {
@@ -420,6 +433,8 @@ void tf_frame_push_native_handler(tf_ctx *ctx, tf_frame_step_fn step,
     ctx->call_stack[ctx->call_stack_len].as.native.state = state;
     ctx->call_stack[ctx->call_stack_len].call_site = ctx->current_span;
     ctx->call_stack_len++;
+    TF_METRIC_INC(ctx, native_frames);
+    TF_METRIC_MAX(ctx, max_frame_depth, ctx->call_stack_len);
 }
 
 void tf_frame_push_native(tf_ctx *ctx, tf_frame_step_fn step,
@@ -967,11 +982,14 @@ void tf_ctx_interrupt(tf_ctx *ctx) {
  * schedule continuations before returning.
  */
 static tf_ret dict_call_resolved(tf_ctx *ctx, tf_word *word) {
+    TF_METRIC_INC(ctx, general_dispatches);
     if (word->type == TF_WORD_USER) {
+        TF_METRIC_INC(ctx, user_word_calls);
         frame_push_program_kind(ctx, word->user_impl, TF_FRAME_PROGRAM_USER,
                                 word->package_index);
         return TF_OK;
     }
+    TF_METRIC_INC(ctx, native_word_calls);
     return word->native_impl(ctx);
 }
 
@@ -1005,6 +1023,7 @@ static tf_ret quick_dup(tf_ctx *ctx) {
     if (len == 0) return tf_dup(ctx);
     tf_obj *value = ctx->data_stack->vector.elem[len - 1];
     tf_vector_push(ctx->data_stack, value);
+    TF_METRIC_MAX(ctx, max_data_stack_depth, ctx->data_stack->vector.len);
     tf_obj_retain(value);
     return TF_OK;
 }
@@ -1077,14 +1096,24 @@ static tf_ret quickened_call_dispatch(tf_ctx *ctx, tf_frame *frame,
 
     switch (call->kind) {
     case TF_QUICK_CALL_DUP:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_dup(ctx);
     case TF_QUICK_CALL_PRED:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_pred(ctx);
     case TF_QUICK_CALL_ADD:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_binary_int(ctx, false);
     case TF_QUICK_CALL_MUL:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_binary_int(ctx, true);
     case TF_QUICK_CALL_LT:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_lt(ctx);
     case TF_QUICK_CALL_WORD:
         return dict_call_resolved(ctx, word);
@@ -1143,6 +1172,7 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
         tf_frame *f = &ctx->call_stack[ctx->call_stack_len - 1];
         if (f->kind == TF_FRAME_NATIVE) {
             bool done = false;
+            TF_METRIC_INC(ctx, native_continuation_steps);
             tf_ret cont_res =
                 f->as.native.step(ctx, f->as.native.state, &done);
             if (cont_res != TF_OK) {
@@ -1181,8 +1211,10 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
             if (action == TF_DEBUG_CONTINUE) debug_continuing = true;
         }
         f->as.program.pc++;
+        TF_METRIC_INC(ctx, instructions);
         switch (tf_obj_typeof(o)) {
         case TF_OBJ_TYPE_CALL: {
+            TF_METRIC_INC(ctx, call_instructions);
             ctx->current_word = o->str.ptr;
             tf_word *word = quickened_call_lookup(ctx, f, o, pc);
             if (!word) {
@@ -1289,3 +1321,48 @@ tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable) {
     }
     return TF_ERR;
 }
+
+#ifdef TF_OBSERVE
+bool tf_metrics_write_json(tf_ctx *ctx, FILE *output) {
+    if (!ctx || !output) return false;
+    tf_runtime_metrics *m = &ctx->metrics;
+    int written = fprintf(
+        output,
+        "{\n"
+        "  \"schema\": \"toy.runtime-metrics\",\n"
+        "  \"version\": 1,\n"
+        "  \"execution\": {\n"
+        "    \"instructions\": %" PRIu64 ",\n"
+        "    \"call_instructions\": %" PRIu64 ",\n"
+        "    \"native_continuation_steps\": %" PRIu64 ",\n"
+        "    \"native_word_calls\": %" PRIu64 ",\n"
+        "    \"user_word_calls\": %" PRIu64 ",\n"
+        "    \"program_frames\": %" PRIu64 ",\n"
+        "    \"native_frames\": %" PRIu64 ",\n"
+        "    \"max_frame_depth\": %" PRIu64 ",\n"
+        "    \"max_data_stack_depth\": %" PRIu64 "\n"
+        "  },\n"
+        "  \"dispatch\": {\n"
+        "    \"dictionary_lookups\": %" PRIu64 ",\n"
+        "    \"dictionary_cache_hits\": %" PRIu64 ",\n"
+        "    \"dictionary_cache_misses\": %" PRIu64 ",\n"
+        "    \"quick_program_cache_hits\": %" PRIu64 ",\n"
+        "    \"quick_program_cache_misses\": %" PRIu64 ",\n"
+        "    \"quick_program_cache_evictions\": %" PRIu64 ",\n"
+        "    \"quickened_lookup_hits\": %" PRIu64 ",\n"
+        "    \"quickened_lookup_misses\": %" PRIu64 ",\n"
+        "    \"specialized_dispatches\": %" PRIu64 ",\n"
+        "    \"general_dispatches\": %" PRIu64 "\n"
+        "  }\n"
+        "}\n",
+        m->instructions, m->call_instructions, m->native_continuation_steps,
+        m->native_word_calls, m->user_word_calls, m->program_frames,
+        m->native_frames, m->max_frame_depth, m->max_data_stack_depth,
+        m->dictionary_lookups, m->dictionary_cache_hits,
+        m->dictionary_cache_misses, m->quick_program_cache_hits,
+        m->quick_program_cache_misses, m->quick_program_cache_evictions,
+        m->quickened_lookup_hits, m->quickened_lookup_misses,
+        m->specialized_dispatches, m->general_dispatches);
+    return written >= 0 && !ferror(output);
+}
+#endif

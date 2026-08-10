@@ -169,6 +169,42 @@ typedef struct {
     tf_quick_call calls[];
 } tf_quick_program;
 
+#ifdef TF_OBSERVE
+typedef struct {
+    uint64_t instructions;
+    uint64_t call_instructions;
+    uint64_t native_continuation_steps;
+    uint64_t native_word_calls;
+    uint64_t user_word_calls;
+    uint64_t program_frames;
+    uint64_t native_frames;
+    uint64_t max_frame_depth;
+    uint64_t max_data_stack_depth;
+    uint64_t dictionary_lookups;
+    uint64_t dictionary_cache_hits;
+    uint64_t dictionary_cache_misses;
+    uint64_t quick_program_cache_hits;
+    uint64_t quick_program_cache_misses;
+    uint64_t quick_program_cache_evictions;
+    uint64_t quickened_lookup_hits;
+    uint64_t quickened_lookup_misses;
+    uint64_t specialized_dispatches;
+    uint64_t general_dispatches;
+} tf_runtime_metrics;
+
+#define TF_METRIC_INC(ctx, field) ((ctx)->metrics.field++)
+#define TF_METRIC_MAX(ctx, field, value)                                  \
+    do {                                                                  \
+        uint64_t tf_metric_value = (uint64_t)(value);                      \
+        if ((ctx)->metrics.field < tf_metric_value) {                      \
+            (ctx)->metrics.field = tf_metric_value;                        \
+        }                                                                 \
+    } while (0)
+#else
+#define TF_METRIC_INC(ctx, field) ((void)0)
+#define TF_METRIC_MAX(ctx, field, value) ((void)0)
+#endif
+
 typedef struct tf_scratch_block tf_scratch_block;
 
 typedef struct {
@@ -266,6 +302,9 @@ struct tf_ctx {
     tf_scratch_arena scratch;
     void *control_state_cache;
     size_t control_state_cache_len;
+#ifdef TF_OBSERVE
+    tf_runtime_metrics metrics;
+#endif
 
     /* State services, packages, and loaded native libraries. */
     tf_random random;
@@ -433,6 +472,10 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
                           size_t package_index);
 bool tf_obj_is_callable(tf_obj *o);
 tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable);
+
+#ifdef TF_OBSERVE
+bool tf_metrics_write_json(tf_ctx *ctx, FILE *output);
+#endif
 
 /*
  * Frontend-neutral debugger hook and read-only state inspection. Returned

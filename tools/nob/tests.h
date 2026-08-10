@@ -421,6 +421,43 @@ static bool run_cli_argument_separator_test(const Build_Config *config,
     return ok;
 }
 
+static bool run_cli_metrics_test(const Build_Config *config,
+                                 const char *root) {
+    const char *name = "test_cli_metrics";
+    const char *toy = temp_sprintf("%s/%s", root, config->toy_exe);
+    const char *metrics = temp_sprintf(
+        "%s/%s/test-work/%s.json", root, config->build_dir, name);
+    const char *stdout_path = temp_sprintf(
+        "%s/test-work/%s.stdout", config->build_dir, name);
+    const char *stderr_path = temp_sprintf(
+        "%s/test-work/%s.stderr", config->build_dir, name);
+
+    Cmd command = {0};
+    cmd_append(&command, toy, "--metrics-json", metrics, "--eval", "1 2 +");
+    int exit_code = 0;
+    bool ran = run_captured(&command, NULL, stdout_path, stderr_path,
+                            &exit_code);
+    String_Builder output = {0};
+    String_Builder diagnostic = {0};
+    String_Builder metrics_json = {0};
+    bool ok = ran && exit_code == 0 &&
+              read_normalized(stdout_path, &output) &&
+              read_normalized(stderr_path, &diagnostic) &&
+              read_normalized(metrics, &metrics_json) && output.count == 1 &&
+              diagnostic.count == 1 &&
+              strstr(metrics_json.items,
+                     "\"schema\": \"toy.runtime-metrics\"") != NULL &&
+              strstr(metrics_json.items, "\"instructions\": 3") != NULL &&
+              strstr(metrics_json.items,
+                     "\"specialized_dispatches\": 1") != NULL;
+    fprintf(stderr, "[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    if (!ok) print_test_streams(&output, &diagnostic);
+    da_free(output);
+    da_free(diagnostic);
+    da_free(metrics_json);
+    return ok;
+}
+
 static bool run_file_relative_import_test(const Build_Config *config,
                                           const char *root) {
     const char *name = "test_file_relative_import";
@@ -570,6 +607,11 @@ static bool run_toy_tests(const Build_Config *config, const char *root,
     if (test_matches_filter(config, "test_cli_argument_separator")) {
         ++selected;
         if (!run_cli_argument_separator_test(config, root)) ok = false;
+    }
+    if (config->mode == MODE_OBSERVE &&
+        test_matches_filter(config, "test_cli_metrics")) {
+        ++selected;
+        if (!run_cli_metrics_test(config, root)) ok = false;
     }
     if (test_matches_filter(config, "test_file_relative_import")) {
         ++selected;

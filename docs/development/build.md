@@ -64,6 +64,7 @@ Supported compilers are `clang`, `gcc`, `msvc`, and `clang-cl`. On Windows,
 - `alloc`: optimized build with allocation counters;
 - `leak`: leak instrumentation (`stb_leakcheck` on Windows, LeakSanitizer on
   supported Unix compilers);
+- `observe`: optimized build with compile-gated deterministic runtime metrics;
 - `profile`: optimized build with symbols and frame pointers.
 
 Independent C compilations run in parallel. Use `-j` or `--jobs` to change the
@@ -74,6 +75,22 @@ nob --mode alloc benchmark dispatch
 nob --cc clang --mode profile build
 samply record build/clang/profile/toy --file benchmarks/runtime-internals.toy
 ```
+
+## Runtime Metrics
+
+The `observe` mode defines `TF_OBSERVE`; normal Release builds do not contain
+the metrics fields, counter operations, JSON writer, or CLI option. Write one
+context's cumulative VM and dispatch counters with:
+
+```console
+nob --mode observe build
+build/gcc/observe/toy --metrics-json metrics.json --file workload.toy
+```
+
+The versioned JSON contains instruction, word, frame, stack high-water,
+dictionary-cache, quick-program-cache, and specialized-dispatch counts. These
+deterministic counters attribute runtime behavior but perturb timing. Use a
+Release or Profile build for elapsed-time conclusions.
 
 ## libffi
 
