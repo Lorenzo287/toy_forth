@@ -10,6 +10,8 @@
   executions of `benchmarks/json.toy`, seven alternating direct
   baseline/candidate Release executions of `benchmarks/dispatch.toy` and
   `benchmarks/json.toy` with the laptop on AC power and other programs closed,
+  a three-pair Release sweep of the remaining runnable Toy benchmarks, an
+  eleven-pair focused `set` comparison, per-operation `set` timings,
   `nob --mode alloc benchmark json --runs 1 --jobs 4`, and the complete
   Release and LeakCheck suites
 - Change under test: replace the 64-entry direct-mapped quick-program cache
@@ -39,6 +41,21 @@ primary-hit path as neutral. Every JSON pair improved; its paired median was
 -7.9% (ratios ranged from 0.78 to 0.94), consistent with the independent
 medians. These replace an earlier battery-powered run whose CPU speed varied
 too much for a useful timing comparison.
+
+The broader sweep found one GCC Release regression. Eleven focused `set`
+pairs measured 314.412 ms for the baseline and 349.900 ms for the candidate;
+the paired median was +11.0%. Ten pairs were slower, normally by 8-13%, and
+one was 2% faster. Per-operation medians localized most of the difference to
+the copy-on-write `insert shared new` case (+79%), while membership and
+duplicate insertion were neutral. A Clang Profile build did not reproduce
+the regression.
+
+Observe counters for `set` report identical instruction, call, and frame
+counts. The candidate has one fewer program-cache miss, five fewer evictions,
+and three fewer dictionary lookups. The existing metrics do not distinguish
+primary hits from overflow-way hits and move-to-front promotions, so a hot
+collision pattern remains a plausible explanation that needs focused
+instrumentation before changing the cache again.
 
 | AllocationStats JSON measurement | Baseline | Candidate | Difference |
 | --- | ---: | ---: | ---: |
