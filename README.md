@@ -72,6 +72,9 @@ nob dist
 ```
 
 The staged SDK is under `dist/toy`.
+Repository contributors can find build modes in the
+[source-build guide](./docs/development/build.md) and the performance workflow
+in [Runtime Observability](./docs/development/observability.md).
 
 ## Postfix Notation
 

@@ -49,6 +49,8 @@ navigation and development rules.
   handwritten C extensions.
 - `docs/development/runtime-internals.md`: VM/object/allocation implementation
   notes.
+- `docs/development/observability.md`: compile-gated metrics, allocation,
+  profiling, and performance-measurement workflow.
 - `docs/embedding.md`: C embedding and native-word API.
 - `docs/editor.md`: formatter, LSP, DAP, Tree-sitter, VS Code, and editor setup.
 - `benchmarks/`: reproducible performance workloads run by `nob benchmark`.
@@ -116,6 +118,7 @@ navigation and development rules.
 - Data model reference: `docs/data-model.md`.
 - Toy source idioms: `docs/idioms.md`.
 - Test conventions: `docs/development/testing.md`.
+- Performance measurement: `docs/development/observability.md`.
 - Editor tooling and formatter behavior: `docs/editor.md`.
 
 ## Workflow

@@ -27,8 +27,10 @@ and report their own operation timings in the same way. The runner also reports
 wall time for each fresh process and its median. A custom `--toy` executable can
 run only Toy-script workloads. Compare results only across the same machine,
 compiler, build configuration, and workload.
-Use the `alloc` build mode from `docs/development/build.md` when a change is
-expected to reduce allocation calls or requested bytes.
+Use the workflow in
+[`docs/development/observability.md`](../docs/development/observability.md)
+when a change needs runtime counters, allocation statistics, or a sampled
+profile in addition to Release timing.
 Before drawing a conclusion:
 
 1. Record the commit, compiler/version, build type, OS, CPU, and command.

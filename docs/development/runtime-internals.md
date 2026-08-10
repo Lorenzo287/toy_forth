@@ -350,7 +350,10 @@ rollback; an enclosing `try` owns recovery state when execution is recoverable.
 
 ## Measuring Changes
 
-Use the benchmark suite rather than isolated impressions:
+Use the benchmark suite rather than isolated impressions. The
+[runtime observability guide](observability.md) explains when to use Release
+timings, deterministic counters, allocation statistics, sampled profiles, and
+leak checks:
 
 ```console
 nob --mode alloc benchmark

@@ -78,6 +78,9 @@ samply record build/clang/profile/toy --file benchmarks/runtime-internals.toy
 
 ## Runtime Metrics
 
+See [Runtime Observability](observability.md) for the complete measurement
+workflow and interpretation rules.
+
 The `observe` mode defines `TF_OBSERVE`; normal Release builds do not contain
 the metrics fields, counter operations, JSON writer, or CLI option. Write one
 context's cumulative VM and dispatch counters with:
