@@ -378,7 +378,7 @@ The library name is platform-specific. [Using C libraries](./docs/c-libraries.md
 compares dynamic FFI, generated bindings, handwritten extensions, and their
 manifest options.
 
-## Built-in Words
+## Word Reference
 
 <!-- BEGIN GENERATED BUILTIN TABLE -->
 | Category                    | Words |
@@ -404,11 +404,15 @@ manifest options.
 | Files                       | `read-file`, `write-file`, `delete-file`, `read-lines`, `file-exists?` |
 | Environment / Processes     | `argc`, `argv`, `env?`, `get-env`, `set-env`, `pwd`, `shell`, `exit` |
 | Time                        | `sleep`, `unix-time`, `local-time`, `utc-time`, `cpu-time`, `monotonic-ns` |
+| core:ffi                    | `ffi.open`, `ffi.bind`, `ffi.call` |
+| core:json                   | `json.null`, `json.null?`, `json.decode`, `json.encode` |
+| core:random                 | `random.seed`, `random.int`, `random.float`, `random.choice`, `random.shuffle` |
 <!-- END GENERATED BUILTIN TABLE -->
 
 Words appear under their main idea even when they work on more than one type.
 For example, `push-back` works on sequences and deques, while `pairs` works on
-maps and priority queues.
+maps and priority queues. Core-package rows use the default package name and
+show the locator that must be imported first.
 
 ## License
 

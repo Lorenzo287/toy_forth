@@ -440,14 +440,21 @@ function renderVsCodeGrammar(manifest) {
   return `${JSON.stringify(grammar, null, 4)}\n`;
 }
 
-function renderReadme(manifest, current) {
+function renderReadme(manifest, corePackages, current) {
   const begin = '<!-- BEGIN GENERATED BUILTIN TABLE -->';
   const end = '<!-- END GENERATED BUILTIN TABLE -->';
-  const categoryWidth = Math.max('Category'.length, ...manifest.categories.map((category) => category.name.length));
+  const categories = [
+    ...manifest.categories,
+    ...corePackages.map((pkg) => ({
+      name: pkg.locator,
+      words: pkg.words.map((word) => ({name: `${pkg.name}.${word.name}`})),
+    })),
+  ];
+  const categoryWidth = Math.max('Category'.length, ...categories.map((category) => category.name.length));
   const table = [
     `| ${'Category'.padEnd(categoryWidth)} | Words |`,
     `| ${'-'.repeat(categoryWidth)} | ----- |`,
-    ...manifest.categories.map((category) =>
+    ...categories.map((category) =>
       `| ${category.name.padEnd(categoryWidth)} | ${category.words.map((word) => `\`${word.name}\``).join(', ')} |`
     ),
   ].join('\n');
@@ -476,7 +483,7 @@ function main() {
     ['tools/internal/analysis/core_package_docs_generated.go', renderLspCorePackageDocs(corePackages)],
     ['tools/tree-sitter-toy/builtin-words.js', renderTreeSitterWords(manifest)],
     ['tools/vscode-toy/syntaxes/toy.tmLanguage.json', renderVsCodeGrammar(manifest)],
-    ['README.md', renderReadme(manifest, fs.readFileSync(readmePath, 'utf8'))],
+    ['README.md', renderReadme(manifest, corePackages, fs.readFileSync(readmePath, 'utf8'))],
   ]);
   for (const metadata of corePackages.filter((pkg) => pkg.kind !== 'source')) {
     targets.set(
