@@ -87,7 +87,7 @@ bool tf_debug_get_capture(tf_ctx *ctx, size_t frame_depth, size_t index,
                           tf_debug_capture_info *info) {
     tf_var_table *vars = debug_frame_vars(ctx, frame_depth);
     if (!info || !vars || index >= vars->len) return false;
-    tf_var *bindings = vars->vars ? vars->vars : &vars->inline_var;
+    tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
     info->name = bindings[index].name->str.ptr;
     info->value = bindings[index].val;
     return true;
@@ -99,7 +99,7 @@ bool tf_debug_lookup_capture(tf_ctx *ctx, const char *name, size_t name_len,
     for (size_t depth = 0; depth < ctx->call_stack_len; depth++) {
         tf_var_table *vars = debug_frame_vars(ctx, depth);
         if (!vars) continue;
-        tf_var *bindings = vars->vars ? vars->vars : &vars->inline_var;
+        tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
         for (size_t i = vars->len; i > 0; i--) {
             tf_obj *binding_name = bindings[i - 1].name;
             if (binding_name->str.len == name_len &&

@@ -13,7 +13,7 @@
 #include <signal.h>  // IWYU pragma: keep
 
 #define TF_CALL_STACK_INITIAL_CAP 8
-#define TF_CAPTURE_INITIAL_CAP 4
+#define TF_CAPTURE_INITIAL_CAP (TF_CAPTURE_INLINE_CAP * 2)
 #define TF_ERROR_STACK_LIMIT 8
 #define TF_ERROR_FRAME_LIMIT 8
 #define TF_SCRATCH_BLOCK_CAPACITY 4096
@@ -485,7 +485,7 @@ void tf_frame_pop(tf_ctx *ctx, tf_ret status) {
     if (frame_is_program(f->kind)) {
         tf_var *vars = f->as.program.vars.vars
                            ? f->as.program.vars.vars
-                           : &f->as.program.vars.inline_var;
+                           : f->as.program.vars.inline_vars;
         for (size_t i = 0; i < f->as.program.vars.len; i++) {
             tf_obj_release(vars[i].name);
             tf_obj_release(vars[i].val);
@@ -965,7 +965,7 @@ static void scope_bind_var(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
 
     // check if variable already exists in current frame and update it
     tf_var_table *vars = &f->as.program.vars;
-    tf_var *bindings = vars->vars ? vars->vars : &vars->inline_var;
+    tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
     for (int i = (int)vars->len - 1; i >= 0; i--) {
         if (tf_obj_compare_string(bindings[i].name, name) == 0) {
             tf_obj_release(bindings[i].val);
@@ -976,10 +976,10 @@ static void scope_bind_var(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
     }
 
     // otherwise append new binding
-    if (vars->len == 1 && !vars->vars) {
+    if (vars->len == TF_CAPTURE_INLINE_CAP && !vars->vars) {
         vars->cap = TF_CAPTURE_INITIAL_CAP;
         vars->vars = tf_xmalloc(sizeof(tf_var) * vars->cap);
-        vars->vars[0] = vars->inline_var;
+        memcpy(vars->vars, vars->inline_vars, sizeof(vars->inline_vars));
         bindings = vars->vars;
     } else if (vars->vars && vars->len >= vars->cap) {
         vars->cap = vars->cap == 0 ? TF_CAPTURE_INITIAL_CAP : vars->cap * 2;
@@ -998,7 +998,7 @@ tf_obj *tf_scope_lookup_var(tf_ctx *ctx, tf_obj *name) {
         tf_frame *f = &ctx->call_stack[i];
         if (!frame_is_program(f->kind)) continue;
         tf_var_table *vars = &f->as.program.vars;
-        tf_var *bindings = vars->vars ? vars->vars : &vars->inline_var;
+        tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
         for (int j = (int)vars->len - 1; j >= 0; j--) {
             if (tf_obj_compare_string(bindings[j].name, name) == 0) {
                 return bindings[j].val;

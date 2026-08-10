@@ -210,6 +210,8 @@ typedef struct {
 
 typedef struct tf_scratch_block tf_scratch_block;
 
+#define TF_CAPTURE_INLINE_CAP 2
+
 typedef struct {
     tf_scratch_block *current;
     tf_scratch_block *spare;
@@ -221,7 +223,7 @@ typedef struct {
     tf_var *vars;
     size_t len;
     size_t cap;
-    tf_var inline_var;
+    tf_var inline_vars[TF_CAPTURE_INLINE_CAP];
 } tf_var_table;
 
 typedef enum {

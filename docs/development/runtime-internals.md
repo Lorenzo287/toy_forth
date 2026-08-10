@@ -47,7 +47,7 @@ the C call stack. The main loop keeps processing frames until no work remains.
 - New native words that execute user code should schedule frames or
   continuations, not call `tf_vm_exec()` recursively.
 - Program and native payloads share a union because a frame is one or the other.
-- Program frames keep one capture binding inline and allocate a small binding
+- Program frames keep two capture bindings inline and allocate a small binding
   table only when more captures are introduced.
 
 This model keeps Toy-level recursion and higher-order combinators independent
@@ -359,8 +359,8 @@ leak checks:
 nob --mode alloc benchmark
 ```
 
-The `alloc` mode reports checked allocation calls and cumulative
-requested bytes. These totals compare identical workloads; they are not live or
-peak memory. Timing and allocation workloads live in `benchmarks/`, including
-`runtime-internals.toy` for continuations, captures, predicate snapshots, and
-recursion schemes.
+The `alloc` mode reports checked allocation calls, cumulative requested bytes,
+and call sites ranked by byte traffic. These totals compare identical
+workloads; they are not live or peak memory. Timing and allocation workloads
+live in `benchmarks/`, including `runtime-internals.toy` for continuations,
+captures, predicate snapshots, and recursion schemes.

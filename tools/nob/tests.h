@@ -458,6 +458,37 @@ static bool run_cli_metrics_test(const Build_Config *config,
     return ok;
 }
 
+static bool run_cli_alloc_stats_test(const Build_Config *config,
+                                     const char *root) {
+    const char *name = "test_cli_alloc_stats";
+    const char *toy = temp_sprintf("%s/%s", root, config->toy_exe);
+    const char *stdout_path = temp_sprintf(
+        "%s/test-work/%s.stdout", config->build_dir, name);
+    const char *stderr_path = temp_sprintf(
+        "%s/test-work/%s.stderr", config->build_dir, name);
+
+    Cmd command = {0};
+    cmd_append(&command, toy, "--eval", "1 2 + drop");
+    int exit_code = 0;
+    bool ran = run_captured(&command, NULL, stdout_path, stderr_path,
+                            &exit_code);
+    String_Builder output = {0};
+    String_Builder diagnostic = {0};
+    bool ok = ran && exit_code == 0 &&
+              read_normalized(stdout_path, &output) &&
+              read_normalized(stderr_path, &diagnostic) && output.count == 1 &&
+              strstr(diagnostic.items, "allocations: ") != NULL &&
+              strstr(diagnostic.items, "requested bytes: ") != NULL &&
+              strstr(diagnostic.items, "allocation sites:\n") != NULL &&
+              strstr(diagnostic.items, "calls=") != NULL &&
+              strstr(diagnostic.items, " at src/") != NULL;
+    fprintf(stderr, "[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    if (!ok) print_test_streams(&output, &diagnostic);
+    da_free(output);
+    da_free(diagnostic);
+    return ok;
+}
+
 static bool run_file_relative_import_test(const Build_Config *config,
                                           const char *root) {
     const char *name = "test_file_relative_import";
@@ -612,6 +643,11 @@ static bool run_toy_tests(const Build_Config *config, const char *root,
         test_matches_filter(config, "test_cli_metrics")) {
         ++selected;
         if (!run_cli_metrics_test(config, root)) ok = false;
+    }
+    if (config->mode == MODE_ALLOC &&
+        test_matches_filter(config, "test_cli_alloc_stats")) {
+        ++selected;
+        if (!run_cli_alloc_stats_test(config, root)) ok = false;
     }
     if (test_matches_filter(config, "test_file_relative_import")) {
         ++selected;

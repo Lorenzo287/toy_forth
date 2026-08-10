@@ -7,7 +7,7 @@ each mode for the question it can answer:
 | --- | --- | --- |
 | Did elapsed time change? | `release` | Repeated benchmark medians |
 | Did VM behavior change? | `observe` | Deterministic JSON counters |
-| Did checked allocation traffic change? | `alloc` | Calls and requested bytes |
+| Did checked allocation traffic change? | `alloc` | Calls, bytes, and ranked source sites |
 | Where is CPU time spent? | `profile` | Sampled stacks with symbols |
 | Is ownership correct? | `leak` | Leak-instrumented regressions |
 
@@ -43,9 +43,10 @@ Use AllocationStats when allocation traffic may explain the result:
 nob --mode alloc benchmark json --runs 1
 ```
 
-The report counts calls through Toy's checked allocation helpers and sums the
-requested bytes. It does not report live or peak memory, allocator overhead,
-or allocations performed directly by external libraries.
+The report counts calls through Toy's checked allocation helpers, sums the
+requested bytes, and ranks call sites by byte traffic. Its fixed internal site
+table does not allocate. It does not report live or peak memory, allocator
+overhead, or allocations performed directly by external libraries.
 
 When counters identify a hot workload but not a hot function, capture sampled
 stacks from an optimized Profile build:
@@ -90,3 +91,12 @@ nob --mode observe test --filter cli_metrics
 It checks that the gated option writes versioned JSON. Tests should verify the
 schema and invariants, not freeze benchmark counter totals that legitimately
 change with runtime implementation work.
+
+AllocationStats has a similarly gated report smoke test:
+
+```console
+nob --mode alloc test --filter cli_alloc_stats
+```
+
+It checks the summary and source attribution format without fixing counts or
+line numbers.
