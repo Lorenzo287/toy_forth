@@ -29,8 +29,9 @@ struct tf_scratch_block {
 
 struct tf_deferred_call {
     tf_obj *callable;
-    tf_obj *arguments;
     tf_deferred_call *next;
+    size_t argument_count;
+    tf_obj *arguments[];
 };
 
 typedef union {
@@ -194,18 +195,18 @@ void tf_deferred_call_enqueue(tf_ctx *ctx, tf_obj *callable,
     assert(tf_obj_is_callable(callable));
     assert(tf_stack_len(ctx) >= argument_count);
 
-    tf_obj_pool *previous_pool = tf_obj_pool_enter(&ctx->objects);
-    tf_deferred_call *call = tf_xmalloc(sizeof(*call));
+    tf_deferred_call *call =
+        tf_xmalloc(sizeof(*call) + argument_count * sizeof(*call->arguments));
     call->callable = callable;
     tf_obj_retain(callable);
-    call->arguments = tf_obj_new_vector_with_capacity(argument_count);
     call->next = NULL;
+    call->argument_count = argument_count;
 
     size_t first_argument = tf_stack_len(ctx) - argument_count;
     for (size_t i = 0; i < argument_count; i++) {
         tf_obj *argument = ctx->data_stack->vector.elem[first_argument + i];
         tf_obj_retain(argument);
-        tf_vector_push(call->arguments, argument);
+        call->arguments[i] = argument;
     }
     for (size_t i = 0; i < argument_count; i++) {
         tf_obj_release(tf_stack_pop(ctx));
@@ -218,7 +219,6 @@ void tf_deferred_call_enqueue(tf_ctx *ctx, tf_obj *callable,
     }
     ctx->deferred_tail = call;
     ctx->deferred_count++;
-    tf_obj_pool_leave(previous_pool);
 }
 
 size_t tf_deferred_call_count(tf_ctx *ctx) {
@@ -231,7 +231,9 @@ void tf_deferred_calls_clear(tf_ctx *ctx) {
         tf_deferred_call *call = ctx->deferred_head;
         ctx->deferred_head = call->next;
         tf_obj_release(call->callable);
-        tf_obj_release(call->arguments);
+        for (size_t i = 0; i < call->argument_count; i++) {
+            tf_obj_release(call->arguments[i]);
+        }
         free(call);
     }
     ctx->deferred_tail = NULL;
@@ -482,11 +484,9 @@ static tf_ret deferred_call_start_next(tf_ctx *ctx) {
     tf_frame_push_native(ctx, deferred_call_finish, deferred_call_cleanup,
                          NULL);
 
-    for (size_t i = 0; i < call->arguments->vector.len; i++) {
-        tf_stack_push(ctx, call->arguments->vector.elem[i]);
+    for (size_t i = 0; i < call->argument_count; i++) {
+        tf_stack_push(ctx, call->arguments[i]);
     }
-    call->arguments->vector.len = 0;
-    tf_obj_release(call->arguments);
 
     free(call);
     tf_ret result = tf_vm_call_callable(ctx, callable);

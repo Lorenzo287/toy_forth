@@ -1,5 +1,9 @@
 #include "toy.h"
 
+#ifdef TF_ALLOC_STATS
+#include "tf_alloc.h"
+#endif
+
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -85,5 +89,8 @@ int main(void) {
 
     toy_value_release(handler);
     toy_state_free(state);
+#ifdef TF_ALLOC_STATS
+    tf_alloc_stats_dump();
+#endif
     return 0;
 }
