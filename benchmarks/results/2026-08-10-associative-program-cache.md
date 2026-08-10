@@ -11,7 +11,8 @@
   baseline/candidate Release executions of `benchmarks/dispatch.toy` and
   `benchmarks/json.toy` with the laptop on AC power and other programs closed,
   a three-pair Release sweep of the remaining runnable Toy benchmarks, an
-  eleven-pair focused `set` comparison, per-operation `set` timings,
+  eleven-pair focused `set` comparison, per-operation `set` timings, and
+  fixed-base GCC relinks at four image addresses,
   `nob --mode alloc benchmark json --runs 1 --jobs 4`, and the complete
   Release and LeakCheck suites
 - Change under test: replace the 64-entry direct-mapped quick-program cache
@@ -42,20 +43,31 @@ primary-hit path as neutral. Every JSON pair improved; its paired median was
 medians. These replace an earlier battery-powered run whose CPU speed varied
 too much for a useful timing comparison.
 
-The broader sweep found one GCC Release regression. Eleven focused `set`
-pairs measured 314.412 ms for the baseline and 349.900 ms for the candidate;
-the paired median was +11.0%. Ten pairs were slower, normally by 8-13%, and
-one was 2% faster. Per-operation medians localized most of the difference to
-the copy-on-write `insert shared new` case (+79%), while membership and
-duplicate insertion were neutral. A Clang Profile build did not reproduce
-the regression.
+The broader sweep initially appeared to find a GCC Release regression.
+Eleven focused `set` pairs measured a +11.0% paired median, localized mostly
+to the copy-on-write `insert shared new` phase. Observe counters report
+identical instruction, call, and frame counts. A temporary way probe counted
+1,751,200 primary program-cache hits and only one overflow hit in the complete
+workload, ruling out move-to-front churn.
 
-Observe counters for `set` report identical instruction, call, and frame
-counts. The candidate has one fewer program-cache miss, five fewer evictions,
-and three fewer dictionary lookups. The existing metrics do not distinguish
-primary hits from overflow-way hits and move-to-front promotions, so a hot
-collision pattern remains a plausible explanation that needs focused
-instrumentation before changing the cache again.
+Fresh candidate executables with byte-identical `.text` and `.rdata` sections
+produced different `set` results when Windows loaded them at different ASLR
+addresses. Relinking both revisions without ASLR at four shared image bases
+confirmed that the apparent regression is code-address sensitive:
+
+| Image base | Set shared-insert difference | JSON wall difference |
+| --- | ---: | ---: |
+| `0x140000000` | +68.6% | -6.5% |
+| `0x140010000` | +2.9% | -7.7% |
+| `0x140020000` | +1.3% | -9.6% |
+| `0x140030000` | -0.4% | -5.8% |
+
+The set column compares per-operation independent medians; the JSON column
+compares process-wall independent medians. The set change disappears after
+small shared address shifts and a Clang Profile build also did not reproduce
+it, consistent with front-end or branch-predictor aliasing rather than extra
+runtime work. JSON improves at every placement, so its benefit is robust to
+this layout effect. No cache change is justified by the `set` result.
 
 | AllocationStats JSON measurement | Baseline | Candidate | Difference |
 | --- | ---: | ---: | ---: |
