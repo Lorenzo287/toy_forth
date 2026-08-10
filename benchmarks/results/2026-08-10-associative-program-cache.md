@@ -2,13 +2,14 @@
 
 - Date: 2026-08-10
 - Baseline commit: `4108eb1`
-- Candidate: baseline plus the associative-cache working tree
+- Candidate commit: `9ed2b8f`
 - OS / CPU: Windows 11 Pro 10.0.26200 / Intel Core i7-1065G7
 - Compiler / version: GCC 16.1.0 (MSYS2 UCRT64)
 - Build configurations: Release, Observe, AllocationStats, and LeakCheck
 - Commands: `nob --mode observe test --jobs 4`, repeated Observe
-  executions of `benchmarks/json.toy`, alternating direct baseline/candidate
-  executions of `benchmarks/dispatch.toy` and `benchmarks/json.toy`,
+  executions of `benchmarks/json.toy`, seven alternating direct
+  baseline/candidate Release executions of `benchmarks/dispatch.toy` and
+  `benchmarks/json.toy` with the laptop on AC power and other programs closed,
   `nob --mode alloc benchmark json --runs 1 --jobs 4`, and the complete
   Release and LeakCheck suites
 - Change under test: replace the 64-entry direct-mapped quick-program cache
@@ -29,14 +30,15 @@ final cache is at the cold-miss floor for this workload.
 
 | Release process wall | Baseline median | Candidate median | Difference |
 | --- | ---: | ---: | ---: |
-| Dispatch | 3827.092 ms | 3817.886 ms | -0.2% |
-| JSON | 1327.977 ms | 1144.767 ms | -13.8% |
+| Dispatch | 2933.841 ms | 2914.988 ms | -0.6% |
+| JSON | 1001.228 ms | 916.128 ms | -8.5% |
 
-Five baseline/candidate pairs alternated process order. The machine changed
-speed substantially during the run. Paired dispatch ratios ranged from 0.77
-to 1.19 with a median of 1.02, while the independent medians were nearly
-identical; this supports treating the primary-hit path as neutral. JSON's
-paired median was 0.87, consistent with its independent-median improvement.
+Seven baseline/candidate pairs alternated process order. Dispatch's paired
+median was +0.4% (ratios ranged from 0.97 to 1.06), supporting treating the
+primary-hit path as neutral. Every JSON pair improved; its paired median was
+-7.9% (ratios ranged from 0.78 to 0.94), consistent with the independent
+medians. These replace an earlier battery-powered run whose CPU speed varied
+too much for a useful timing comparison.
 
 | AllocationStats JSON measurement | Baseline | Candidate | Difference |
 | --- | ---: | ---: | ---: |
