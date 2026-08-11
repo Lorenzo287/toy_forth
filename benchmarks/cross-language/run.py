@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import re
+import shutil
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -36,6 +38,7 @@ class Runtime:
     separator: bool = False
     startup_arguments: tuple[str, ...] | None = None
     internal_scale: float = 1.0
+    case_source: str | None = None
 
     def command(self, workload):
         if workload == "startup":
@@ -43,7 +46,9 @@ class Runtime:
                 return [str(self.executable), *self.startup_arguments]
             return [str(self.executable), *self.arguments, "/dev/null"]
         if self.source is None:
-            source = SOURCE / "joy" / f"{workload}.joy"
+            if self.case_source is None:
+                raise ValueError(f"{self.name} has no source for {workload}")
+            source = SOURCE / self.case_source.format(workload=workload)
             return [str(self.executable), *self.arguments, str(source)]
         separator = ["--"] if self.separator else []
         return [
@@ -75,6 +80,7 @@ def runtimes():
             cases=joy_cases,
             cwd=PROBE / "concat" / "Joy_original",
             internal_scale=0.001,
+            case_source="joy/{workload}.joy",
         ),
         Runtime(
             "Joy current",
@@ -84,12 +90,28 @@ def runtimes():
             joy_cases,
             PROBE / "concat" / "Joy",
             internal_scale=1.0,
+            case_source="joy/{workload}.joy",
+        ),
+        Runtime(
+            "Gforth",
+            Path("/usr/bin/gforth"),
+            None,
+            cases=frozenset({"startup", "arithmetic", "dispatch", "fibonacci"}),
+            startup_arguments=("/dev/null", "-e", "bye"),
+            internal_scale=0.001,
+            case_source="gforth/{workload}.fs",
         ),
         Runtime(
             "Lua",
             BUILD / "tools" / "lua-5.5.0" / "src" / "lua",
             SOURCE / "lua.lua",
             internal_scale=0.000001,
+        ),
+        Runtime(
+            "Janet",
+            BUILD / "tools" / "janet-1.41.2" / "build" / "janet",
+            SOURCE / "janet.janet",
+            internal_scale=1000.0,
         ),
         Runtime(
             "Python",
@@ -162,6 +184,19 @@ def format_ms(value):
     return f"{value:.0f}"
 
 
+def stage_mounted_executables(all_runtimes, directory):
+    staged = []
+    for index, runtime in enumerate(all_runtimes):
+        executable = runtime.executable.resolve()
+        if not str(executable).startswith("/mnt/"):
+            staged.append(runtime)
+            continue
+        target = directory / f"{index}-{executable.name}"
+        shutil.copy2(executable, target)
+        staged.append(replace(runtime, executable=target))
+    return staged
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run the cross-language benchmark matrix")
     parser.add_argument("--runs", type=int, default=5, help="measured processes per cell")
@@ -176,6 +211,8 @@ def main():
     for runtime in all_runtimes:
         if not runtime.executable.exists():
             raise SystemExit(f"missing {runtime.name} executable: {runtime.executable}")
+    temporary = tempfile.TemporaryDirectory(prefix="toy-cross-language-")
+    all_runtimes = stage_mounted_executables(all_runtimes, Path(temporary.name))
 
     process_samples = {
         workload: {runtime.name: [] for runtime in all_runtimes}
@@ -238,6 +275,7 @@ def main():
                 + " | ".join(format_ms(value) for value in medians)
                 + " |"
             )
+    temporary.cleanup()
 
 
 if __name__ == "__main__":

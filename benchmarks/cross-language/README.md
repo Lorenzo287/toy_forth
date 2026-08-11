@@ -20,8 +20,10 @@ The workloads are deliberately small and inspectable:
 
 Sequence and string rows compare idiomatic language-level operations, not
 identical storage structures. JavaScript JIT compilation is included in the
-in-program time. Startup and file-loading costs appear only in the process
-table.
+in-program time. Gforth appears only for startup and the scalar/control
+workloads: its unboxed cells and threaded execution make it a useful stack
+dispatch reference, not a comparable high-level collection runtime. Startup
+and file-loading costs appear only in the process table.
 
 ## Environment
 
@@ -33,11 +35,20 @@ It also expects these ignored build artifacts:
 - a clean Linux Toy build at
   `build/cross-language/toy-linux/build/gcc/release/toy`;
 - Lua 5.5.0 at `build/cross-language/tools/lua-5.5.0/src/lua`;
+- Janet 1.41.2 at
+  `build/cross-language/tools/janet-1.41.2/build/janet`;
 - Bun at `build/cross-language/tools/bun-linux-x64/bun`.
 
 Lua should be built from the official release source with its default Linux
-target. Bun should be the official Linux x64 release and invoked through
-`bun run`. Python and Node are read from the Linux environment.
+target. Janet should be built from the official `v1.41.2` tag using its default
+`make` target. Bun should be the official Linux x64 release and invoked through
+`bun run`. Python, Node, and Gforth are read from the Linux environment; the
+runner currently expects Gforth at `/usr/bin/gforth`.
+
+Before measuring, the runner copies executables stored below WSL's `/mnt/`
+mount into a temporary native-Linux directory. This prevents large binaries
+from inheriting Windows-filesystem paging costs in the process-time table. The
+temporary copies are removed when the run completes.
 
 Run the complete matrix from WSL:
 
