@@ -1,0 +1,4 @@
+0 __settracegc.
+DEFINE build == [] 20000 [1 swap cons] times.
+clock 0 10 [build 0 [+] fold +] times
+dup put '\n putch pop clock swap -.

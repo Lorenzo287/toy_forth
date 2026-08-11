@@ -43,6 +43,8 @@ Before drawing a conclusion:
 
 Current workloads:
 
+- `cross-language/`: optional checksum-validated comparison with Joy0, current
+  Joy, Lua, Python, Bun, and Node, run separately under Linux;
 - `construction-patterns.toy`: equivalent captured, stack-threaded, list,
   `infra`, and one-shot conversion patterns for vectors, maps, and strings;
 - `control-ownership.toy`: ambient collection updates through state-threading

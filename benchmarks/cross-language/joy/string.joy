@@ -1,0 +1,3 @@
+0 __settracegc.
+clock 0 20 ["" 10000 ['x swap cons] times size +] times
+dup put '\n putch pop clock swap -.

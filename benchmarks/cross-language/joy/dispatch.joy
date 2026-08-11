@@ -1,0 +1,4 @@
+0 __settracegc.
+DEFINE inc == 1 +.
+clock 0 10000000 [inc] times
+dup put '\n putch pop clock swap -.
