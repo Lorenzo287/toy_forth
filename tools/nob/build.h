@@ -228,7 +228,12 @@ NOBDEF void print_usage(const char *program) {
     fprintf(stderr, "  --filter <text>       Run matching tests only\n\n");
     fprintf(stderr, "Benchmark options:\n");
     fprintf(stderr, "  --runs <count>        Samples per workload (default: 5)\n");
-    fprintf(stderr, "  --toy <path>          Use an existing Toy executable\n\n");
+    fprintf(stderr, "  --toy <path>          Use an existing Toy executable\n");
+    fprintf(stderr,
+            "  --compare <base> <new> Compare two Toy executables (15 pairs)\n");
+    fprintf(stderr,
+            "  --warmup <count>       Warmups per executable (default: 1)\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "Core libffi options (repeatable):\n");
     fprintf(stderr, "  --include <directory> Add a C include directory\n");
     fprintf(stderr, "  --lib-dir <directory> Add a library search directory\n");
@@ -237,6 +242,8 @@ NOBDEF void print_usage(const char *program) {
     fprintf(stderr, "  nob --mode debug build\n");
     fprintf(stderr, "  nob test --filter package\n");
     fprintf(stderr, "  nob benchmark vector --runs 10\n");
+    fprintf(stderr,
+            "  nob benchmark dispatch --compare old/toy new/toy --runs 15\n");
     fprintf(stderr, "  nob dist\n");
 }
 

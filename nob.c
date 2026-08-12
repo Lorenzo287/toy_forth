@@ -39,8 +39,13 @@ int main(int argc, char **argv) {
     const char *program = shift(argv, argc);
     const char *command = NULL;
     const char *benchmark_toy = NULL;
+    const char *benchmark_baseline = NULL;
+    const char *benchmark_candidate = NULL;
     size_t benchmark_runs = 5;
+    size_t benchmark_warmups = 1;
+    bool benchmark_runs_set = false;
     bool benchmark_options = false;
+    bool comparison_options = false;
     File_Paths benchmark_names = {0};
 
     Build_Config config = {
@@ -94,6 +99,7 @@ int main(int argc, char **argv) {
             config.test_filter = shift(argv, argc);
         } else if (strcmp(argument, "--runs") == 0) {
             benchmark_options = true;
+            benchmark_runs_set = true;
             if (argc == 0 ||
                 !parse_count(shift(argv, argc), &benchmark_runs)) {
                 nob_log(ERROR, "--runs requires a positive integer");
@@ -101,6 +107,7 @@ int main(int argc, char **argv) {
             }
         } else if (starts_with(argument, "--runs=")) {
             benchmark_options = true;
+            benchmark_runs_set = true;
             if (!parse_count(argument + strlen("--runs="),
                              &benchmark_runs)) {
                 nob_log(ERROR, "--runs requires a positive integer");
@@ -118,6 +125,32 @@ int main(int argc, char **argv) {
             benchmark_toy = argument + strlen("--toy=");
             if (benchmark_toy[0] == '\0') {
                 nob_log(ERROR, "--toy requires an executable path");
+                return 1;
+            }
+        } else if (strcmp(argument, "--compare") == 0) {
+            benchmark_options = true;
+            comparison_options = true;
+            if (argc < 2) {
+                nob_log(ERROR,
+                        "--compare requires baseline and candidate executables");
+                return 1;
+            }
+            benchmark_baseline = shift(argv, argc);
+            benchmark_candidate = shift(argv, argc);
+        } else if (strcmp(argument, "--warmup") == 0) {
+            benchmark_options = true;
+            comparison_options = true;
+            if (argc == 0 ||
+                !parse_count(shift(argv, argc), &benchmark_warmups)) {
+                nob_log(ERROR, "--warmup requires a positive integer");
+                return 1;
+            }
+        } else if (starts_with(argument, "--warmup=")) {
+            benchmark_options = true;
+            comparison_options = true;
+            if (!parse_count(argument + strlen("--warmup="),
+                             &benchmark_warmups)) {
+                nob_log(ERROR, "--warmup requires a positive integer");
                 return 1;
             }
         } else if (strcmp(argument, "--include") == 0) {
@@ -161,7 +194,15 @@ int main(int argc, char **argv) {
         return 0;
     }
     if (benchmark_options && strcmp(command, "benchmark") != 0) {
-        nob_log(ERROR, "--runs and --toy are benchmark options");
+        nob_log(ERROR, "benchmark options require the benchmark command");
+        return 1;
+    }
+    if (benchmark_toy && benchmark_baseline) {
+        nob_log(ERROR, "--toy and --compare cannot be used together");
+        return 1;
+    }
+    if (comparison_options && !benchmark_baseline) {
+        nob_log(ERROR, "--warmup requires --compare");
         return 1;
     }
     if (strcmp(command, "clean") == 0) {
@@ -183,7 +224,8 @@ int main(int argc, char **argv) {
         return 1;
     }
     bool custom_benchmark = strcmp(command, "benchmark") == 0 &&
-                            benchmark_toy != NULL;
+                            (benchmark_toy != NULL ||
+                             benchmark_baseline != NULL);
     if (!custom_benchmark &&
         !program_on_path(compiler_executable(config.compiler))) {
         nob_log(ERROR, "compiler '%s' was not found on PATH",
@@ -222,10 +264,17 @@ int main(int argc, char **argv) {
         ok = build_distribution(&config, root);
     }
     if (ok && strcmp(command, "benchmark") == 0) {
-        ok = run_benchmarks(custom_benchmark ? NULL : &config,
-                            custom_benchmark ? benchmark_toy : config.toy_exe,
-                            &benchmark_names, benchmark_runs,
-                            &compile_commands);
+        if (benchmark_baseline) {
+            size_t pairs = benchmark_runs_set ? benchmark_runs : 15;
+            ok = compare_benchmarks(benchmark_baseline, benchmark_candidate,
+                                    &benchmark_names, pairs,
+                                    benchmark_warmups);
+        } else {
+            ok = run_benchmarks(custom_benchmark ? NULL : &config,
+                                custom_benchmark ? benchmark_toy : config.toy_exe,
+                                &benchmark_names, benchmark_runs,
+                                &compile_commands);
+        }
     }
     if (ok && needs_core) ok = write_compile_commands(&compile_commands);
 

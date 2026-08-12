@@ -1,15 +1,19 @@
 # Experiment: <name>
 
 - Date:
-- Commit:
+- Baseline commit / executable:
+- Candidate commit / executable:
 - OS / CPU:
+- Power state:
 - Compiler / version:
 - Build configuration:
 - Command:
+- Pairs / warmups:
 - Change under test:
 
-| Workload | Baseline | Candidate | Difference |
-| --- | ---: | ---: | ---: |
-| `<name>` | | | |
+| Workload | Baseline median | Candidate median | Paired ratio | Difference |
+| --- | ---: | ---: | ---: | ---: |
+| `<name>` | | | | |
 
-Notes on variance, profiler evidence, and correctness/leak checks:
+Notes on pair variance, control workloads, counter/profile evidence, and
+correctness/leak checks:

@@ -12,6 +12,9 @@ NOBDEF bool collect_benchmarks(const File_Paths *requested, bool include_c,
 NOBDEF bool run_benchmarks(const Build_Config *config, const char *toy,
                            const File_Paths *requested, size_t runs,
                            Compile_Commands *compile_commands);
+NOBDEF bool compare_benchmarks(const char *baseline, const char *candidate,
+                               const File_Paths *requested, size_t pairs,
+                               size_t warmups);
 
 #endif  // TOY_NOB_BENCHMARKS_H
 
@@ -29,6 +32,27 @@ static int compare_samples(const void *left, const void *right) {
     return (a > b) - (a < b);
 }
 
+static int compare_ratios(const void *left, const void *right) {
+    double a = *(const double *)left;
+    double b = *(const double *)right;
+    return (a > b) - (a < b);
+}
+
+static double median_samples(uint64_t *samples, size_t count) {
+    qsort(samples, count, sizeof(*samples), compare_samples);
+    return count % 2 == 1
+        ? (double)samples[count / 2]
+        : ((double)samples[count / 2 - 1] +
+           (double)samples[count / 2]) / 2.0;
+}
+
+static double median_ratios(double *ratios, size_t count) {
+    qsort(ratios, count, sizeof(*ratios), compare_ratios);
+    return count % 2 == 1
+        ? ratios[count / 2]
+        : (ratios[count / 2 - 1] + ratios[count / 2]) / 2.0;
+}
+
 static const char *benchmark_path(const char *filename) {
     const char *path = starts_with(filename, "benchmarks/") ||
                                starts_with(filename, "benchmarks\\")
@@ -43,7 +67,8 @@ static bool append_benchmark_path(File_Paths *paths, const char *name,
         const char *path = benchmark_path(name);
         if (ends_with(name, ".c") && !include_c) {
             nob_log(ERROR,
-                    "C benchmarks cannot be run with a custom --toy executable: %s",
+                    "C benchmarks require a repository build and cannot be "
+                    "used with --toy or --compare: %s",
                     path);
             return false;
         }
@@ -65,7 +90,8 @@ static bool append_benchmark_path(File_Paths *paths, const char *name,
     if (file_exists(c_path)) {
         if (!include_c) {
             nob_log(ERROR,
-                    "C benchmarks cannot be run with a custom --toy executable: %s",
+                    "C benchmarks require a repository build and cannot be "
+                    "used with --toy or --compare: %s",
                     c_path);
             return false;
         }
@@ -180,7 +206,7 @@ NOBDEF bool run_benchmarks(const Build_Config *config, const char *toy,
             uint64_t start = nanos_since_unspecified_epoch();
             Nob_Log_Level previous_level = minimal_log_level;
             minimal_log_level = WARNING;
-            bool ran = cmd_run(&command);
+            bool ran = cmd_run(&command, .dont_reset = false);
             minimal_log_level = previous_level;
             if (!ran) {
                 ok = false;
@@ -192,15 +218,144 @@ NOBDEF bool run_benchmarks(const Build_Config *config, const char *toy,
         }
         if (!ok) break;
 
-        qsort(samples, runs, sizeof(*samples), compare_samples);
-        double median = runs % 2 == 1
-            ? (double)samples[runs / 2]
-            : ((double)samples[runs / 2 - 1] +
-               (double)samples[runs / 2]) / 2.0;
+        double median = median_samples(samples, runs);
         fprintf(stderr, "median: %.3f ms wall\n", median / 1000000.0);
     }
 
     free(samples);
+    da_free(paths);
+    return ok;
+}
+
+static const char *benchmark_platform(void) {
+#ifdef _WIN32
+    return "Windows";
+#elif defined(__APPLE__)
+    return "macOS";
+#elif defined(__linux__)
+    return "Linux";
+#else
+    return "unknown";
+#endif
+}
+
+static bool run_toy_sample(const char *toy, const char *path,
+                           uint64_t *elapsed) {
+    Cmd command = {0};
+    cmd_append(&command, toy, "--file", path);
+    uint64_t start = nanos_since_unspecified_epoch();
+    Nob_Log_Level previous_level = minimal_log_level;
+    minimal_log_level = WARNING;
+#ifdef _WIN32
+    const char *null_device = "NUL";
+#else
+    const char *null_device = "/dev/null";
+#endif
+    bool ran = cmd_run(&command, .stdout_path = null_device);
+    minimal_log_level = previous_level;
+    if (ran && elapsed) {
+        *elapsed = nanos_since_unspecified_epoch() - start;
+    }
+    da_free(command);
+    return ran;
+}
+
+NOBDEF bool compare_benchmarks(const char *baseline, const char *candidate,
+                               const File_Paths *requested, size_t pairs,
+                               size_t warmups) {
+    if (!file_exists(baseline)) {
+        nob_log(ERROR, "baseline Toy executable does not exist: %s", baseline);
+        return false;
+    }
+    if (!file_exists(candidate)) {
+        nob_log(ERROR, "candidate Toy executable does not exist: %s", candidate);
+        return false;
+    }
+
+    File_Paths paths = {0};
+    if (!collect_benchmarks(requested, false, &paths)) {
+        da_free(paths);
+        return false;
+    }
+
+    uint64_t *baseline_samples = malloc(sizeof(*baseline_samples) * pairs);
+    uint64_t *candidate_samples = malloc(sizeof(*candidate_samples) * pairs);
+    double *ratios = malloc(sizeof(*ratios) * pairs);
+    if (!baseline_samples || !candidate_samples || !ratios) {
+        nob_log(ERROR, "could not allocate comparison samples");
+        free(baseline_samples);
+        free(candidate_samples);
+        free(ratios);
+        da_free(paths);
+        return false;
+    }
+
+    fprintf(stderr,
+            "paired comparison\n"
+            "baseline: %s\n"
+            "candidate: %s\n"
+            "pairs: %zu, warmups: %zu, platform: %s, logical processors: %d\n",
+            baseline, candidate, pairs, warmups, benchmark_platform(), nprocs());
+
+    bool ok = true;
+    for (size_t i = 0; ok && i < paths.count; ++i) {
+        const char *path = paths.items[i];
+        fprintf(stderr, "\n%s\n", path_name(path));
+        for (size_t warmup = 0; warmup < warmups; ++warmup) {
+            const char *first = warmup % 2 == 0 ? baseline : candidate;
+            const char *second = warmup % 2 == 0 ? candidate : baseline;
+            if (!run_toy_sample(first, path, NULL) ||
+                !run_toy_sample(second, path, NULL)) {
+                ok = false;
+                break;
+            }
+        }
+        if (!ok) break;
+
+        for (size_t pair = 0; pair < pairs; ++pair) {
+            bool baseline_first = pair % 2 == 0;
+            const char *first = baseline_first ? baseline : candidate;
+            const char *second = baseline_first ? candidate : baseline;
+            uint64_t first_elapsed = 0;
+            uint64_t second_elapsed = 0;
+            if (!run_toy_sample(first, path, &first_elapsed) ||
+                !run_toy_sample(second, path, &second_elapsed)) {
+                ok = false;
+                break;
+            }
+            baseline_samples[pair] = baseline_first
+                ? first_elapsed
+                : second_elapsed;
+            candidate_samples[pair] = baseline_first
+                ? second_elapsed
+                : first_elapsed;
+            ratios[pair] = (double)candidate_samples[pair] /
+                           (double)baseline_samples[pair];
+            fprintf(stderr,
+                    "pair %zu (%s first): %.3f ms baseline, %.3f ms candidate, "
+                    "ratio %.4f\n",
+                    pair + 1, baseline_first ? "baseline" : "candidate",
+                    (double)baseline_samples[pair] / 1000000.0,
+                    (double)candidate_samples[pair] / 1000000.0, ratios[pair]);
+        }
+        if (!ok) break;
+
+        double baseline_median = median_samples(baseline_samples, pairs);
+        double candidate_median = median_samples(candidate_samples, pairs);
+        double ratio_median = median_ratios(ratios, pairs);
+        fprintf(stderr,
+                "medians: %.3f ms baseline, %.3f ms candidate\n"
+                "median paired ratio: %.4f (%s %.2f%%)\n",
+                baseline_median / 1000000.0,
+                candidate_median / 1000000.0, ratio_median,
+                ratio_median <= 1.0 ? "faster" : "slower",
+                (ratio_median <= 1.0 ? 1.0 - ratio_median
+                                     : ratio_median - 1.0) * 100.0);
+    }
+
+    free(baseline_samples);
+    free(candidate_samples);
+    free(ratios);
     da_free(paths);
     return ok;
 }

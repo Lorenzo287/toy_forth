@@ -24,6 +24,22 @@ Measure timing with Release first:
 nob benchmark json --runs 7
 ```
 
+When comparing a change against a saved baseline executable, use the paired
+runner so both builds experience nearly the same machine state:
+
+```console
+nob benchmark json \
+  --compare build/baseline/toy build/gcc/release/toy \
+  --runs 15 --warmup 1
+```
+
+It warms both builds, alternates their order in each pair, and reports the
+median candidate/baseline ratio. Treat that paired ratio as the timing result;
+the two independent medians are useful context but do not preserve pairing.
+See [`benchmarks/README.md`](../../benchmarks/README.md) for laptop setup,
+output capture, control workloads, and the limits of recorded environment
+metadata.
+
 If the result is meaningful, run the same workload with deterministic runtime
 metrics:
 
@@ -72,8 +88,8 @@ nob --mode leak test
 ## Interpreting Results
 
 - Compare the same workload, compiler, machine, and power state.
-- Alternate baseline and candidate process order and use medians; never select
-  the fastest run.
+- Use the paired runner to alternate baseline and candidate process order;
+  never select the fastest run.
 - Treat counters as attribution, not timing. A faster run with identical
   counters may be a code-generation or memory-layout effect.
 - Rebuild or change code placement before acting on a compiler-only anomaly.
