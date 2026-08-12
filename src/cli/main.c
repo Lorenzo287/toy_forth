@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     cli_config config = {0};
     tf_ret ret = parse_args(argc, argv, &config);
     if (ret == TF_ERR || config.help) {
-        fprintf(stderr, "=== Toy Interpreter ===\n");
+        fprintf(stderr, "Toy CLI\n");
         fprintf(stderr,
                 "Usage: %s [options] [package-directory] [-- args...]\n",
                 argv[0]);
