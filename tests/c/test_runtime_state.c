@@ -144,6 +144,20 @@ static int check_runtime_metrics(void) {
           "metrics JSON schema and values");
     fclose(output);
     toy_state_free(state);
+
+    state = toy_state_new(NULL);
+    CHECK(state, "repeat metrics state creation");
+    CHECK(toy_eval(state, "<repeat-metrics>", "0 5 [ 1 + ] times") ==
+              TOY_OK,
+          "repeat metrics program execution");
+    int64_t result = 0;
+    CHECK(toy_get_int(state, 0, &result) && result == 5,
+          "repeat metrics result");
+    metrics = &state->metrics;
+    CHECK(metrics->native_continuation_steps == 0 &&
+              metrics->program_frames == 2 && metrics->native_frames == 0,
+          "times reuses one program frame");
+    toy_state_free(state);
     return 0;
 }
 #endif

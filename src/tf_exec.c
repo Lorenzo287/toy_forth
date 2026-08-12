@@ -18,6 +18,16 @@
 #define TF_ERROR_FRAME_LIMIT 8
 #define TF_SCRATCH_BLOCK_CAPACITY 4096
 #define TF_SCRATCH_SPARE_BYTE_LIMIT (64 * 1024)
+/* Keep the rare repeat check out of the dispatch loop; inlining it regresses
+ * unrelated GCC workloads by disturbing the hot VM layout. */
+#if defined(_MSC_VER)
+#define TF_NOINLINE __declspec(noinline)
+#elif defined(__GNUC__)
+#define TF_NOINLINE __attribute__((noinline))
+#else
+#define TF_NOINLINE
+#endif
+static TF_NOINLINE void frame_complete(tf_ctx *ctx);
 _Static_assert((TF_QUICK_PROGRAM_CACHE_CAP &
                 (TF_QUICK_PROGRAM_CACHE_CAP - 1)) == 0,
                "quick-program cache capacity must be a power of two");
@@ -1227,7 +1237,7 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
         }
 
         if (f->as.program.pc >= f->as.program.program->vector.len) {
-            tf_frame_pop(ctx, TF_OK);
+            frame_complete(ctx);
             continue;
         }
 
@@ -1356,6 +1366,57 @@ tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable) {
         return dict_call_resolved(ctx, word);
     }
     return TF_ERR;
+}
+
+static TF_NOINLINE void frame_complete(tf_ctx *ctx) {
+    tf_frame *frame = &ctx->call_stack[ctx->call_stack_len - 1];
+    if (frame->kind == TF_FRAME_PROGRAM_REPEAT &&
+        frame->as.program.vars.cap > 1) {
+        frame->as.program.vars.cap--;
+        frame->as.program.pc = 0;
+        return;
+    }
+    tf_frame_pop(ctx, TF_OK);
+}
+#undef TF_NOINLINE
+
+static bool program_binds_captures(tf_obj *program) {
+    for (size_t i = 0; i < program->vector.len; i++) {
+        if (tf_obj_typeof(program->vector.elem[i]) == TF_OBJ_TYPE_VARLIST) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool tf_frame_push_repeat(tf_ctx *ctx, tf_obj *program, int64_t count) {
+    if (!ctx || count <= 0 || ctx->debug_hook ||
+        (uint64_t)count > (uint64_t)SIZE_MAX ||
+        tf_obj_typeof(program) != TF_OBJ_TYPE_VECTOR ||
+        program_binds_captures(program)) {
+        return false;
+    }
+
+    size_t package_index = program_package_index(ctx, program);
+    ensure_call_stack_slot(ctx);
+    tf_frame *frame = &ctx->call_stack[ctx->call_stack_len];
+    frame->kind = TF_FRAME_PROGRAM_REPEAT;
+    frame->as.program.program = program;
+    frame->as.program.pc = 0;
+    frame->as.program.package_index = package_index;
+    frame->as.program.quick =
+        quick_program_acquire(ctx, program, package_index);
+    frame->as.program.vars.vars = NULL;
+    frame->as.program.vars.len = 0;
+    /* Capture-free repeat frames reuse the otherwise dormant capacity field
+     * for their remaining iteration count, keeping every frame the same size. */
+    frame->as.program.vars.cap = (size_t)count;
+    frame->call_site = ctx->current_span;
+    tf_obj_retain(program);
+    ctx->call_stack_len++;
+    TF_METRIC_INC(ctx, program_frames);
+    TF_METRIC_MAX(ctx, max_frame_depth, ctx->call_stack_len);
+    return true;
 }
 
 #ifdef TF_OBSERVE

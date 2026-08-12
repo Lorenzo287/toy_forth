@@ -44,6 +44,11 @@ the C call stack. The main loop keeps processing frames until no work remains.
   instead of pushing one native frame per logical recursion level. `binrec`
   similarly keeps compact logical levels in one controller, retaining its four
   callables and predicate evaluator only once.
+- `times` keeps a capture-free vector body in one repeat program frame and
+  resets its program counter between iterations. The frame retains the body and
+  quickening sidecar once. Bodies that bind captures, non-vector callables, and
+  debug-hook execution use the ordinary continuation path so every iteration
+  keeps its original scope and debugger behavior.
 - New native words that execute user code should schedule frames or
   continuations, not call `tf_vm_exec()` recursively.
 - Program and native payloads share a union because a frame is one or the other.

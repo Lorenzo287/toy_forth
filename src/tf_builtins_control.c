@@ -2195,6 +2195,11 @@ tf_ret tf_times(tf_ctx *ctx) {
         return TF_OK;
     }
 
+    if (tf_frame_push_repeat(ctx, body, n)) {
+        tf_obj_release(body);
+        return TF_OK;
+    }
+
     times_state *state = control_state_acquire(ctx, sizeof(*state));
     state->body = body;
     state->remaining = n;

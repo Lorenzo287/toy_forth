@@ -230,7 +230,8 @@ typedef enum {
     TF_FRAME_PROGRAM,
     TF_FRAME_PROGRAM_ROOT,
     TF_FRAME_PROGRAM_USER,
-    TF_FRAME_NATIVE
+    TF_FRAME_NATIVE,
+    TF_FRAME_PROGRAM_REPEAT
 } tf_frame_kind;
 
 typedef struct {
@@ -369,6 +370,7 @@ bool tf_ctx_require_callable(tf_ctx *ctx, size_t depth);
 void tf_frame_push_program(tf_ctx *ctx, tf_obj *program);
 void tf_frame_push_program_package(tf_ctx *ctx, tf_obj *program,
                                    size_t package_index);
+bool tf_frame_push_repeat(tf_ctx *ctx, tf_obj *program, int64_t count);
 void tf_frame_push_native(tf_ctx *ctx, tf_frame_step_fn step,
                           tf_frame_cleanup_fn cleanup, void *state);
 void tf_frame_push_native_handler(tf_ctx *ctx, tf_frame_step_fn step,

@@ -5,3 +5,10 @@
 
 \ Nested iteration preserves the surrounding accumulator.
 0 2 [ 2 [ 1 + ] times ] times 4 == check
+
+\ A body that binds captures gets a fresh scope for every iteration.
+1 3 [ | current | $current 1 + ] times 4 == check
+
+\ A capture-free body may still read a capture from its caller.
+'add-captured [ | increment | 0 3 [ $increment + ] times ] def
+2 add-captured 6 == check
