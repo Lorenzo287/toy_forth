@@ -1,26 +1,17 @@
 # Toy Language Roadmap
 
-This roadmap records Toy's current development status and larger active or
-future tracks. It is not a language reference, an agent manual, or a changelog.
-
-## Status Labels
-
-- **In progress**: an active or ongoing development track.
-- **Future**: an accepted direction that has not started or is intentionally
-  deferred.
+This roadmap records Toy's active and future development tracks. Current
+behavior belongs in the [README](../README.md) and focused references;
+completed work belongs in Git history.
 
 ## Current Baseline
 
 Toy already has the language, collection, tooling, testing, formatting, and
-debugging foundations needed by the tracks below. Current behavior belongs in
-the [README](../README.md) and focused references; completed work belongs in Git
-history rather than this roadmap.
+debugging foundations needed by the tracks below.
 
 ## Work in Progress
 
 ### Performance Work
-
-**Status: In progress**
 
 Keep optimization work benchmark-driven and record durable experiments under
 `benchmarks/results/`. Current investigation candidates are:
@@ -32,8 +23,6 @@ Keep optimization work benchmark-driven and record durable experiments under
 - structural hashes if map/set key policy expands.
 
 ### C Interop
-
-**Status: In progress**
 
 Embedding, C extensions, `core:ffi`, and generated bindings share one
 value and ownership model, but serve intentionally different use cases. They
@@ -73,8 +62,6 @@ and focused reference docs.
 ## Future Work
 
 ### Compiler Backends
-
-**Status: Future**
 
 Treat compilation as a learning track with explicit semantic checkpoints:
 

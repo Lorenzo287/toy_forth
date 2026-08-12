@@ -6,10 +6,10 @@ buildable hosts live under `examples/embedding/`.
 
 ## Run the Suite
 
-Bootstrap Nob once and run its isolated test harness directly:
+After bootstrapping Nob as described in the [build guide](build.md), run its
+isolated test harness directly:
 
 ```console
-cc nob.c -o nob
 nob test
 nob test --filter native_loader
 ```
@@ -60,9 +60,9 @@ tests/toy/output_repr.toy
 tests/toy/output_repr.stdout
 ```
 
-Use value assertions for language semantics and stack effects. Use expected
-failure cases for parser, CLI, diagnostic, and unhandled-error behavior. Golden
-output should be limited to words whose output is the public contract.
+Prefer value assertions for language semantics and stack effects, expected
+failure cases for diagnostics, and golden output only when exact output is the
+public contract.
 
 ## Manual and Integration Behavior
 

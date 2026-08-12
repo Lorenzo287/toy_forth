@@ -78,22 +78,16 @@ samply record build/clang/profile/toy --file benchmarks/runtime-internals.toy
 
 ## Runtime Metrics
 
-See [Runtime Observability](observability.md) for the complete measurement
-workflow and interpretation rules.
-
-The `observe` mode defines `TF_OBSERVE`; normal Release builds do not contain
-the metrics fields, counter operations, JSON writer, or CLI option. Write one
-context's cumulative VM and dispatch counters with:
+The `observe` mode writes deterministic counters for attributing runtime work:
 
 ```console
 nob --mode observe build
 build/gcc/observe/toy --metrics-json metrics.json --file workload.toy
 ```
 
-The versioned JSON contains instruction, word, frame, stack high-water,
-dictionary-cache, quick-program-cache, and specialized-dispatch counts. These
-deterministic counters attribute runtime behavior but perturb timing. Use a
-Release or Profile build for elapsed-time conclusions.
+Counter collection perturbs timing. Use a Release build for elapsed-time
+conclusions and see [Runtime Observability](observability.md) for the complete
+measurement workflow and interpretation rules.
 
 ## libffi
 

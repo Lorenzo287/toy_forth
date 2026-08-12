@@ -25,7 +25,7 @@ nob benchmark json --runs 7
 ```
 
 When comparing a change against a saved baseline executable, use the paired
-runner so both builds experience nearly the same machine state:
+runner:
 
 ```console
 nob benchmark json \
@@ -33,12 +33,9 @@ nob benchmark json \
   --runs 15 --warmup 1
 ```
 
-It warms both builds, alternates their order in each pair, and reports the
-median candidate/baseline ratio. Treat that paired ratio as the timing result;
-the two independent medians are useful context but do not preserve pairing.
-See [`benchmarks/README.md`](../../benchmarks/README.md) for laptop setup,
-output capture, control workloads, and the limits of recorded environment
-metadata.
+Treat the median candidate/baseline ratio as the timing result. See
+[`benchmarks/README.md`](../../benchmarks/README.md) for runner behavior,
+workload selection, output capture, and recorded environment metadata.
 
 If the result is meaningful, run the same workload with deterministic runtime
 metrics:
@@ -88,15 +85,13 @@ nob --mode leak test
 ## Interpreting Results
 
 - Compare the same workload, compiler, machine, and power state.
-- Use the paired runner to alternate baseline and candidate process order;
-  never select the fastest run.
+- Use paired comparisons for two builds; do not select the fastest run.
 - Treat counters as attribution, not timing. A faster run with identical
   counters may be a code-generation or memory-layout effect.
 - Rebuild or change code placement before acting on a compiler-only anomaly.
   Function addresses can affect instruction-cache and branch-predictor
   behavior even when the executed work is unchanged.
-- Store durable experiments under `benchmarks/results/` with the commit,
-  environment, commands, variance, and correctness checks.
+- Store durable experiments under `benchmarks/results/` using its template.
 
 The Observe-specific CLI smoke test runs only in that mode:
 

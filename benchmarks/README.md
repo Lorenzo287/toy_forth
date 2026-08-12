@@ -78,26 +78,12 @@ individual operations. C workloads are compiled against the matching runtime
 and report their own operation timings in the same way. The runner also reports
 wall time for each fresh process and its median. A custom `--toy` executable can
 run only Toy-script workloads. Compare results only across the same machine,
-compiler, build configuration, and workload.
-Use the workflow in
-[`docs/development/observability.md`](../docs/development/observability.md)
-when a change needs runtime counters, allocation statistics, or a sampled
-profile in addition to Release timing.
-Before drawing a conclusion:
+compiler, build configuration, and workload. Store durable measurements under
+`results/` using the provided template.
 
-1. Plug into AC power, choose one power mode, close avoidable background work,
-   and let the machine settle before warming both builds.
-2. Record the commit, compiler/version, build type, OS, CPU, power state, and
-   command.
-3. Prefer 15 or more alternating pairs. Make important workloads long enough
-   to dominate startup and timer resolution; do not select the fastest run.
-4. Change one implementation technique at a time. Include a control workload
-   that should not use the changed path, and repeat small results in a separate
-   session.
-5. Confirm behavior and leak tests separately; a benchmark is not a regression
-   test.
-6. Store durable measurements from meaningful experiments under `results/`
-   using the provided template.
+For guidance on drawing conclusions, choosing control workloads, or combining
+timing with counters, allocation statistics, profiles, and leak checks, see
+[`docs/development/observability.md`](../docs/development/observability.md).
 
 Current workloads:
 
