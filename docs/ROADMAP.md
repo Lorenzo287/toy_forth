@@ -30,6 +30,15 @@ optimization separately from portable source changes. A future bytecode
 prototype should replace executable object fetches rather than add a second
 instruction stream beside them.
 
+Use the [application workloads](../benchmarks/results/2026-09-05-application-workloads.md)
+alongside JSON, graph search, and the focused microbenchmarks. Separate fixture
+generation from application phases, check scaling, and compare plausible Toy
+implementations before attributing costs to the runtime. Coverage is still
+synthetic: next useful additions include skewed real-text inputs, varied JSON
+shapes and graph topologies, and a host-driven event-processing example that
+exercises embedding callbacks. Let concrete consumer use determine further
+workloads rather than trying to represent every language feature in one suite.
+
 ### C Interop
 
 Embedding, C extensions, `core:ffi`, and generated bindings share one

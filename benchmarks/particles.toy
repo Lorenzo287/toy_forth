@@ -1,0 +1,33 @@
+\ Application timing: seeding and validation are outside advance_ns.
+\ Both population and step count vary; no file I/O or graphics are involved.
+"../examples/particles/physics" import
+
+'verify [ not [ "particle benchmark result mismatch" error ] if ] def
+'near [ - abs 0.000001 < ] def
+
+'bench-particles [ | count steps gravity expected |
+    monotonic-ns | start |
+    $count particles.seed
+    monotonic-ns $start - | setup |
+    monotonic-ns | start |
+    $steps 0.02 $gravity particles.advance | result |
+    monotonic-ns $start - | advance |
+
+    $result particles.summary | actual |
+    $actual 0 at $expected 0 at == verify
+    1 4 range [ | index | $actual $index at $expected $index at near verify ] each
+    $result [ | p |
+        $p 0 at 0.0 >= $p 0 at 100.0 <= and
+        $p 1 at 0.0 >= $p 1 at 100.0 <= and and
+    ] all verify
+    $count $steps $gravity $setup $advance $actual 3 at
+    "particles n={} steps={} gravity={} setup_ns={} advance_ns={} checksum={}\n" printf
+] def
+
+\ Full-state oracle and energy checks live in check-applications.py.
+250 25 -9.81 [ 250 11975.1 11474.634544 5123.6164048400015 ] bench-particles
+1000 25 -9.81 [ 1000 49654.1 47879.870376 20336.597014400006 ] bench-particles
+4000 25 -9.81 [ 4000 198849.5 192329.05352 81489.18702480002 ] bench-particles
+1000 10 0.0 [ 1000 49661.34 49121.08 8675.585 ] bench-particles
+1000 40 0.0 [ 1000 49654.7 49141.46 8675.585 ] bench-particles
+1000 160 0.0 [ 1000 49705.38 49241.7 8675.585 ] bench-particles

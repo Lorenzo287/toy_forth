@@ -103,12 +103,16 @@ Current workloads:
   copy-left/share-right concatenation.
 - `json.toy`: decode and encode scaling for the Toy-written `core:json`
   package.
+- `log-report.toy`: text parsing, per-route aggregation, sorting, and reporting
+  using `examples/log-report/`, with fixed and growing route cardinality.
 - `map.toy`: unique growth and replacement, shared updates, lookup, and
   absent-key deletion.
 - `set.toy`: unique growth, duplicate insertion, shared updates, membership,
   present/absent removal, algebra, and relation predicates.
 - `pqueue.toy`: unique/shared heap updates, non-consuming peek, pop, and ordered
   pair projection.
+- `particles.toy`: repeated floating-point state transformations using
+  `examples/particles/`, varying population and timestep count independently.
 - `runtime-internals.toy`: native continuations, dynamic captures, predicate
   stack snapshots, and recursion-scheme scheduling.
 - `sequence-algorithms.toy`: sort and unique crossover workloads by size,
@@ -117,3 +121,55 @@ Current workloads:
   string transforms, splitting, and incremental growth.
 - `vector.toy`: unique `push-back`, non-shrinking `pop-back`, indexed reads,
   and unique/shared-left `concat`.
+
+## Application Workloads
+
+The [log reporter](../examples/log-report/README.md) and
+[headless simulation](../examples/particles/README.md) are runnable consumer
+examples. Their benchmark drivers import the same packages; they do not
+contain faster, benchmark-only implementations. No Python is required to run
+the examples or their Toy regressions.
+
+```console
+nob benchmark log-report particles --runs 7
+```
+
+These drivers check their results on every run. Log cases use an independently
+derived route-sensitive aggregate checksum and report row count. Particle
+cases check population, position sums, energy, and coordinate bounds. A
+separate Python standard-library checker compares every group and every
+particle component to independent implementations, including randomized text,
+fractional report means, multiple wall crossings, and zero-gravity energy:
+
+```console
+python3 benchmarks/check-applications.py --toy build/gcc/release/toy
+python3 benchmarks/check-applications.py --emit-checksums
+```
+
+Nob measures the whole process, including package loading, generated fixtures,
+and correctness checks. Use the phase-aware runner to distinguish application
+work from that overhead:
+
+```console
+python3 benchmarks/measure-applications.py --runs 7
+python3 benchmarks/measure-applications.py \
+  --baseline path/to/baseline/toy --toy path/to/candidate/toy --runs 7 --json
+```
+
+The runner warms up each executable once, alternates execution order when
+comparing two builds, and reports phase medians and median paired
+candidate/baseline ratios. JSON includes raw samples. Log `application` time
+is analysis plus report generation; particle `application` time is advancement.
+`setup` and process `wall` are reported separately. File I/O and terminal
+printing are not part of application timing. Very short phases, especially
+reports of just 16 routes, cannot resolve small effects reliably.
+
+Log input grows from 2,000 to 32,000 records, first with 16 routes and then with
+one distinct route per two records. Particles vary from 250 to 4,000 at fixed
+steps, and from 10 to 160 steps at fixed population. These are deterministic
+synthetic inputs, not evidence from established Toy production applications.
+Together they broaden coverage beyond JSON and graph search, but do not
+represent recursive interpreters, interactive tools, host callbacks, streaming
+I/O, or large graph topologies. See the
+[application workload experiment](results/2026-09-05-application-workloads.md)
+for source-level alternatives, scaling results, and remaining limitations.

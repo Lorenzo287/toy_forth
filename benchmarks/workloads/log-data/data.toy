@@ -1,0 +1,15 @@
+'logdata package
+
+\ count routes -- text; setup fixture, not part of log analysis.
+\ Route cardinality is independent of record count. A permutation changes
+\ insertion order; queries, mixed line endings, comments, and errors vary.
+'make [ | count routes |
+    0 $count range [ | i |
+        $i 37 * $routes % $i 7 %
+        $i 10 % 0 == [ 503 ] [ $i 10 % 1 == [ 404 ] [ 200 ] ifelse ] ifelse
+        $i 17 * 1000 % 1 + $i 31 * 1000 % 128 +
+        " /item/{}?v={}\t{}\t{}\t{} " format
+        $i 2 % 0 == [ "\r\n" ] [ "\n" ] ifelse concat
+        $i 251 % 0 == [ "# checkpoint\n" swap concat ] if
+    ] map "" join
+] def

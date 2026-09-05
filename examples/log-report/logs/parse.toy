@@ -1,0 +1,19 @@
+'logs package
+
+\ trimmed-line -- route status latency-ms bytes
+\ Input is four tab-separated fields. Query strings do not identify routes;
+\ path case is preserved. Numeric fields are strict decimal integers.
+'parse-line [ | line |
+    $line "\t" split | fields |
+    $fields len 4 != [ "log-report: expected four tab-separated fields" error ] if
+    $fields 0 at trim "?" split first | route |
+    $route empty? [ "log-report: empty route" error ] if
+    $route first "/" != [ "log-report: route must start with /" error ] if
+    $fields 1 at trim >int | status |
+    $fields 2 at trim >int | latency |
+    $fields 3 at trim >int | bytes |
+    $status 100 < $status 599 > or [ "log-report: status outside 100..599" error ] if
+    $latency 0 < $bytes 0 < or [ "log-report: negative latency or byte count" error ] if
+    $route $status $latency $bytes
+] def
+'parse-line private

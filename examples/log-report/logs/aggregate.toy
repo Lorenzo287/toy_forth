@@ -1,0 +1,30 @@
+'logs package
+
+\ groups route status latency-ms bytes -- groups
+\ A group holds [requests errors total-ms max-ms bytes]. The growing outer
+\ map stays on the stack. Capturing this fixed-size old group is intentional.
+'add-record [ | route status latency bytes |
+    dup $route [ 0 0 0 0 0 ] get-or | old |
+    $route [] [
+        $old 0 at 1 +
+        $old 1 at $status 400 >= [ 1 + ] if
+        $old 2 at $latency +
+        $old 3 at $latency max
+        $old 4 at $bytes +
+    ] infra assoc
+] def
+'add-record private
+
+\ groups line -- groups; blank lines and # comments are ignored.
+'add-line [
+    trim dup empty?
+    [ drop ]
+    [ dup first "#" == [ drop ] [ parse-line add-record ] ifelse ] ifelse
+] def
+'add-line private
+
+/* text -- groups
+Aggregate an in-memory TSV log in expected O(input bytes) time, plus storage for
+the split lines and distinct routes. Errors include HTTP statuses 400..599.
+Blank lines and lines starting with # after trimming are ignored. */
+'analyze [ "\n" split {} swap [ add-line ] fold ] def

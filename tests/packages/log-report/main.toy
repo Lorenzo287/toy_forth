@@ -1,0 +1,29 @@
+'main package
+"../../../examples/log-report/logs" import
+
+'check [ not [ "log-report regression failed" error ] if ] def
+'sample [
+    " # ignored\r\n/api?q=1\t200\t10\t100\r\n/api?q=2\t500\t30\t20\n/z\t404\t0\t0\n/API\t299\t2\t8\n\n/api\t400\t20\t10"
+] def
+
+'main [
+    sample logs.analyze
+    { "/api" [ 3 2 60 30 130 ] "/z" [ 1 1 0 0 0 ] "/API" [ 1 0 2 2 8 ] }
+    == check
+    sample logs.analyze logs.rows
+    [ [ "/API" 1 0 2 2 8 ] [ "/api" 3 2 60 30 130 ] [ "/z" 1 1 0 0 0 ] ]
+    == check
+    " /p\t200\t1\t4\n/p\t599\t2\t5\n" logs.analyze logs.report
+    "route\trequests\terrors\tmean_ms\tmax_ms\tbytes\n/p\t2\t1\t1.5\t2\t9\n" == check
+    "\n # comment\n" logs.analyze {} == check
+    {} logs.report "route\trequests\terrors\tmean_ms\tmax_ms\tbytes\n" == check
+    [ "/p\t200\t1" logs.analyze false ] [ "four tab-separated" contains? ] try check
+    [ "/p\t600\t1\t0" logs.analyze false ] [ "outside 100..599" contains? ] try check
+    [ "/p\t200\t-1\t0" logs.analyze false ] [ "negative latency" contains? ] try check
+    [ "p\t200\t1\t0" logs.analyze false ] [ "route must start" contains? ] try check
+    [ "/p\t200\t1.5\t0" logs.analyze false ] [ drop true ] try check
+
+    \ Required sharing: the original report remains a value after an update.
+    sample logs.analyze dup "/api" [ 0 0 0 0 0 ] assoc drop
+    "/api" get [ 3 2 60 30 130 ] == check
+] def

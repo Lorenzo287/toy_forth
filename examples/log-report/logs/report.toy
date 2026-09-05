@@ -1,0 +1,26 @@
+'logs package
+
+/* groups -- rows
+Return [route requests errors total-ms max-ms bytes] rows in ascending,
+case-sensitive route order. Sorting costs O(k log k) for k distinct routes. */
+'rows [ | groups |
+    $groups keys sort [ | route |
+        [] $route push-back $groups $route get concat
+    ] map
+] def
+
+'format-row [ | row |
+    $row 0 at $row 1 at $row 2 at
+    $row 3 at >float $row 1 at >float /
+    $row 4 at $row 5 at "{}\t{}\t{}\t{}\t{}\t{}" format
+] def
+'format-row private
+
+/* groups -- text
+Render a TSV report with a header and an unrounded floating-point mean latency.
+Rows are formatted independently and joined once. */
+'report [
+    rows [ format-row ] map
+    "route\trequests\terrors\tmean_ms\tmax_ms\tbytes" swap cons
+    "\n" join "\n" concat
+] def

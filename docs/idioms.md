@@ -195,6 +195,15 @@ runtime fix made both BFS layouts linear. The separate
 [control-ownership experiment](../benchmarks/results/2026-07-31-control-ownership.md)
 audits the same distinction across the control vocabulary.
 
+The [log reporter](../examples/log-report/README.md) combines a growing map
+threaded through `fold` with fixed-size captured records. The
+[particle simulation](../examples/particles/README.md) uses `map` for each
+population update and `times` for evolving state. Their
+[application experiment](../benchmarks/results/2026-09-05-application-workloads.md)
+compares `map` with a threaded `fold` and checks a domain-level fast path.
+Avoiding unnecessary reflection arithmetic mattered much more than changing
+the combinator: an idiom audit should also question the algorithm's work.
+
 Use those results as guidance, not as a universal ranking. Small data, required
 sharing, clearer domain structure, or a different mix of operations can change
 the right choice. The [combinator reference](./combinators.md) describes the

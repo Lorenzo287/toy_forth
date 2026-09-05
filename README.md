@@ -43,6 +43,10 @@ Start the REPL, run a package, or evaluate a standalone file with the CLI. The
 is self-documenting. There are also [examples](./examples/) that showcase some
 of the coolest features.
 
+For small complete applications, try the [log reporter](./examples/log-report/README.md),
+[headless particle simulation](./examples/particles/README.md), or
+[graph search](./examples/graphs/README.md).
+
 ```console
 toy
 toy folder

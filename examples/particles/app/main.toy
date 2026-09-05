@@ -1,0 +1,12 @@
+'main package
+"../physics" import
+
+'main [
+    argc 2 > [ "Usage: toy examples/particles/app -- [count [steps]]" error ] if
+    argc 0 > [ argv 0 at >int ] [ 200 ] ifelse | count |
+    argc 1 > [ argv 1 at >int ] [ 100 ] ifelse | steps |
+    $count particles.seed $steps 0.02 -9.81 particles.advance
+    particles.summary | result |
+    $result 0 at $steps $result 1 at $result 2 at $result 3 at
+    "particles={} steps={} sum-x={} sum-y={} kinetic-energy={}\n" printf
+] def

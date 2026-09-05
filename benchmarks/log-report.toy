@@ -1,0 +1,43 @@
+\ Application timing: setup and output verification are outside the measured
+\ analyze/report phases. Nob's process wall time includes all three.
+"../examples/log-report/logs" import
+"./workloads/log-data" import
+
+'verify [ not [ "log-report benchmark result mismatch" error ] if ] def
+
+'checksum [
+    pairs 0 swap [ | pair |
+        $pair 0 at "/" split last >int 1 +
+        $pair 1 at | stats |
+        $stats 0 at 3 * $stats 1 at 5 * + $stats 2 at 7 * +
+        $stats 3 at 11 * + $stats 4 at 13 * + * +
+    ] fold
+] def
+
+'bench-log [ | count routes expected |
+    monotonic-ns | start |
+    $count $routes logdata.make | text |
+    monotonic-ns $start - | setup |
+    monotonic-ns | start |
+    $text logs.analyze | groups |
+    monotonic-ns $start - | analyze |
+    monotonic-ns | start |
+    $groups logs.report | report |
+    monotonic-ns $start - | render |
+
+    $groups len $routes == verify
+    $groups checksum $expected == verify
+    $report "\n" split len $routes 2 + == verify
+    $count $routes $setup $analyze $render $expected
+    "log-report n={} groups={} setup_ns={} analyze_ns={} report_ns={} checksum={}\n" printf
+] def
+
+\ Expected values come from check-applications.py, not logs.analyze.
+\ Fixed cardinality tests repeated updates; growing cardinality tests map
+\ growth, route sorting, and a report proportional to the input size.
+2000 16 199871984 bench-log
+8000 16 795014984 bench-log
+32000 16 3175586984 bench-log
+2000 1000 14480335500 bench-log
+8000 4000 230934342000 bench-log
+32000 16000 3691945368000 bench-log

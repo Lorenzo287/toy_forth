@@ -1,0 +1,30 @@
+'particles package
+
+/* count -- particles
+Create a deterministic spread of positions and velocities. This is a fixture,
+not a random source. Each particle is a distinct [x y vx vy] record. */
+'seed [ | count |
+    $count 0 < [ "particles: count must be non-negative" error ] if
+    0 $count range [ | i |
+        [] [
+            $i 37 * 997 % >float 10.0 /
+            $i 17 * 991 % >float 10.0 /
+            $i 13 * 101 % 50 - >float 10.0 /
+            $i 29 * 103 % 51 - >float 10.0 /
+        ] infra
+    ] map
+] def
+
+/* particles -- [count sum-x sum-y kinetic-energy]
+Summarize with four scalar accumulators. This avoids rebuilding a summary
+collection for every particle. Energy is sum((vx*vx + vy*vy)/2), unit masses. */
+'summary [ | particles |
+    [ 0 0.0 0.0 0.0 ] [
+        $particles [ | count sum-x sum-y energy particle |
+            $count 1 +
+            $sum-x $particle 0 at +
+            $sum-y $particle 1 at +
+            $energy $particle 2 at square $particle 3 at square + 2.0 / +
+        ] each
+    ] infra
+] def

@@ -1,0 +1,66 @@
+'particles package
+
+\ position velocity -- position velocity, for one axis of a 100-unit box.
+\ Fold the unfolded coordinate into alternating tiles. This supports multiple
+\ wall crossings in one step. At a wall, velocity points into the box.
+'reflect-axis [ | position velocity |
+    \ Most updates do not hit a wall. Leave exact boundary cases to the fold.
+    $position 0.0 > $position 100.0 < and [
+        $position $velocity
+    ] [
+        $position 100.0 / floor | tile |
+        $position $tile >float 100.0 * - | offset |
+        $tile 2 mod 0 ==
+        [ $offset $velocity ]
+        [ 100.0 $offset - $velocity neg ] ifelse
+        | x v |
+        $x
+        $x 0.0 == [ $v abs ] [
+            $x 100.0 == [ $v abs neg ] [ $v ] ifelse
+        ] ifelse
+    ] ifelse
+] def
+'reflect-axis private
+
+\ particle -- particle; dt and velocity-change are stable entry-point context.
+\ Particle records are [x y vx vy]; each result is a new four-element record.
+'move [ | particle |
+    $particle 2 at | vx |
+    $particle 3 at $velocity-change + | vy |
+    $particle 0 at $vx $dt * + $vx reflect-axis | x next-vx |
+    $particle 1 at $vy $dt * + $vy reflect-axis | y next-vy |
+    [] [ $x $y $next-vx $next-vy ] infra
+] def
+'move private
+
+'validate-parameters [
+    $dt 0 <= $dt inf? or $dt nan? or
+    [ "particles: dt must be finite and positive" error ] if
+    $gravity inf? $gravity nan? or
+    [ "particles: gravity must be finite" error ] if
+] def
+'validate-parameters private
+
+\ particles -- particles; timestep parameters belong to the public entry frame.
+'step-current [ [ move ] map ] def
+'step-current private
+
+/* particles dt gravity -- particles
+Advance independent unit-mass particles one step: vy += gravity*dt, then move
+and reflect each coordinate elastically at 0 and 100. O(n) work and output
+storage. Inputs must contain finite numbers; dt must be positive. */
+'step [ | dt gravity |
+    validate-parameters
+    $gravity $dt * | velocity-change |
+    step-current
+] def
+
+/* particles steps dt gravity -- particles
+Run a fixed number of steps. The evolving particle vector stays on the stack;
+only scalar parameters are captured. Work is O(n*steps), live state O(n). */
+'advance [ | steps dt gravity |
+    $steps 0 < [ "particles: steps must be non-negative" error ] if
+    validate-parameters
+    $gravity $dt * | velocity-change |
+    $steps [ step-current ] times
+] def

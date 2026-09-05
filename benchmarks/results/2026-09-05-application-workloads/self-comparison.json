@@ -1,0 +1,1105 @@
+{
+  "platform": "Linux-7.2.2-arch1-1-x86_64-with-glibc2.44",
+  "executables": {
+    "candidate": "/home/lorenzo/Probe/toy/build/gcc/release/toy",
+    "baseline": "/home/lorenzo/Probe/toy/build/gcc/release/toy"
+  },
+  "runs": 5,
+  "warmups": 1,
+  "summaries": [
+    {
+      "case": "log-report process",
+      "phase": "wall",
+      "candidate_median_ms": 223.417857,
+      "baseline_median_ms": 229.694904,
+      "median_paired_ratio": 0.9739426434989606
+    },
+    {
+      "case": "log-report n=2000 groups=16",
+      "phase": "setup",
+      "candidate_median_ms": 1.590629,
+      "baseline_median_ms": 1.639212,
+      "median_paired_ratio": 0.9787660978735947
+    },
+    {
+      "case": "log-report n=2000 groups=16",
+      "phase": "analyze",
+      "candidate_median_ms": 3.087397,
+      "baseline_median_ms": 3.186594,
+      "median_paired_ratio": 0.9690465419664328
+    },
+    {
+      "case": "log-report n=2000 groups=16",
+      "phase": "report",
+      "candidate_median_ms": 0.021055,
+      "baseline_median_ms": 0.022236,
+      "median_paired_ratio": 0.9468879294837201
+    },
+    {
+      "case": "log-report n=2000 groups=16",
+      "phase": "application",
+      "candidate_median_ms": 3.1104640000000003,
+      "baseline_median_ms": 3.210093,
+      "median_paired_ratio": 0.9694993886664693
+    },
+    {
+      "case": "log-report n=8000 groups=16",
+      "phase": "setup",
+      "candidate_median_ms": 6.239197,
+      "baseline_median_ms": 6.370927,
+      "median_paired_ratio": 0.9643529112796301
+    },
+    {
+      "case": "log-report n=8000 groups=16",
+      "phase": "analyze",
+      "candidate_median_ms": 12.486828,
+      "baseline_median_ms": 12.91183,
+      "median_paired_ratio": 0.9641759838553102
+    },
+    {
+      "case": "log-report n=8000 groups=16",
+      "phase": "report",
+      "candidate_median_ms": 0.016196,
+      "baseline_median_ms": 0.01833,
+      "median_paired_ratio": 0.8660645285935085
+    },
+    {
+      "case": "log-report n=8000 groups=16",
+      "phase": "application",
+      "candidate_median_ms": 12.502977,
+      "baseline_median_ms": 12.927944,
+      "median_paired_ratio": 0.9640207163966996
+    },
+    {
+      "case": "log-report n=32000 groups=16",
+      "phase": "setup",
+      "candidate_median_ms": 24.775239,
+      "baseline_median_ms": 25.638371,
+      "median_paired_ratio": 0.9663343665633046
+    },
+    {
+      "case": "log-report n=32000 groups=16",
+      "phase": "analyze",
+      "candidate_median_ms": 48.68584,
+      "baseline_median_ms": 50.863843,
+      "median_paired_ratio": 0.9624230320150996
+    },
+    {
+      "case": "log-report n=32000 groups=16",
+      "phase": "report",
+      "candidate_median_ms": 0.017604,
+      "baseline_median_ms": 0.019426,
+      "median_paired_ratio": 0.8719970754125758
+    },
+    {
+      "case": "log-report n=32000 groups=16",
+      "phase": "application",
+      "candidate_median_ms": 48.704806,
+      "baseline_median_ms": 50.883269000000006,
+      "median_paired_ratio": 0.9624051473579655
+    },
+    {
+      "case": "log-report n=2000 groups=1000",
+      "phase": "setup",
+      "candidate_median_ms": 1.457078,
+      "baseline_median_ms": 1.521027,
+      "median_paired_ratio": 0.9634220825797308
+    },
+    {
+      "case": "log-report n=2000 groups=1000",
+      "phase": "analyze",
+      "candidate_median_ms": 3.099344,
+      "baseline_median_ms": 3.188792,
+      "median_paired_ratio": 0.9695423847024203
+    },
+    {
+      "case": "log-report n=2000 groups=1000",
+      "phase": "report",
+      "candidate_median_ms": 0.795474,
+      "baseline_median_ms": 0.793704,
+      "median_paired_ratio": 1.0014221364303735
+    },
+    {
+      "case": "log-report n=2000 groups=1000",
+      "phase": "application",
+      "candidate_median_ms": 3.894818,
+      "baseline_median_ms": 3.970011,
+      "median_paired_ratio": 0.9758156841379029
+    },
+    {
+      "case": "log-report n=8000 groups=4000",
+      "phase": "setup",
+      "candidate_median_ms": 5.887445,
+      "baseline_median_ms": 5.998443,
+      "median_paired_ratio": 0.9814955314237377
+    },
+    {
+      "case": "log-report n=8000 groups=4000",
+      "phase": "analyze",
+      "candidate_median_ms": 12.610129,
+      "baseline_median_ms": 12.710766,
+      "median_paired_ratio": 0.9901680848875424
+    },
+    {
+      "case": "log-report n=8000 groups=4000",
+      "phase": "report",
+      "candidate_median_ms": 3.241187,
+      "baseline_median_ms": 3.290416,
+      "median_paired_ratio": 1.0145274706356473
+    },
+    {
+      "case": "log-report n=8000 groups=4000",
+      "phase": "application",
+      "candidate_median_ms": 15.865271,
+      "baseline_median_ms": 15.999198,
+      "median_paired_ratio": 0.9915061899802152
+    },
+    {
+      "case": "log-report n=32000 groups=16000",
+      "phase": "setup",
+      "candidate_median_ms": 23.605275,
+      "baseline_median_ms": 23.986406,
+      "median_paired_ratio": 0.9824480165974011
+    },
+    {
+      "case": "log-report n=32000 groups=16000",
+      "phase": "analyze",
+      "candidate_median_ms": 50.557588,
+      "baseline_median_ms": 51.492719,
+      "median_paired_ratio": 0.9887260371704201
+    },
+    {
+      "case": "log-report n=32000 groups=16000",
+      "phase": "report",
+      "candidate_median_ms": 13.474331,
+      "baseline_median_ms": 13.541365,
+      "median_paired_ratio": 0.9964177171208367
+    },
+    {
+      "case": "log-report n=32000 groups=16000",
+      "phase": "application",
+      "candidate_median_ms": 64.24365499999999,
+      "baseline_median_ms": 65.519556,
+      "median_paired_ratio": 0.9837524540001463
+    },
+    {
+      "case": "particles process",
+      "phase": "wall",
+      "candidate_median_ms": 291.052262,
+      "baseline_median_ms": 290.024067,
+      "median_paired_ratio": 0.9934130057748283
+    },
+    {
+      "case": "particles n=250 steps=25 gravity=-9.81",
+      "phase": "setup",
+      "candidate_median_ms": 0.13427,
+      "baseline_median_ms": 0.129887,
+      "median_paired_ratio": 1.016444271775025
+    },
+    {
+      "case": "particles n=250 steps=25 gravity=-9.81",
+      "phase": "advance",
+      "candidate_median_ms": 5.130315,
+      "baseline_median_ms": 5.119094,
+      "median_paired_ratio": 1.0132864006597802
+    },
+    {
+      "case": "particles n=250 steps=25 gravity=-9.81",
+      "phase": "application",
+      "candidate_median_ms": 5.130315,
+      "baseline_median_ms": 5.119094,
+      "median_paired_ratio": 1.0132864006597802
+    },
+    {
+      "case": "particles n=1000 steps=25 gravity=-9.81",
+      "phase": "setup",
+      "candidate_median_ms": 0.460204,
+      "baseline_median_ms": 0.458381,
+      "median_paired_ratio": 1.0096257158598445
+    },
+    {
+      "case": "particles n=1000 steps=25 gravity=-9.81",
+      "phase": "advance",
+      "candidate_median_ms": 20.905403,
+      "baseline_median_ms": 20.874833,
+      "median_paired_ratio": 0.9989151431612997
+    },
+    {
+      "case": "particles n=1000 steps=25 gravity=-9.81",
+      "phase": "application",
+      "candidate_median_ms": 20.905403,
+      "baseline_median_ms": 20.874833,
+      "median_paired_ratio": 0.9989151431612997
+    },
+    {
+      "case": "particles n=4000 steps=25 gravity=-9.81",
+      "phase": "setup",
+      "candidate_median_ms": 1.767288,
+      "baseline_median_ms": 1.734876,
+      "median_paired_ratio": 1.0378369998185402
+    },
+    {
+      "case": "particles n=4000 steps=25 gravity=-9.81",
+      "phase": "advance",
+      "candidate_median_ms": 82.781246,
+      "baseline_median_ms": 82.628772,
+      "median_paired_ratio": 0.998016668636929
+    },
+    {
+      "case": "particles n=4000 steps=25 gravity=-9.81",
+      "phase": "application",
+      "candidate_median_ms": 82.781246,
+      "baseline_median_ms": 82.628772,
+      "median_paired_ratio": 0.998016668636929
+    },
+    {
+      "case": "particles n=1000 steps=10 gravity=0",
+      "phase": "setup",
+      "candidate_median_ms": 0.378966,
+      "baseline_median_ms": 0.380211,
+      "median_paired_ratio": 0.996725502418394
+    },
+    {
+      "case": "particles n=1000 steps=10 gravity=0",
+      "phase": "advance",
+      "candidate_median_ms": 8.241679,
+      "baseline_median_ms": 8.245964,
+      "median_paired_ratio": 1.017353723663343
+    },
+    {
+      "case": "particles n=1000 steps=10 gravity=0",
+      "phase": "application",
+      "candidate_median_ms": 8.241679,
+      "baseline_median_ms": 8.245964,
+      "median_paired_ratio": 1.017353723663343
+    },
+    {
+      "case": "particles n=1000 steps=40 gravity=0",
+      "phase": "setup",
+      "candidate_median_ms": 0.379632,
+      "baseline_median_ms": 0.377167,
+      "median_paired_ratio": 0.997123290213619
+    },
+    {
+      "case": "particles n=1000 steps=40 gravity=0",
+      "phase": "advance",
+      "candidate_median_ms": 32.759294,
+      "baseline_median_ms": 32.791314,
+      "median_paired_ratio": 1.0041539070142569
+    },
+    {
+      "case": "particles n=1000 steps=40 gravity=0",
+      "phase": "application",
+      "candidate_median_ms": 32.759294,
+      "baseline_median_ms": 32.791314,
+      "median_paired_ratio": 1.0041539070142569
+    },
+    {
+      "case": "particles n=1000 steps=160 gravity=0",
+      "phase": "setup",
+      "candidate_median_ms": 0.376395,
+      "baseline_median_ms": 0.376643,
+      "median_paired_ratio": 1.006304189157757
+    },
+    {
+      "case": "particles n=1000 steps=160 gravity=0",
+      "phase": "advance",
+      "candidate_median_ms": 132.724019,
+      "baseline_median_ms": 132.055174,
+      "median_paired_ratio": 0.9974563362303037
+    },
+    {
+      "case": "particles n=1000 steps=160 gravity=0",
+      "phase": "application",
+      "candidate_median_ms": 132.724019,
+      "baseline_median_ms": 132.055174,
+      "median_paired_ratio": 0.9974563362303037
+    }
+  ],
+  "samples": {
+    "log-report": [
+      {
+        "baseline": {
+          "log-report process": {
+            "wall": 222.016174
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.639212,
+            "analyze": 3.186594,
+            "report": 0.023499,
+            "application": 3.210093
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.370927,
+            "analyze": 12.676932,
+            "report": 0.01833,
+            "application": 12.695262000000001
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.418059,
+            "analyze": 48.642369,
+            "report": 0.019148,
+            "application": 48.661517
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.452185,
+            "analyze": 3.089295,
+            "report": 0.777116,
+            "application": 3.866411
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.779818,
+            "analyze": 12.336484,
+            "report": 3.343717,
+            "application": 15.680201
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.286196,
+            "analyze": 50.734741,
+            "report": 13.109729,
+            "application": 63.84447
+          }
+        },
+        "candidate": {
+          "log-report process": {
+            "wall": 220.991105
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.667329,
+            "analyze": 3.057304,
+            "report": 0.021047,
+            "application": 3.0783509999999996
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.143822,
+            "analyze": 12.038992,
+            "report": 0.015672,
+            "application": 12.054664
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.594739,
+            "analyze": 48.182659,
+            "report": 0.016697,
+            "application": 48.199356
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.457078,
+            "analyze": 3.111449,
+            "report": 0.866466,
+            "application": 3.977915
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 6.090283,
+            "analyze": 12.321466,
+            "report": 3.138759,
+            "application": 15.460225
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.530479,
+            "analyze": 50.258284,
+            "report": 13.259285,
+            "application": 63.517569
+          }
+        }
+      },
+      {
+        "candidate": {
+          "log-report process": {
+            "wall": 222.762055
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.680761,
+            "analyze": 3.061684,
+            "report": 0.021039,
+            "application": 3.082723
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.239197,
+            "analyze": 12.486828,
+            "report": 0.016149,
+            "application": 12.502977
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.432424,
+            "analyze": 48.184353,
+            "report": 0.017604,
+            "application": 48.201957
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.452586,
+            "analyze": 3.064317,
+            "report": 0.784261,
+            "application": 3.848578
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.788106,
+            "analyze": 12.610129,
+            "report": 3.153999,
+            "application": 15.764128000000001
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.71063,
+            "analyze": 50.254166,
+            "report": 13.474331,
+            "application": 63.728497
+          }
+        },
+        "baseline": {
+          "log-report process": {
+            "wall": 242.775105
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.684917,
+            "analyze": 3.29687,
+            "report": 0.023977,
+            "application": 3.320847
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.654484,
+            "analyze": 12.99261,
+            "report": 0.023091,
+            "application": 13.015701000000002
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 26.689572,
+            "analyze": 54.152708,
+            "report": 0.027796,
+            "application": 54.180504
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.645992,
+            "analyze": 3.380712,
+            "report": 0.874868,
+            "application": 4.25558
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 6.426617,
+            "analyze": 13.562877,
+            "report": 3.328131,
+            "application": 16.891008
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 25.717065,
+            "analyze": 55.207854,
+            "report": 14.927936,
+            "application": 70.13579
+          }
+        }
+      },
+      {
+        "baseline": {
+          "log-report process": {
+            "wall": 233.052926
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.625137,
+            "analyze": 3.120249,
+            "report": 0.022236,
+            "application": 3.1424849999999998
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.203055,
+            "analyze": 13.06188,
+            "report": 0.020704,
+            "application": 13.082584
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 26.796163,
+            "analyze": 51.929916,
+            "report": 0.025986,
+            "application": 51.955902
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.521027,
+            "analyze": 3.299657,
+            "report": 0.793704,
+            "application": 4.093361
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.998443,
+            "analyze": 12.710766,
+            "report": 3.290416,
+            "application": 16.001182
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.986406,
+            "analyze": 51.492719,
+            "report": 15.233161,
+            "application": 66.72588
+          }
+        },
+        "candidate": {
+          "log-report process": {
+            "wall": 223.417857
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.590629,
+            "analyze": 3.091864,
+            "report": 0.021055,
+            "application": 3.112919
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.164548,
+            "analyze": 12.593951,
+            "report": 0.017931,
+            "application": 12.611882000000001
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.924151,
+            "analyze": 48.895726,
+            "report": 0.016791,
+            "application": 48.912517
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.465391,
+            "analyze": 3.099344,
+            "report": 0.795474,
+            "application": 3.894818
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.887445,
+            "analyze": 12.437265,
+            "report": 3.428006,
+            "application": 15.865271
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.565397,
+            "analyze": 50.912192,
+            "report": 13.331463,
+            "application": 64.24365499999999
+          }
+        }
+      },
+      {
+        "candidate": {
+          "log-report process": {
+            "wall": 225.695995
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.58154,
+            "analyze": 3.087397,
+            "report": 0.023067,
+            "application": 3.1104640000000003
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.239294,
+            "analyze": 12.188835,
+            "report": 0.01639,
+            "application": 12.205224999999999
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.99676,
+            "analyze": 48.68584,
+            "report": 0.018966,
+            "application": 48.704806
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.680921,
+            "analyze": 3.127648,
+            "report": 0.827625,
+            "application": 3.955273
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.930684,
+            "analyze": 12.657074,
+            "report": 3.243375,
+            "application": 15.900449
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.985117,
+            "analyze": 52.293605,
+            "report": 13.492856,
+            "application": 65.786461
+          }
+        },
+        "baseline": {
+          "log-report process": {
+            "wall": 223.294998
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.662473,
+            "analyze": 3.141394,
+            "report": 0.021994,
+            "application": 3.163388
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.295951,
+            "analyze": 12.459898,
+            "report": 0.016543,
+            "application": 12.476441000000001
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.761473,
+            "analyze": 48.703762,
+            "report": 0.018519,
+            "application": 48.722280999999995
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.788034,
+            "analyze": 3.086911,
+            "report": 0.882396,
+            "application": 3.969307
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.86571,
+            "analyze": 12.487895,
+            "report": 3.196589,
+            "application": 15.684484
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.54796,
+            "analyze": 50.709309,
+            "report": 13.541365,
+            "application": 64.250674
+          }
+        }
+      },
+      {
+        "baseline": {
+          "log-report process": {
+            "wall": 229.694904
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.61014,
+            "analyze": 3.234049,
+            "report": 0.020312,
+            "application": 3.2543610000000003
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.554404,
+            "analyze": 12.91183,
+            "report": 0.016114,
+            "application": 12.927944
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 25.638371,
+            "analyze": 50.863843,
+            "report": 0.019426,
+            "application": 50.883269000000006
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.46694,
+            "analyze": 3.188792,
+            "report": 0.781219,
+            "application": 3.970011
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 6.203437,
+            "analyze": 12.804423,
+            "report": 3.194775,
+            "application": 15.999198
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 24.370569,
+            "analyze": 52.005804,
+            "report": 13.513752,
+            "application": 65.519556
+          }
+        },
+        "candidate": {
+          "log-report process": {
+            "wall": 223.709662
+          },
+          "log-report n=2000 groups=16": {
+            "setup": 1.527885,
+            "analyze": 3.133944,
+            "report": 0.021157,
+            "application": 3.155101
+          },
+          "log-report n=8000 groups=16": {
+            "setup": 6.26809,
+            "analyze": 12.616298,
+            "report": 0.016196,
+            "application": 12.632494000000001
+          },
+          "log-report n=32000 groups=16": {
+            "setup": 24.775239,
+            "analyze": 48.952534,
+            "report": 0.017786,
+            "application": 48.97032
+          },
+          "log-report n=2000 groups=1000": {
+            "setup": 1.452962,
+            "analyze": 3.091669,
+            "report": 0.78233,
+            "application": 3.873999
+          },
+          "log-report n=8000 groups=4000": {
+            "setup": 5.839629,
+            "analyze": 12.678531,
+            "report": 3.241187,
+            "application": 15.919718
+          },
+          "log-report n=32000 groups=16000": {
+            "setup": 23.605275,
+            "analyze": 50.557588,
+            "report": 13.897436,
+            "application": 64.45502400000001
+          }
+        }
+      }
+    ],
+    "particles": [
+      {
+        "baseline": {
+          "particles process": {
+            "wall": 289.550534
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.119353,
+            "advance": 5.044105,
+            "application": 5.044105
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.458381,
+            "advance": 20.678441,
+            "application": 20.678441
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.729156,
+            "advance": 82.536788,
+            "application": 82.536788
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.380211,
+            "advance": 8.245964,
+            "application": 8.245964
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.390089,
+            "advance": 32.427488,
+            "application": 32.427488
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.376643,
+            "advance": 132.055174,
+            "application": 132.055174
+          }
+        },
+        "candidate": {
+          "particles process": {
+            "wall": 286.970813
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.120419,
+            "advance": 5.111123,
+            "application": 5.111123
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.460204,
+            "advance": 20.915451,
+            "application": 20.915451
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.866733,
+            "advance": 82.197165,
+            "application": 82.197165
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.378966,
+            "advance": 8.107697,
+            "application": 8.107697
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.379632,
+            "advance": 32.092153,
+            "application": 32.092153
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.375174,
+            "advance": 129.721593,
+            "application": 129.721593
+          }
+        }
+      },
+      {
+        "candidate": {
+          "particles process": {
+            "wall": 291.052262
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.136047,
+            "advance": 5.130315,
+            "application": 5.130315
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.478291,
+            "advance": 20.35044,
+            "application": 20.35044
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.707468,
+            "advance": 82.912347,
+            "application": 82.912347
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.377399,
+            "advance": 8.354639,
+            "application": 8.354639
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.376082,
+            "advance": 32.759294,
+            "application": 32.759294
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.539772,
+            "advance": 132.812946,
+            "application": 132.812946
+          }
+        },
+        "baseline": {
+          "particles process": {
+            "wall": 293.422249
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.133846,
+            "advance": 5.060327,
+            "application": 5.060327
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.473731,
+            "advance": 21.145171,
+            "application": 21.145171
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.806571,
+            "advance": 83.095761,
+            "application": 83.095761
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.422067,
+            "advance": 8.212128,
+            "application": 8.212128
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.377167,
+            "advance": 33.899081,
+            "application": 33.899081
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.378377,
+            "advance": 133.151639,
+            "application": 133.151639
+          }
+        }
+      },
+      {
+        "baseline": {
+          "particles process": {
+            "wall": 290.024067
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.131192,
+            "advance": 5.194924,
+            "application": 5.194924
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.428403,
+            "advance": 20.874833,
+            "application": 20.874833
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.734876,
+            "advance": 82.510166,
+            "application": 82.510166
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.375223,
+            "advance": 8.469861,
+            "application": 8.469861
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.400065,
+            "advance": 32.6093,
+            "application": 32.6093
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.374037,
+            "advance": 131.801971,
+            "application": 131.801971
+          }
+        },
+        "candidate": {
+          "particles process": {
+            "wall": 290.324047
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.161985,
+            "advance": 5.128423,
+            "application": 5.128423
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.434083,
+            "advance": 20.578301,
+            "application": 20.578301
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.829925,
+            "advance": 82.346521,
+            "application": 82.346521
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.374794,
+            "advance": 8.136151,
+            "application": 8.136151
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.377565,
+            "advance": 32.744756,
+            "application": 32.744756
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.376395,
+            "advance": 132.724019,
+            "application": 132.724019
+          }
+        }
+      },
+      {
+        "candidate": {
+          "particles process": {
+            "wall": 293.896389
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.13427,
+            "advance": 5.27306,
+            "application": 5.27306
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.43903,
+            "advance": 21.287194,
+            "application": 21.287194
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.767288,
+            "advance": 83.665556,
+            "application": 83.665556
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.383782,
+            "advance": 8.241679,
+            "application": 8.241679
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.386445,
+            "advance": 33.359467,
+            "application": 33.359467
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.390719,
+            "advance": 133.334006,
+            "application": 133.334006
+          }
+        },
+        "baseline": {
+          "particles process": {
+            "wall": 289.919634
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.119843,
+            "advance": 5.159119,
+            "application": 5.159119
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.467771,
+            "advance": 20.794514,
+            "application": 20.794514
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.702857,
+            "advance": 82.817842,
+            "application": 82.817842
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.374034,
+            "advance": 8.078307,
+            "application": 8.078307
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.374484,
+            "advance": 32.791314,
+            "application": 32.791314
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.377204,
+            "advance": 131.671852,
+            "application": 131.671852
+          }
+        }
+      },
+      {
+        "baseline": {
+          "particles process": {
+            "wall": 293.958357
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.129887,
+            "advance": 5.119094,
+            "application": 5.119094
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.441833,
+            "advance": 20.928107,
+            "application": 20.928107
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.749143,
+            "advance": 82.628772,
+            "application": 82.628772
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.432618,
+            "advance": 8.307976,
+            "application": 8.307976
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.375517,
+            "advance": 32.837723,
+            "application": 32.837723
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.374313,
+            "advance": 135.411859,
+            "application": 135.411859
+          }
+        },
+        "candidate": {
+          "particles process": {
+            "wall": 292.022055
+          },
+          "particles n=250 steps=25 gravity=-9.81": {
+            "setup": 0.121639,
+            "advance": 5.178518,
+            "application": 5.178518
+          },
+          "particles n=1000 steps=25 gravity=-9.81": {
+            "setup": 0.461403,
+            "advance": 20.905403,
+            "application": 20.905403
+          },
+          "particles n=4000 steps=25 gravity=-9.81": {
+            "setup": 1.706264,
+            "advance": 82.781246,
+            "application": 82.781246
+          },
+          "particles n=1000 steps=10 gravity=0": {
+            "setup": 0.401215,
+            "advance": 8.520372,
+            "application": 8.520372
+          },
+          "particles n=1000 steps=40 gravity=0": {
+            "setup": 0.398632,
+            "advance": 33.782281,
+            "application": 33.782281
+          },
+          "particles n=1000 steps=160 gravity=0": {
+            "setup": 0.375158,
+            "advance": 131.910636,
+            "application": 131.910636
+          }
+        }
+      }
+    ]
+  }
+}

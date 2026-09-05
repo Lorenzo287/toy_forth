@@ -1,0 +1,13 @@
+'main package
+"../logs" import
+
+'sample [
+    "# route\tstatus\tlatency-ms\tbytes\n/api/items?page=1\t200\t12\t1000\n/api/items?page=2\t503\t48\t80\n/health\t200\t2\t16\n/api/items\t404\t6\t40\n/health\t200\t4\t16\n"
+] def
+'sample private
+
+'main [
+    argc 1 > [ "Usage: toy examples/log-report/app -- [log.tsv]" error ] if
+    argc 0 == [ sample ] [ argv 0 at read-file ] ifelse
+    logs.analyze logs.report "{}" printf
+] def

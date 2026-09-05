@@ -1,0 +1,962 @@
+[
+  {
+    "case": "log n=2000 routes=16",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 2000 16 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 2000 16 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 6873,
+      "requested_bytes": 587905,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 116442,
+          "call_instructions": 45424,
+          "native_continuation_steps": 15609,
+          "native_word_calls": 45423,
+          "user_word_calls": 1,
+          "program_frames": 7810,
+          "native_frames": 7801,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 3805,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 45391,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 10000,
+          "general_dispatches": 35424
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 24633,
+      "requested_bytes": 1838086,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 365970,
+          "call_instructions": 158164,
+          "native_continuation_steps": 42087,
+          "native_word_calls": 152135,
+          "user_word_calls": 6029,
+          "program_frames": 22296,
+          "native_frames": 25821,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 18275,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 158043,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 28417,
+          "general_dispatches": 129747
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 17760,
+      "requested_bytes": 1250181,
+      "execution": {
+        "instructions": 249528,
+        "call_instructions": 112740,
+        "native_continuation_steps": 26478,
+        "native_word_calls": 106712,
+        "user_word_calls": 6028,
+        "program_frames": 14486,
+        "native_frames": 18020
+      }
+    }
+  },
+  {
+    "case": "log n=8000 routes=16",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 8000 16 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 8000 16 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 24897,
+      "requested_bytes": 2023628,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 465714,
+          "call_instructions": 181672,
+          "native_continuation_steps": 62433,
+          "native_word_calls": 181671,
+          "user_word_calls": 1,
+          "program_frames": 31234,
+          "native_frames": 31201,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 15229,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 181639,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 40000,
+          "general_dispatches": 141672
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 96341,
+      "requested_bytes": 7034045,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 1462002,
+          "call_instructions": 631852,
+          "native_continuation_steps": 168231,
+          "native_word_calls": 607799,
+          "user_word_calls": 24053,
+          "program_frames": 89016,
+          "native_frames": 103269,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 72995,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 631731,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 113665,
+          "general_dispatches": 518187
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 71444,
+      "requested_bytes": 5010417,
+      "execution": {
+        "instructions": 996288,
+        "call_instructions": 450180,
+        "native_continuation_steps": 105798,
+        "native_word_calls": 426128,
+        "user_word_calls": 24052,
+        "program_frames": 57782,
+        "native_frames": 72068
+      }
+    }
+  },
+  {
+    "case": "log n=32000 routes=16",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 32000 16 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 32000 16 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 96993,
+      "requested_bytes": 7766530,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 1862802,
+          "call_instructions": 726664,
+          "native_continuation_steps": 249729,
+          "native_word_calls": 726663,
+          "user_word_calls": 1,
+          "program_frames": 124930,
+          "native_frames": 124801,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 60925,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 726631,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 160000,
+          "general_dispatches": 566664
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 383167,
+      "requested_bytes": 27817603,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 5846130,
+          "call_instructions": 2526604,
+          "native_continuation_steps": 672807,
+          "native_word_calls": 2430455,
+          "user_word_calls": 96149,
+          "program_frames": 355896,
+          "native_frames": 413061,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 291875,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 2526483,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 454657,
+          "general_dispatches": 2071947
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 286174,
+      "requested_bytes": 20051073,
+      "execution": {
+        "instructions": 3983328,
+        "call_instructions": 1799940,
+        "native_continuation_steps": 423078,
+        "native_word_calls": 1703792,
+        "user_word_calls": 96148,
+        "program_frames": 230966,
+        "native_frames": 288260
+      }
+    }
+  },
+  {
+    "case": "log n=2000 routes=1000",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 2000 1000 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 2000 1000 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 6873,
+      "requested_bytes": 597006,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 116442,
+          "call_instructions": 45424,
+          "native_continuation_steps": 15609,
+          "native_word_calls": 45423,
+          "user_word_calls": 1,
+          "program_frames": 7810,
+          "native_frames": 7801,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 3805,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 45391,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 10000,
+          "general_dispatches": 35424
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 30185,
+      "requested_bytes": 2464929,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 401394,
+          "call_instructions": 172924,
+          "native_continuation_steps": 44055,
+          "native_word_calls": 165911,
+          "user_word_calls": 7013,
+          "program_frames": 25248,
+          "native_frames": 25821,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 21227,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 172803,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 28417,
+          "general_dispatches": 144507
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 23312,
+      "requested_bytes": 1867923,
+      "execution": {
+        "instructions": 284952,
+        "call_instructions": 127500,
+        "native_continuation_steps": 28446,
+        "native_word_calls": 120488,
+        "user_word_calls": 7012,
+        "program_frames": 17438,
+        "native_frames": 18020
+      }
+    }
+  },
+  {
+    "case": "log n=8000 routes=4000",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 8000 4000 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 8000 4000 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 24897,
+      "requested_bytes": 2080043,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 465714,
+          "call_instructions": 181672,
+          "native_continuation_steps": 62433,
+          "native_word_calls": 181671,
+          "user_word_calls": 1,
+          "program_frames": 31234,
+          "native_frames": 31201,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 15229,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 181639,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 40000,
+          "general_dispatches": 141672
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 120239,
+      "requested_bytes": 9730808,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 1605426,
+          "call_instructions": 691612,
+          "native_continuation_steps": 176199,
+          "native_word_calls": 663575,
+          "user_word_calls": 28037,
+          "program_frames": 100968,
+          "native_frames": 103269,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 84947,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 691491,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 113665,
+          "general_dispatches": 577947
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 95342,
+      "requested_bytes": 7650765,
+      "execution": {
+        "instructions": 1139712,
+        "call_instructions": 509940,
+        "native_continuation_steps": 113766,
+        "native_word_calls": 481904,
+        "user_word_calls": 28036,
+        "program_frames": 69734,
+        "native_frames": 72068
+      }
+    }
+  },
+  {
+    "case": "log n=32000 routes=16000",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 32000 16000 logdata.make drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 32000 16000 logdata.make logs.analyze logs.report drop",
+    "setup": {
+      "alloc_calls": 96993,
+      "requested_bytes": 8048247,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 1862802,
+          "call_instructions": 726664,
+          "native_continuation_steps": 249729,
+          "native_word_calls": 726663,
+          "user_word_calls": 1,
+          "program_frames": 124930,
+          "native_frames": 124801,
+          "max_frame_depth": 8,
+          "max_data_stack_depth": 6
+        },
+        "dispatch": {
+          "dictionary_lookups": 33,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 33,
+          "quick_program_cache_hits": 60925,
+          "quick_program_cache_misses": 5,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 726631,
+          "quickened_lookup_misses": 33,
+          "specialized_dispatches": 160000,
+          "general_dispatches": 566664
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 480437,
+      "requested_bytes": 38872380,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 6421554,
+          "call_instructions": 2766364,
+          "native_continuation_steps": 704775,
+          "native_word_calls": 2654231,
+          "user_word_calls": 112133,
+          "program_frames": 403848,
+          "native_frames": 413061,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 7
+        },
+        "dispatch": {
+          "dictionary_lookups": 121,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 121,
+          "quick_program_cache_hits": 339827,
+          "quick_program_cache_misses": 21,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 2766243,
+          "quickened_lookup_misses": 121,
+          "specialized_dispatches": 454657,
+          "general_dispatches": 2311707
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 383444,
+      "requested_bytes": 30824133,
+      "execution": {
+        "instructions": 4558752,
+        "call_instructions": 2039700,
+        "native_continuation_steps": 455046,
+        "native_word_calls": 1927568,
+        "user_word_calls": 112132,
+        "program_frames": 278918,
+        "native_frames": 288260
+      }
+    }
+  },
+  {
+    "case": "particles n=250 steps=25",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 250 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 250 particles.seed 25 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 2360,
+      "requested_bytes": 220289,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 10020,
+          "call_instructions": 4759,
+          "native_continuation_steps": 752,
+          "native_word_calls": 4758,
+          "user_word_calls": 1,
+          "program_frames": 502,
+          "native_frames": 252,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 498,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 4731,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 1001,
+          "general_dispatches": 3758
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 40090,
+      "requested_bytes": 3193025,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 416571,
+          "call_instructions": 136145,
+          "native_continuation_steps": 44560,
+          "native_word_calls": 117367,
+          "user_word_calls": 18778,
+          "program_frames": 44295,
+          "native_frames": 19045,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 77,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 77,
+          "quick_program_cache_hits": 25531,
+          "quick_program_cache_misses": 14,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 136068,
+          "quickened_lookup_misses": 77,
+          "specialized_dispatches": 44758,
+          "general_dispatches": 91387
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 37730,
+      "requested_bytes": 2972736,
+      "execution": {
+        "instructions": 406551,
+        "call_instructions": 131386,
+        "native_continuation_steps": 43808,
+        "native_word_calls": 112609,
+        "user_word_calls": 18777,
+        "program_frames": 43793,
+        "native_frames": 18793
+      }
+    }
+  },
+  {
+    "case": "particles n=1000 steps=25",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed 25 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 6860,
+      "requested_bytes": 556578,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 40020,
+          "call_instructions": 19009,
+          "native_continuation_steps": 3002,
+          "native_word_calls": 19008,
+          "user_word_calls": 1,
+          "program_frames": 2002,
+          "native_frames": 1002,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 1998,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 18981,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 4001,
+          "general_dispatches": 15008
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 175870,
+      "requested_bytes": 13884978,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 1666114,
+          "call_instructions": 544438,
+          "native_continuation_steps": 178184,
+          "native_word_calls": 469410,
+          "user_word_calls": 75028,
+          "program_frames": 177107,
+          "native_frames": 76107,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 78,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 78,
+          "quick_program_cache_hits": 102093,
+          "quick_program_cache_misses": 15,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 544360,
+          "quickened_lookup_misses": 78,
+          "specialized_dispatches": 179029,
+          "general_dispatches": 365409
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 169010,
+      "requested_bytes": 13328400,
+      "execution": {
+        "instructions": 1626094,
+        "call_instructions": 525429,
+        "native_continuation_steps": 175182,
+        "native_word_calls": 450402,
+        "user_word_calls": 75027,
+        "program_frames": 175105,
+        "native_frames": 75105
+      }
+    }
+  },
+  {
+    "case": "particles n=4000 steps=25",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 4000 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 4000 particles.seed 25 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 24860,
+      "requested_bytes": 1901730,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 160020,
+          "call_instructions": 76009,
+          "native_continuation_steps": 12002,
+          "native_word_calls": 76008,
+          "user_word_calls": 1,
+          "program_frames": 8002,
+          "native_frames": 4002,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 7998,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 75981,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 16001,
+          "general_dispatches": 60008
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 718984,
+      "requested_bytes": 56652354,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 6664187,
+          "call_instructions": 2177571,
+          "native_continuation_steps": 712668,
+          "native_word_calls": 1877543,
+          "user_word_calls": 300028,
+          "program_frames": 708349,
+          "native_frames": 304349,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 78,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 78,
+          "quick_program_cache_hits": 408336,
+          "quick_program_cache_misses": 15,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 2177493,
+          "quickened_lookup_misses": 78,
+          "specialized_dispatches": 716110,
+          "general_dispatches": 1461461
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 694124,
+      "requested_bytes": 54750624,
+      "execution": {
+        "instructions": 6504167,
+        "call_instructions": 2101562,
+        "native_continuation_steps": 700666,
+        "native_word_calls": 1801535,
+        "user_word_calls": 300027,
+        "program_frames": 700347,
+        "native_frames": 300347
+      }
+    }
+  },
+  {
+    "case": "particles n=1000 steps=10",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed 10 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 6860,
+      "requested_bytes": 556578,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 40020,
+          "call_instructions": 19009,
+          "native_continuation_steps": 3002,
+          "native_word_calls": 19008,
+          "user_word_calls": 1,
+          "program_frames": 2002,
+          "native_frames": 1002,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 1998,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 18981,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 4001,
+          "general_dispatches": 15008
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 74628,
+      "requested_bytes": 5904194,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 690466,
+          "call_instructions": 229185,
+          "native_continuation_steps": 73075,
+          "native_word_calls": 199172,
+          "user_word_calls": 30013,
+          "program_frames": 72045,
+          "native_frames": 31045,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 77,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 77,
+          "quick_program_cache_hits": 42031,
+          "quick_program_cache_misses": 14,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 229108,
+          "quickened_lookup_misses": 77,
+          "specialized_dispatches": 74013,
+          "general_dispatches": 155172
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 67768,
+      "requested_bytes": 5347616,
+      "execution": {
+        "instructions": 650446,
+        "call_instructions": 210176,
+        "native_continuation_steps": 70073,
+        "native_word_calls": 180164,
+        "user_word_calls": 30012,
+        "program_frames": 70043,
+        "native_frames": 30043
+      }
+    }
+  },
+  {
+    "case": "particles n=1000 steps=40",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed 40 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 6860,
+      "requested_bytes": 556578,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 40020,
+          "call_instructions": 19009,
+          "native_continuation_steps": 3002,
+          "native_word_calls": 19008,
+          "user_word_calls": 1,
+          "program_frames": 2002,
+          "native_frames": 1002,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 1998,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 18981,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 4001,
+          "general_dispatches": 15008
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 277119,
+      "requested_bytes": 21866194,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 2642071,
+          "call_instructions": 859804,
+          "native_continuation_steps": 283343,
+          "native_word_calls": 739761,
+          "user_word_calls": 120043,
+          "program_frames": 282194,
+          "native_frames": 121194,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 78,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 78,
+          "quick_program_cache_hits": 162180,
+          "quick_program_cache_misses": 15,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 859726,
+          "quickened_lookup_misses": 78,
+          "specialized_dispatches": 284053,
+          "general_dispatches": 575751
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 270259,
+      "requested_bytes": 21309616,
+      "execution": {
+        "instructions": 2602051,
+        "call_instructions": 840795,
+        "native_continuation_steps": 280341,
+        "native_word_calls": 720753,
+        "user_word_calls": 120042,
+        "program_frames": 280192,
+        "native_frames": 120192
+      }
+    }
+  },
+  {
+    "case": "particles n=1000 steps=160",
+    "setup_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed drop",
+    "full_source": "\"/home/lorenzo/Probe/toy/examples/log-report/logs\" import \"/home/lorenzo/Probe/toy/benchmarks/workloads/log-data\" import \"/home/lorenzo/Probe/toy/examples/particles/physics\" import 1000 particles.seed 160 0.02 -9.81 particles.advance drop",
+    "setup": {
+      "alloc_calls": 6860,
+      "requested_bytes": 556578,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 40020,
+          "call_instructions": 19009,
+          "native_continuation_steps": 3002,
+          "native_word_calls": 19008,
+          "user_word_calls": 1,
+          "program_frames": 2002,
+          "native_frames": 1002,
+          "max_frame_depth": 6,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 28,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 28,
+          "quick_program_cache_hits": 1998,
+          "quick_program_cache_misses": 4,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 18981,
+          "quickened_lookup_misses": 28,
+          "specialized_dispatches": 4001,
+          "general_dispatches": 15008
+        }
+      }
+    },
+    "full": {
+      "alloc_calls": 1087576,
+      "requested_bytes": 85746163,
+      "metrics": {
+        "schema": "toy.runtime-metrics",
+        "version": 1,
+        "execution": {
+          "instructions": 10466247,
+          "call_instructions": 3388820,
+          "native_continuation_steps": 1127221,
+          "native_word_calls": 2908657,
+          "user_word_calls": 480163,
+          "program_frames": 1124193,
+          "native_frames": 483193,
+          "max_frame_depth": 14,
+          "max_data_stack_depth": 5
+        },
+        "dispatch": {
+          "dictionary_lookups": 78,
+          "dictionary_cache_hits": 0,
+          "dictionary_cache_misses": 78,
+          "quick_program_cache_hits": 644181,
+          "quick_program_cache_misses": 15,
+          "quick_program_cache_evictions": 0,
+          "quickened_lookup_hits": 3388742,
+          "quickened_lookup_misses": 78,
+          "specialized_dispatches": 1124680,
+          "general_dispatches": 2264140
+        }
+      }
+    },
+    "difference": {
+      "alloc_calls": 1080716,
+      "requested_bytes": 85189585,
+      "execution": {
+        "instructions": 10426227,
+        "call_instructions": 3369811,
+        "native_continuation_steps": 1124219,
+        "native_word_calls": 2889649,
+        "user_word_calls": 480162,
+        "program_frames": 1122191,
+        "native_frames": 482191
+      }
+    }
+  }
+]
