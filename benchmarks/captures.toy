@@ -1,0 +1,38 @@
+\ Controlled capture-storage workloads. The application drivers remain the
+\ representative tests; deep chains deliberately isolate dynamic lookup cost.
+'verify [ not [ "capture benchmark result mismatch" error ] if ] def
+
+\ depth -- checksum; intervening calls do not bind any local captures.
+'capture-free-chain [
+    dup 0 == [
+        drop 0 $iterations [ $outer + ] times
+    ] [ pred capture-free-chain ] ifelse
+] def
+
+'bench-depth [ | depth iterations |
+    37 | outer |
+    monotonic-ns | start |
+    $depth capture-free-chain
+    monotonic-ns $start - | elapsed |
+    $outer $iterations * == verify
+    $depth $iterations $elapsed
+    "capture-free chain depth={} reads={} elapsed_ns={}\n" printf
+] def
+
+'read-wide [ | a b c d e f g h |
+    $a $b + $c + $d + $e + $f + $g + $h +
+] def
+
+'bench-wide [ | iterations |
+    monotonic-ns | start |
+    0 $iterations [ 1 2 3 4 5 6 7 8 read-wide + ] times
+    monotonic-ns $start - | elapsed |
+    $iterations 36 * == verify
+    $iterations $elapsed "eight local captures calls={} elapsed_ns={}\n" printf
+] def
+
+0 20000 bench-depth
+32 20000 bench-depth
+256 20000 bench-depth
+20000 bench-wide
+80000 bench-wide

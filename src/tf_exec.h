@@ -217,8 +217,6 @@ typedef struct {
 
 typedef struct tf_scratch_block tf_scratch_block;
 
-#define TF_CAPTURE_INLINE_CAP 2
-
 typedef struct {
     tf_scratch_block *current;
     tf_scratch_block *spare;
@@ -227,10 +225,10 @@ typedef struct {
 } tf_scratch_arena;
 
 typedef struct {
-    tf_var *vars;
+    /* This frame owns a segment of ctx->captures, addressed by index so both
+     * frame and binding storage can relocate independently. */
+    size_t base;
     size_t len;
-    size_t cap;
-    tf_var inline_vars[TF_CAPTURE_INLINE_CAP];
 } tf_var_table;
 
 typedef enum {
@@ -247,6 +245,7 @@ typedef struct {
     size_t package_index;
     tf_quick_program *quick;
     tf_var_table vars;
+    size_t repeats;
 } tf_program_frame;
 
 typedef struct {
@@ -308,6 +307,9 @@ struct tf_ctx {
     tf_frame *call_stack;  // explicit execution stack
     size_t call_stack_len;
     size_t call_stack_cap;
+    tf_var *captures;  // active dynamic bindings, in frame/binding order
+    size_t captures_len;
+    size_t captures_cap;
     tf_deferred_call *deferred_head;
     tf_deferred_call *deferred_tail;
     size_t deferred_count;
@@ -539,7 +541,8 @@ tf_ret tf_package_run_main(tf_ctx *ctx, const char *path);
 toy_status tf_install_native_package(tf_ctx *ctx, size_t package_index,
                                      const toy_native_package *package);
 
-/* Dynamic capture lookup across active program frames. */
+/* Borrow the innermost dynamic binding, or NULL. Linear in active bindings,
+ * independent of intervening capture-free frames. */
 tf_obj *tf_scope_lookup_var(tf_ctx *ctx, tf_obj *name);
 
 /* VM entry points. */

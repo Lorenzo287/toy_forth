@@ -13,7 +13,7 @@
 #include <signal.h>  // IWYU pragma: keep
 
 #define TF_CALL_STACK_INITIAL_CAP 8
-#define TF_CAPTURE_INITIAL_CAP (TF_CAPTURE_INLINE_CAP * 2)
+#define TF_CAPTURE_INITIAL_CAP 32
 #define TF_ERROR_STACK_LIMIT 8
 #define TF_ERROR_FRAME_LIMIT 8
 #define TF_SCRATCH_BLOCK_CAPACITY 4096
@@ -420,9 +420,9 @@ static void frame_push_program_kind(tf_ctx *ctx, tf_obj *program,
     ctx->call_stack[ctx->call_stack_len].as.program.package_index = package_index;
     ctx->call_stack[ctx->call_stack_len].as.program.quick =
         quick_program_acquire(ctx, program, package_index);
-    ctx->call_stack[ctx->call_stack_len].as.program.vars.vars = NULL;
+    ctx->call_stack[ctx->call_stack_len].as.program.vars.base = ctx->captures_len;
     ctx->call_stack[ctx->call_stack_len].as.program.vars.len = 0;
-    ctx->call_stack[ctx->call_stack_len].as.program.vars.cap = 0;
+    ctx->call_stack[ctx->call_stack_len].as.program.repeats = 0;
     ctx->call_stack[ctx->call_stack_len].call_site = ctx->current_span;
     tf_obj_retain(program);
     ctx->call_stack_len++;
@@ -465,14 +465,14 @@ void tf_frame_pop(tf_ctx *ctx, tf_ret status) {
     tf_frame *f = &ctx->call_stack[ctx->call_stack_len - 1];
 
     if (frame_is_program(f->kind)) {
-        tf_var *vars = f->as.program.vars.vars
-                           ? f->as.program.vars.vars
-                           : f->as.program.vars.inline_vars;
-        for (size_t i = 0; i < f->as.program.vars.len; i++) {
-            tf_obj_release(vars[i].name);
-            tf_obj_release(vars[i].val);
+        size_t base = f->as.program.vars.base;
+        assert(base + f->as.program.vars.len == ctx->captures_len);
+        for (size_t i = base; i < ctx->captures_len; i++) {
+            tf_var *binding = &ctx->captures[i];
+            tf_obj_release(binding->name);
+            tf_obj_release(binding->val);
         }
-        free(f->as.program.vars.vars);
+        ctx->captures_len = base;
         quick_program_release(f->as.program.quick);
         tf_obj_release(f->as.program.program);
     } else if (f->as.native.cleanup) {
@@ -913,46 +913,43 @@ static void scope_bind_var(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
     tf_frame *f = &ctx->call_stack[ctx->call_stack_len - 1];
     if (!frame_is_program(f->kind)) return;
 
-    // check if variable already exists in current frame and update it
+    /* Only the executing frame can bind. Its segment is the current suffix;
+     * rebinding must not overwrite an identically named outer capture. */
     tf_var_table *vars = &f->as.program.vars;
-    tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
-    for (int i = (int)vars->len - 1; i >= 0; i--) {
-        if (capture_name_equal(bindings[i].name, name)) {
-            tf_obj_release(bindings[i].val);
-            bindings[i].val = val;
+    assert(vars->base + vars->len == ctx->captures_len);
+    for (size_t i = ctx->captures_len; i > vars->base; i--) {
+        tf_var *binding = &ctx->captures[i - 1];
+        if (capture_name_equal(binding->name, name)) {
             tf_obj_retain(val);
+            tf_obj_release(binding->val);
+            binding->val = val;
             return;
         }
     }
 
-    // otherwise append new binding
-    if (vars->len == TF_CAPTURE_INLINE_CAP && !vars->vars) {
-        vars->cap = TF_CAPTURE_INITIAL_CAP;
-        vars->vars = tf_xmalloc(sizeof(tf_var) * vars->cap);
-        memcpy(vars->vars, vars->inline_vars, sizeof(vars->inline_vars));
-        bindings = vars->vars;
-    } else if (vars->vars && vars->len >= vars->cap) {
-        vars->cap = vars->cap == 0 ? TF_CAPTURE_INITIAL_CAP : vars->cap * 2;
-        vars->vars = tf_xrealloc(vars->vars, sizeof(tf_var) * vars->cap);
-        bindings = vars->vars;
+    /* Reuse the shared stack's capacity across calls instead of allocating a
+     * capture array for each frame. The frame stores indices, not pointers. */
+    if (ctx->captures_len == ctx->captures_cap) {
+        ctx->captures_cap = ctx->captures_cap == 0
+                                ? TF_CAPTURE_INITIAL_CAP
+                                : ctx->captures_cap * 2;
+        ctx->captures = tf_xrealloc(
+            ctx->captures, sizeof(*ctx->captures) * ctx->captures_cap);
     }
-    bindings[vars->len].name = name;
-    bindings[vars->len].val = val;
+    ctx->captures[ctx->captures_len++] = (tf_var){name, val};
     tf_obj_retain(name);
     tf_obj_retain(val);
     vars->len++;
 }
 
 tf_obj *tf_scope_lookup_var(tf_ctx *ctx, tf_obj *name) {
-    for (int i = (int)ctx->call_stack_len - 1; i >= 0; i--) {
-        tf_frame *f = &ctx->call_stack[i];
-        if (!frame_is_program(f->kind)) continue;
-        tf_var_table *vars = &f->as.program.vars;
-        tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
-        for (int j = (int)vars->len - 1; j >= 0; j--) {
-            if (capture_name_equal(bindings[j].name, name)) {
-                return bindings[j].val;
-            }
+    /* Native and capture-free frames contribute no bindings. Reverse order
+     * implements the same innermost-first dynamic lookup without visiting
+     * those frames or following per-frame allocation pointers. */
+    for (size_t i = ctx->captures_len; i > 0; i--) {
+        tf_var *binding = &ctx->captures[i - 1];
+        if (capture_name_equal(binding->name, name)) {
+            return binding->val;
         }
     }
     return NULL;
@@ -1309,8 +1306,8 @@ tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable) {
 static TF_NOINLINE void frame_complete(tf_ctx *ctx) {
     tf_frame *frame = &ctx->call_stack[ctx->call_stack_len - 1];
     if (frame->kind == TF_FRAME_PROGRAM_REPEAT &&
-        frame->as.program.vars.cap > 1) {
-        frame->as.program.vars.cap--;
+        frame->as.program.repeats > 1) {
+        frame->as.program.repeats--;
         frame->as.program.pc = 0;
         return;
     }
@@ -1344,11 +1341,9 @@ bool tf_frame_push_repeat(tf_ctx *ctx, tf_obj *program, int64_t count) {
     frame->as.program.package_index = package_index;
     frame->as.program.quick =
         quick_program_acquire(ctx, program, package_index);
-    frame->as.program.vars.vars = NULL;
+    frame->as.program.vars.base = ctx->captures_len;
     frame->as.program.vars.len = 0;
-    /* Capture-free repeat frames reuse the otherwise dormant capacity field
-     * for their remaining iteration count, keeping every frame the same size. */
-    frame->as.program.vars.cap = (size_t)count;
+    frame->as.program.repeats = (size_t)count;
     frame->call_site = ctx->current_span;
     tf_obj_retain(program);
     ctx->call_stack_len++;

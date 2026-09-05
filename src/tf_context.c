@@ -62,6 +62,7 @@ void tf_ctx_free(tf_ctx *ctx) {
     tf_obj_release(ctx->data_stack);
     while (ctx->call_stack_len > 0) tf_frame_pop(ctx, TF_OK);
     free(ctx->call_stack);
+    free(ctx->captures);
     tf_scratch_clear(ctx);
     tf_control_state_cache_clear(ctx);
     tf_quick_program_cache_clear(ctx);

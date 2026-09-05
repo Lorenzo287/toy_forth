@@ -1,0 +1,27 @@
+{
+  "schema": "toy.runtime-metrics",
+  "version": 1,
+  "execution": {
+    "instructions": 32348208,
+    "call_instructions": 11861779,
+    "native_continuation_steps": 6195151,
+    "native_word_calls": 10375412,
+    "user_word_calls": 1486373,
+    "program_frames": 5213947,
+    "native_frames": 2467578,
+    "max_frame_depth": 50050,
+    "max_data_stack_depth": 7
+  },
+  "dispatch": {
+    "dictionary_lookups": 223,
+    "dictionary_cache_hits": 4,
+    "dictionary_cache_misses": 219,
+    "quick_program_cache_hits": 4511013,
+    "quick_program_cache_misses": 74,
+    "quick_program_cache_evictions": 0,
+    "quickened_lookup_hits": 11861562,
+    "quickened_lookup_misses": 217,
+    "specialized_dispatches": 1598981,
+    "general_dispatches": 10262804
+  }
+}

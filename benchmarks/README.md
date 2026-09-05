@@ -87,6 +87,8 @@ timing with counters, allocation statistics, profiles, and leak checks, see
 
 Current workloads:
 
+- `captures.toy`: checked deep capture-free call chains and repeated wide local
+  scopes, isolating dynamic lookup and capture-storage costs.
 - `cross-language/`: optional checksum-validated comparison with Joy0, current
   Joy, Lua, Python, Bun, and Node, run separately under Linux;
 - `construction-patterns.toy`: equivalent captured, stack-threaded, list,

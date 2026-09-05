@@ -35,6 +35,23 @@ User calls keep dense dictionary indexes because the entry array can move.
 Native libraries remain loaded for the context's lifetime. Neither form caches
 across contexts or changes the quotation's source representation.
 
+Dynamic captures live in one context-owned binding stack. Each program frame
+stores the base index and length of its segment; only the executing frame can
+append or replace bindings. Lookup scans active bindings in reverse order,
+skipping native and capture-free frames by construction. Rebinding searches
+only the current segment, while popping a frame releases that segment and
+restores the binding-stack length. Debugger inspection uses the same indices.
+There are no binding pointers into relocatable frame or capture arrays.
+
+This replaces per-frame capture arrays and their inline slots with smaller
+frames and reusable contiguous storage. Lookup remains linear in the number
+of active bindings; it is not a constant-time environment index. Binding names
+and values still retain their ordinary references, preserving dynamic scope,
+shadowing, and copy-on-write behavior. Capacity grows geometrically and remains
+at its high-water mark until context teardown, like the execution stack. A
+long-lived context that briefly reaches unusually many active captures retains
+that capacity, but not references to captures from completed frames.
+
 Deferred C calls enter the same iterative execution model. They retain a
 callable and arguments until the VM schedules them, and a completion
 continuation prevents later events from overtaking the active handler. New

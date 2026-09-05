@@ -90,6 +90,7 @@ static const char *core_c_tests[] = {
     "tests/c/test_debug_inspection.c",
     "tests/c/test_linenoise.c",
     "tests/c/test_runtime_state.c",
+    "tests/c/test_capture_storage.c",
 };
 
 

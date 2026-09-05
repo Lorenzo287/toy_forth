@@ -1,0 +1,54 @@
+\ A growing capture stack must preserve the caller through native frames,
+\ nested bindings, errors, and repeated invocations of the same quotation.
+73 | anchor |
+
+'capture-depth [ | depth |
+    $depth 0 == [ $anchor ] [ $depth 1 - capture-depth ] ifelse
+] def
+300 capture-depth 73 == check
+$anchor 73 == check
+
+'wide-captures [
+    1 2 3 4 5 6 7 8 | a b c d e f g h |
+    [ $a $b + $c + $d + $e + $f + $g + $h + ] exec
+] def
+100 [ wide-captures 36 == check ] times
+
+\ Capturing a value again in the same frame replaces just that binding.
+10 | anchor |
+$anchor 1 + | anchor |
+$anchor 11 == check
+[ 22 | anchor | [ $anchor ] exec 22 == check ] exec
+$anchor 11 == check
+
+\ Repetition gets a fresh scope when its body binds, even through a helper.
+4 [ 33 | iteration | $iteration 33 == check ] times
+'iteration var? false == check
+0 4 range [ | iteration | $iteration 10 + ] map [ 10 11 12 13 ] == check
+'iteration var? false == check
+
+\ Errors drop inner captures before scheduling the handler.
+[
+    44 | anchor |
+    0 5 range [ | item | $item 3 == [ "capture unwind" error ] if ] each
+] [ drop $anchor ] try
+11 == check
+'item var? false == check
+
+\ A partial capture list can fail after consuming and binding its last item.
+[ 1 | left right | ] [ drop ] try
+'left var? false == check
+'right var? false == check
+$anchor 11 == check
+
+\ Predicate and infra isolation affect the data stack, not dynamic lookup.
+9 [ | observed | $anchor 11 == $observed 9 == and ] [ drop 1 ] if
+1 == check
+'observed var? false == check
+[] [ 55 | anchor | $anchor ] infra [ 55 ] == check
+$anchor 11 == check
+
+\ Captured collections remain values; shared updates do not mutate callers.
+[ 1 2 ] | saved |
+$saved [ | saved | $saved 3 push-back ] exec [ 1 2 3 ] == check
+$saved [ 1 2 ] == check

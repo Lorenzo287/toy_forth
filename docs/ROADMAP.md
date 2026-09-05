@@ -23,8 +23,10 @@ Keep optimization work benchmark-driven and record durable experiments under
 - structural hashes if map/set key policy expands.
 
 The [native fast-path measurements](../benchmarks/results/2026-09-05-native-fast-paths.md)
-establish a baseline for the next stage. Investigate remaining continuation
-scheduling, dynamic capture traversal, and temporary boolean allocation costs.
+and [shared capture-stack experiment](../benchmarks/results/2026-09-05-capture-stack.md)
+establish baselines for the next stage. Investigate remaining continuation
+scheduling, temporary boolean/float object traffic, and capture-name indexing
+when many bindings remain active (capture-free depth no longer adds lookup work).
 Compare further inlining against executable size, and evaluate link-time
 optimization separately from portable source changes. A future bytecode
 prototype should replace executable object fetches rather than add a second
