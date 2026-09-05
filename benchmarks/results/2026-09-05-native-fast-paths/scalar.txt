@@ -1,0 +1,49 @@
+GCC 16 Release; alternating order; 7 pairs; 1 warmup; checksums verified
+arithmetic pair 1: baseline 115.389 ms; candidate 98.249 ms; ratio 0.8515
+arithmetic pair 2: baseline 113.624 ms; candidate 98.606 ms; ratio 0.8678
+arithmetic pair 3: baseline 114.421 ms; candidate 100.618 ms; ratio 0.8794
+arithmetic pair 4: baseline 114.498 ms; candidate 98.593 ms; ratio 0.8611
+arithmetic pair 5: baseline 122.393 ms; candidate 114.848 ms; ratio 0.9384
+arithmetic pair 6: baseline 120.899 ms; candidate 100.276 ms; ratio 0.8294
+arithmetic pair 7: baseline 116.449 ms; candidate 102.054 ms; ratio 0.8764
+arithmetic: median 115.389 -> 100.276 ms; paired ratio 0.8678
+dispatch pair 1: baseline 235.315 ms; candidate 214.621 ms; ratio 0.9121
+dispatch pair 2: baseline 234.451 ms; candidate 214.042 ms; ratio 0.9129
+dispatch pair 3: baseline 239.342 ms; candidate 218.872 ms; ratio 0.9145
+dispatch pair 4: baseline 237.324 ms; candidate 215.736 ms; ratio 0.9090
+dispatch pair 5: baseline 232.529 ms; candidate 215.101 ms; ratio 0.9251
+dispatch pair 6: baseline 238.735 ms; candidate 215.732 ms; ratio 0.9036
+dispatch pair 7: baseline 238.036 ms; candidate 217.725 ms; ratio 0.9147
+dispatch: median 237.324 -> 215.732 ms; paired ratio 0.9129
+fibonacci pair 1: baseline 784.543 ms; candidate 605.376 ms; ratio 0.7716
+fibonacci pair 2: baseline 781.967 ms; candidate 604.366 ms; ratio 0.7729
+fibonacci pair 3: baseline 782.407 ms; candidate 600.500 ms; ratio 0.7675
+fibonacci pair 4: baseline 780.995 ms; candidate 603.379 ms; ratio 0.7726
+fibonacci pair 5: baseline 780.597 ms; candidate 603.185 ms; ratio 0.7727
+fibonacci pair 6: baseline 780.047 ms; candidate 609.343 ms; ratio 0.7812
+fibonacci pair 7: baseline 774.139 ms; candidate 619.547 ms; ratio 0.8003
+fibonacci: median 780.995 -> 604.366 ms; paired ratio 0.7727
+sequence pair 1: baseline 8.400 ms; candidate 6.378 ms; ratio 0.7594
+sequence pair 2: baseline 8.692 ms; candidate 6.470 ms; ratio 0.7444
+sequence pair 3: baseline 8.556 ms; candidate 6.480 ms; ratio 0.7574
+sequence pair 4: baseline 8.353 ms; candidate 6.313 ms; ratio 0.7558
+sequence pair 5: baseline 8.617 ms; candidate 6.548 ms; ratio 0.7600
+sequence pair 6: baseline 8.869 ms; candidate 7.010 ms; ratio 0.7904
+sequence pair 7: baseline 9.718 ms; candidate 6.644 ms; ratio 0.6837
+sequence: median 8.617 -> 6.480 ms; paired ratio 0.7574
+string pair 1: baseline 4.742 ms; candidate 3.711 ms; ratio 0.7826
+string pair 2: baseline 4.845 ms; candidate 3.591 ms; ratio 0.7411
+string pair 3: baseline 4.846 ms; candidate 4.150 ms; ratio 0.8563
+string pair 4: baseline 5.344 ms; candidate 3.852 ms; ratio 0.7208
+string pair 5: baseline 6.127 ms; candidate 3.511 ms; ratio 0.5730
+string pair 6: baseline 7.886 ms; candidate 3.880 ms; ratio 0.4920
+string pair 7: baseline 8.496 ms; candidate 4.414 ms; ratio 0.5195
+string: median 5.344 -> 3.852 ms; paired ratio 0.7208
+map-lookup pair 1: baseline 97.880 ms; candidate 61.858 ms; ratio 0.6320
+map-lookup pair 2: baseline 96.153 ms; candidate 62.030 ms; ratio 0.6451
+map-lookup pair 3: baseline 93.496 ms; candidate 63.243 ms; ratio 0.6764
+map-lookup pair 4: baseline 94.548 ms; candidate 62.576 ms; ratio 0.6618
+map-lookup pair 5: baseline 93.543 ms; candidate 64.680 ms; ratio 0.6914
+map-lookup pair 6: baseline 96.651 ms; candidate 63.003 ms; ratio 0.6519
+map-lookup pair 7: baseline 93.065 ms; candidate 62.144 ms; ratio 0.6677
+map-lookup: median 94.548 -> 62.576 ms; paired ratio 0.6618

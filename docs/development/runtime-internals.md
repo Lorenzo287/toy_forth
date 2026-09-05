@@ -29,6 +29,12 @@ or quickened without modifying the quotation or its debugger spans. Cache
 entries are guarded by the dictionary's resolution generation so later
 definitions, imports, and visibility changes remain observable.
 
+Quickened native calls retain a function target in their context-owned sidecar;
+after checking the resolution generation they need no dictionary entry load.
+User calls keep dense dictionary indexes because the entry array can move.
+Native libraries remain loaded for the context's lifetime. Neither form caches
+across contexts or changes the quotation's source representation.
+
 Deferred C calls enter the same iterative execution model. They retain a
 callable and arguments until the VM schedules them, and a completion
 continuation prevents later events from overtaking the active handler. New
@@ -159,6 +165,13 @@ Each context also owns its random stream. Creating or running another context
 does not reseed it. `core:random` accesses the stream through the public
 extension API; the generator is intended for ordinary randomized algorithms,
 not cryptographic material.
+
+Common vector and data-stack operations, immediate integer construction, and
+successful native argument checks are inline internal helpers. This lets the
+compiler combine validation with the following stack access across the runtime's
+source-file boundaries. Capacity growth, boxed allocation, and diagnostic
+formatting remain ordinary functions. Push and pop transfer owned references;
+peek borrows, and failed validation leaves the stack unchanged.
 
 ## Source Locations and Generated Metadata
 

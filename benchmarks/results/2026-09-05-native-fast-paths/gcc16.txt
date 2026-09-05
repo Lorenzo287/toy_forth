@@ -1,0 +1,186 @@
+paired comparison
+baseline: build/perf/baseline/toy
+candidate: build/perf/capture-equality/toy
+pairs: 9, warmups: 1, platform: Linux, logical processors: 16
+
+construction-patterns.toy
+pair 1 (baseline first): 215.981 ms baseline, 211.758 ms candidate, ratio 0.9804
+pair 2 (candidate first): 222.030 ms baseline, 211.471 ms candidate, ratio 0.9524
+pair 3 (baseline first): 214.758 ms baseline, 212.245 ms candidate, ratio 0.9883
+pair 4 (candidate first): 214.241 ms baseline, 211.596 ms candidate, ratio 0.9877
+pair 5 (baseline first): 212.382 ms baseline, 209.665 ms candidate, ratio 0.9872
+pair 6 (candidate first): 214.029 ms baseline, 210.101 ms candidate, ratio 0.9816
+pair 7 (baseline first): 214.490 ms baseline, 214.715 ms candidate, ratio 1.0010
+pair 8 (candidate first): 214.805 ms baseline, 214.269 ms candidate, ratio 0.9975
+pair 9 (baseline first): 211.987 ms baseline, 210.109 ms candidate, ratio 0.9911
+medians: 214.490 ms baseline, 211.596 ms candidate
+median paired ratio: 0.9877 (faster 1.23%)
+
+control-ownership.toy
+pair 1 (baseline first): 11.771 ms baseline, 8.453 ms candidate, ratio 0.7181
+pair 2 (candidate first): 12.684 ms baseline, 9.935 ms candidate, ratio 0.7833
+pair 3 (baseline first): 13.011 ms baseline, 9.506 ms candidate, ratio 0.7306
+pair 4 (candidate first): 12.230 ms baseline, 11.147 ms candidate, ratio 0.9114
+pair 5 (baseline first): 12.131 ms baseline, 12.481 ms candidate, ratio 1.0289
+pair 6 (candidate first): 20.062 ms baseline, 9.462 ms candidate, ratio 0.4717
+pair 7 (baseline first): 13.435 ms baseline, 9.673 ms candidate, ratio 0.7200
+pair 8 (candidate first): 15.543 ms baseline, 13.578 ms candidate, ratio 0.8736
+pair 9 (baseline first): 13.010 ms baseline, 10.242 ms candidate, ratio 0.7873
+medians: 13.010 ms baseline, 9.935 ms candidate
+median paired ratio: 0.7833 (faster 21.67%)
+
+deque.toy
+pair 1 (baseline first): 204.527 ms baseline, 187.911 ms candidate, ratio 0.9188
+pair 2 (candidate first): 211.327 ms baseline, 187.468 ms candidate, ratio 0.8871
+pair 3 (baseline first): 205.048 ms baseline, 190.519 ms candidate, ratio 0.9291
+pair 4 (candidate first): 204.240 ms baseline, 190.777 ms candidate, ratio 0.9341
+pair 5 (baseline first): 204.744 ms baseline, 188.249 ms candidate, ratio 0.9194
+pair 6 (candidate first): 205.287 ms baseline, 188.181 ms candidate, ratio 0.9167
+pair 7 (baseline first): 205.948 ms baseline, 188.169 ms candidate, ratio 0.9137
+pair 8 (candidate first): 205.280 ms baseline, 188.415 ms candidate, ratio 0.9178
+pair 9 (baseline first): 204.168 ms baseline, 186.961 ms candidate, ratio 0.9157
+medians: 205.048 ms baseline, 188.181 ms candidate
+median paired ratio: 0.9178 (faster 8.22%)
+
+dispatch.toy
+pair 1 (baseline first): 1711.056 ms baseline, 1539.073 ms candidate, ratio 0.8995
+pair 2 (candidate first): 1711.285 ms baseline, 1552.047 ms candidate, ratio 0.9069
+pair 3 (baseline first): 1702.504 ms baseline, 1546.219 ms candidate, ratio 0.9082
+pair 4 (candidate first): 1706.832 ms baseline, 1543.215 ms candidate, ratio 0.9041
+pair 5 (baseline first): 1697.539 ms baseline, 1545.634 ms candidate, ratio 0.9105
+pair 6 (candidate first): 1738.078 ms baseline, 1529.868 ms candidate, ratio 0.8802
+pair 7 (baseline first): 1726.342 ms baseline, 1549.933 ms candidate, ratio 0.8978
+pair 8 (candidate first): 1719.585 ms baseline, 1559.914 ms candidate, ratio 0.9071
+pair 9 (baseline first): 1707.426 ms baseline, 1540.517 ms candidate, ratio 0.9022
+medians: 1711.056 ms baseline, 1545.634 ms candidate
+median paired ratio: 0.9041 (faster 9.59%)
+
+graph-search.toy
+pair 1 (baseline first): 78.035 ms baseline, 56.048 ms candidate, ratio 0.7182
+pair 2 (candidate first): 77.325 ms baseline, 54.967 ms candidate, ratio 0.7109
+pair 3 (baseline first): 77.324 ms baseline, 55.949 ms candidate, ratio 0.7236
+pair 4 (candidate first): 78.514 ms baseline, 56.271 ms candidate, ratio 0.7167
+pair 5 (baseline first): 78.605 ms baseline, 57.178 ms candidate, ratio 0.7274
+pair 6 (candidate first): 80.040 ms baseline, 56.810 ms candidate, ratio 0.7098
+pair 7 (baseline first): 76.775 ms baseline, 57.416 ms candidate, ratio 0.7478
+pair 8 (candidate first): 77.906 ms baseline, 57.306 ms candidate, ratio 0.7356
+pair 9 (baseline first): 77.538 ms baseline, 56.246 ms candidate, ratio 0.7254
+medians: 77.906 ms baseline, 56.271 ms candidate
+median paired ratio: 0.7236 (faster 27.64%)
+
+json.toy
+pair 1 (baseline first): 552.693 ms baseline, 411.651 ms candidate, ratio 0.7448
+pair 2 (candidate first): 556.232 ms baseline, 415.197 ms candidate, ratio 0.7464
+pair 3 (baseline first): 552.139 ms baseline, 417.845 ms candidate, ratio 0.7568
+pair 4 (candidate first): 553.119 ms baseline, 419.161 ms candidate, ratio 0.7578
+pair 5 (baseline first): 552.422 ms baseline, 426.274 ms candidate, ratio 0.7716
+pair 6 (candidate first): 569.586 ms baseline, 414.933 ms candidate, ratio 0.7285
+pair 7 (baseline first): 554.868 ms baseline, 415.615 ms candidate, ratio 0.7490
+pair 8 (candidate first): 554.941 ms baseline, 417.238 ms candidate, ratio 0.7519
+pair 9 (baseline first): 555.480 ms baseline, 419.518 ms candidate, ratio 0.7552
+medians: 554.868 ms baseline, 417.238 ms candidate
+median paired ratio: 0.7519 (faster 24.81%)
+
+list.toy
+pair 1 (baseline first): 66.712 ms baseline, 56.304 ms candidate, ratio 0.8440
+pair 2 (candidate first): 66.445 ms baseline, 56.181 ms candidate, ratio 0.8455
+pair 3 (baseline first): 67.933 ms baseline, 57.960 ms candidate, ratio 0.8532
+pair 4 (candidate first): 66.033 ms baseline, 56.425 ms candidate, ratio 0.8545
+pair 5 (baseline first): 66.528 ms baseline, 57.431 ms candidate, ratio 0.8633
+pair 6 (candidate first): 67.541 ms baseline, 57.413 ms candidate, ratio 0.8501
+pair 7 (baseline first): 66.278 ms baseline, 56.866 ms candidate, ratio 0.8580
+pair 8 (candidate first): 66.750 ms baseline, 56.084 ms candidate, ratio 0.8402
+pair 9 (baseline first): 66.452 ms baseline, 55.740 ms candidate, ratio 0.8388
+medians: 66.528 ms baseline, 56.425 ms candidate
+median paired ratio: 0.8501 (faster 14.99%)
+
+map.toy
+pair 1 (baseline first): 58.308 ms baseline, 49.548 ms candidate, ratio 0.8498
+pair 2 (candidate first): 58.156 ms baseline, 49.403 ms candidate, ratio 0.8495
+pair 3 (baseline first): 57.689 ms baseline, 49.047 ms candidate, ratio 0.8502
+pair 4 (candidate first): 57.864 ms baseline, 49.648 ms candidate, ratio 0.8580
+pair 5 (baseline first): 58.601 ms baseline, 51.068 ms candidate, ratio 0.8714
+pair 6 (candidate first): 59.651 ms baseline, 51.904 ms candidate, ratio 0.8701
+pair 7 (baseline first): 60.139 ms baseline, 49.199 ms candidate, ratio 0.8181
+pair 8 (candidate first): 57.773 ms baseline, 49.592 ms candidate, ratio 0.8584
+pair 9 (baseline first): 57.741 ms baseline, 50.170 ms candidate, ratio 0.8689
+medians: 58.156 ms baseline, 49.592 ms candidate
+median paired ratio: 0.8580 (faster 14.20%)
+
+pqueue.toy
+pair 1 (baseline first): 149.207 ms baseline, 139.590 ms candidate, ratio 0.9355
+pair 2 (candidate first): 147.180 ms baseline, 138.003 ms candidate, ratio 0.9376
+pair 3 (baseline first): 147.069 ms baseline, 138.726 ms candidate, ratio 0.9433
+pair 4 (candidate first): 146.302 ms baseline, 139.669 ms candidate, ratio 0.9547
+pair 5 (baseline first): 147.827 ms baseline, 140.696 ms candidate, ratio 0.9518
+pair 6 (candidate first): 145.847 ms baseline, 138.295 ms candidate, ratio 0.9482
+pair 7 (baseline first): 145.937 ms baseline, 147.522 ms candidate, ratio 1.0109
+pair 8 (candidate first): 146.927 ms baseline, 137.281 ms candidate, ratio 0.9343
+pair 9 (baseline first): 146.359 ms baseline, 139.344 ms candidate, ratio 0.9521
+medians: 146.927 ms baseline, 139.344 ms candidate
+median paired ratio: 0.9482 (faster 5.18%)
+
+runtime-internals.toy
+pair 1 (baseline first): 479.904 ms baseline, 336.650 ms candidate, ratio 0.7015
+pair 2 (candidate first): 480.986 ms baseline, 333.191 ms candidate, ratio 0.6927
+pair 3 (baseline first): 486.269 ms baseline, 336.821 ms candidate, ratio 0.6927
+pair 4 (candidate first): 482.158 ms baseline, 335.372 ms candidate, ratio 0.6956
+pair 5 (baseline first): 483.623 ms baseline, 338.767 ms candidate, ratio 0.7005
+pair 6 (candidate first): 483.839 ms baseline, 338.279 ms candidate, ratio 0.6992
+pair 7 (baseline first): 481.860 ms baseline, 335.130 ms candidate, ratio 0.6955
+pair 8 (candidate first): 481.373 ms baseline, 333.909 ms candidate, ratio 0.6937
+pair 9 (baseline first): 484.498 ms baseline, 337.514 ms candidate, ratio 0.6966
+medians: 482.158 ms baseline, 336.650 ms candidate
+median paired ratio: 0.6956 (faster 30.44%)
+
+sequence-algorithms.toy
+pair 1 (baseline first): 21.361 ms baseline, 18.469 ms candidate, ratio 0.8646
+pair 2 (candidate first): 18.063 ms baseline, 20.580 ms candidate, ratio 1.1393
+pair 3 (baseline first): 17.635 ms baseline, 16.838 ms candidate, ratio 0.9548
+pair 4 (candidate first): 17.772 ms baseline, 16.510 ms candidate, ratio 0.9290
+pair 5 (baseline first): 18.230 ms baseline, 16.675 ms candidate, ratio 0.9147
+pair 6 (candidate first): 19.261 ms baseline, 16.770 ms candidate, ratio 0.8707
+pair 7 (baseline first): 18.183 ms baseline, 17.799 ms candidate, ratio 0.9789
+pair 8 (candidate first): 18.294 ms baseline, 19.204 ms candidate, ratio 1.0498
+pair 9 (baseline first): 18.005 ms baseline, 16.444 ms candidate, ratio 0.9133
+medians: 18.183 ms baseline, 16.838 ms candidate
+median paired ratio: 0.9290 (faster 7.10%)
+
+set.toy
+pair 1 (baseline first): 180.361 ms baseline, 171.049 ms candidate, ratio 0.9484
+pair 2 (candidate first): 180.909 ms baseline, 173.290 ms candidate, ratio 0.9579
+pair 3 (baseline first): 181.356 ms baseline, 172.745 ms candidate, ratio 0.9525
+pair 4 (candidate first): 179.841 ms baseline, 169.923 ms candidate, ratio 0.9449
+pair 5 (baseline first): 183.521 ms baseline, 173.512 ms candidate, ratio 0.9455
+pair 6 (candidate first): 185.408 ms baseline, 174.090 ms candidate, ratio 0.9390
+pair 7 (baseline first): 183.716 ms baseline, 169.736 ms candidate, ratio 0.9239
+pair 8 (candidate first): 186.264 ms baseline, 170.293 ms candidate, ratio 0.9143
+pair 9 (baseline first): 182.789 ms baseline, 172.207 ms candidate, ratio 0.9421
+medians: 182.789 ms baseline, 172.207 ms candidate
+median paired ratio: 0.9449 (faster 5.51%)
+
+string.toy
+pair 1 (baseline first): 71.713 ms baseline, 58.205 ms candidate, ratio 0.8116
+pair 2 (candidate first): 70.745 ms baseline, 59.008 ms candidate, ratio 0.8341
+pair 3 (baseline first): 71.218 ms baseline, 57.687 ms candidate, ratio 0.8100
+pair 4 (candidate first): 71.760 ms baseline, 56.798 ms candidate, ratio 0.7915
+pair 5 (baseline first): 70.769 ms baseline, 57.557 ms candidate, ratio 0.8133
+pair 6 (candidate first): 71.162 ms baseline, 57.152 ms candidate, ratio 0.8031
+pair 7 (baseline first): 71.700 ms baseline, 57.535 ms candidate, ratio 0.8024
+pair 8 (candidate first): 71.030 ms baseline, 58.753 ms candidate, ratio 0.8272
+pair 9 (baseline first): 71.089 ms baseline, 57.540 ms candidate, ratio 0.8094
+medians: 71.162 ms baseline, 57.557 ms candidate
+median paired ratio: 0.8100 (faster 19.00%)
+
+vector.toy
+pair 1 (baseline first): 72.747 ms baseline, 50.428 ms candidate, ratio 0.6932
+pair 2 (candidate first): 73.294 ms baseline, 49.354 ms candidate, ratio 0.6734
+pair 3 (baseline first): 72.479 ms baseline, 50.089 ms candidate, ratio 0.6911
+pair 4 (candidate first): 73.174 ms baseline, 49.684 ms candidate, ratio 0.6790
+pair 5 (baseline first): 72.309 ms baseline, 50.064 ms candidate, ratio 0.6924
+pair 6 (candidate first): 72.934 ms baseline, 48.994 ms candidate, ratio 0.6718
+pair 7 (baseline first): 72.558 ms baseline, 49.873 ms candidate, ratio 0.6873
+pair 8 (candidate first): 72.514 ms baseline, 49.781 ms candidate, ratio 0.6865
+pair 9 (baseline first): 72.782 ms baseline, 49.643 ms candidate, ratio 0.6821
+medians: 72.747 ms baseline, 49.781 ms candidate
+median paired ratio: 0.6865 (faster 31.35%)

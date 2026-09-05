@@ -151,6 +151,7 @@ typedef struct {
 
 typedef enum {
     TF_QUICK_CALL_WORD,
+    TF_QUICK_CALL_NATIVE,
     TF_QUICK_CALL_DUP,
     TF_QUICK_CALL_PRED,
     TF_QUICK_CALL_ADD,
@@ -160,7 +161,13 @@ typedef enum {
 
 typedef struct {
     size_t generation;
-    size_t entry_index;
+    /* Native code stays loaded for the context's lifetime. User definitions
+     * use indexes into relocatable dictionary storage. Both are valid only
+     * while the resolution generation matches. */
+    union {
+        size_t entry_index;
+        tf_native_fn native_impl;
+    };
     tf_quick_call_kind kind;
 } tf_quick_call;
 
@@ -343,13 +350,33 @@ struct tf_ctx {
     bool diagnostic_is_console;
 };
 
-/* Data stack API used by native word implementations. */
-size_t tf_stack_len(tf_ctx *ctx);
-void tf_stack_push(tf_ctx *ctx, tf_obj *o);
-tf_obj *tf_stack_pop(tf_ctx *ctx);
-tf_obj *tf_stack_pop_type(tf_ctx *ctx, tf_type type);
+/* Data stack API used by native word implementations. Push/pop transfer an
+ * owned reference; peek borrows. Pop/peek return NULL on underflow. Operations
+ * are O(1), with amortized O(1) pushes through geometric vector growth. */
+static inline size_t tf_stack_len(tf_ctx *ctx) {
+    return ctx->data_stack->vector.len;
+}
+
+static inline void tf_stack_push(tf_ctx *ctx, tf_obj *o) {
+    tf_vector_push(ctx->data_stack, o);
+    TF_METRIC_MAX(ctx, max_data_stack_depth, ctx->data_stack->vector.len);
+}
+
+static inline tf_obj *tf_stack_pop(tf_ctx *ctx) {
+    return tf_vector_pop(ctx->data_stack);
+}
+
+static inline tf_obj *tf_stack_pop_type(tf_ctx *ctx, tf_type type) {
+    return tf_vector_pop_type(ctx->data_stack, type);
+}
+
+static inline tf_obj *tf_stack_peek(tf_ctx *ctx, size_t depth) {
+    size_t len = tf_stack_len(ctx);
+    if (depth >= len) return NULL;
+    return ctx->data_stack->vector.elem[len - 1 - depth];
+}
+
 tf_obj *tf_stack_pop_callable(tf_ctx *ctx);
-tf_obj *tf_stack_peek(tf_ctx *ctx, size_t depth);
 
 /*
  * Native-word validation helpers.
@@ -360,11 +387,53 @@ tf_obj *tf_stack_peek(tf_ctx *ctx, size_t depth);
  */
 const char *tf_type_name(tf_type type);
 const char *tf_obj_type_name(tf_obj *o);
-bool tf_ctx_require_stack(tf_ctx *ctx, size_t needed);
-bool tf_ctx_require_type(tf_ctx *ctx, size_t depth, tf_type type);
-bool tf_ctx_require_number(tf_ctx *ctx, size_t depth);
-bool tf_ctx_require_sequence(tf_ctx *ctx, size_t depth);
-bool tf_ctx_require_callable(tf_ctx *ctx, size_t depth);
+
+/* Success stays with the caller so validation and the following stack access
+ * can share loads. Diagnostic formatting lives in the cold error helpers. */
+bool tf_ctx_stack_error(tf_ctx *ctx, size_t needed);
+bool tf_ctx_type_error(tf_ctx *ctx, size_t depth, const char *expected);
+
+static inline bool tf_obj_is_callable(tf_obj *o) {
+    if (!o) return false;
+    tf_type type = tf_obj_typeof(o);
+    return type == TF_OBJ_TYPE_VECTOR || type == TF_OBJ_TYPE_SYMBOL ||
+           type == TF_OBJ_TYPE_CALL;
+}
+
+static inline bool tf_ctx_require_stack(tf_ctx *ctx, size_t needed) {
+    if (tf_stack_len(ctx) >= needed) return true;
+    return tf_ctx_stack_error(ctx, needed);
+}
+
+static inline bool tf_ctx_require_type(tf_ctx *ctx, size_t depth, tf_type type) {
+    tf_obj *o = tf_stack_peek(ctx, depth);
+    if (o && tf_obj_typeof(o) == type) return true;
+    return tf_ctx_type_error(ctx, depth, tf_type_name(type));
+}
+
+static inline bool tf_ctx_require_number(tf_ctx *ctx, size_t depth) {
+    tf_obj *o = tf_stack_peek(ctx, depth);
+    if (o) {
+        tf_type type = tf_obj_typeof(o);
+        if (type == TF_OBJ_TYPE_INT || type == TF_OBJ_TYPE_FLOAT) return true;
+    }
+    return tf_ctx_type_error(ctx, depth, "number");
+}
+
+static inline bool tf_ctx_require_sequence(tf_ctx *ctx, size_t depth) {
+    tf_obj *o = tf_stack_peek(ctx, depth);
+    if (o) {
+        tf_type type = tf_obj_typeof(o);
+        if (type == TF_OBJ_TYPE_VECTOR || type == TF_OBJ_TYPE_LIST ||
+            type == TF_OBJ_TYPE_STR) return true;
+    }
+    return tf_ctx_type_error(ctx, depth, "sequence");
+}
+
+static inline bool tf_ctx_require_callable(tf_ctx *ctx, size_t depth) {
+    if (tf_obj_is_callable(tf_stack_peek(ctx, depth))) return true;
+    return tf_ctx_type_error(ctx, depth, "callable");
+}
 
 /* Execution frame scheduling. Native words schedule work here, then return. */
 void tf_frame_push_program(tf_ctx *ctx, tf_obj *program);
@@ -477,7 +546,6 @@ tf_obj *tf_scope_lookup_var(tf_ctx *ctx, tf_obj *name);
 tf_ret tf_vm_exec(tf_ctx *ctx, tf_obj *program);
 tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
                           size_t package_index);
-bool tf_obj_is_callable(tf_obj *o);
 tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable);
 
 #ifdef TF_OBSERVE

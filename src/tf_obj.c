@@ -320,18 +320,6 @@ tf_obj *tf_obj_new_int_boxed(int64_t i) {
     return o;
 }
 
-tf_obj *tf_obj_new_int(int64_t i) {
-#if UINTPTR_MAX == UINT64_MAX
-    const int64_t immediate_min = -(INT64_C(4611686018427387903)) - 1;
-    const int64_t immediate_max = INT64_C(4611686018427387903);
-    if (i >= immediate_min && i <= immediate_max) {
-        uintptr_t encoded = ((uintptr_t)(uint64_t)i << 1) | (uintptr_t)1;
-        return (tf_obj *)encoded;
-    }
-#endif
-    return tf_obj_new_int_boxed(i);
-}
-
 tf_obj *tf_obj_new_bool(bool b) {
     tf_obj *o = tf_obj_new(TF_OBJ_TYPE_BOOL);
     o->b = b;
@@ -619,25 +607,6 @@ void tf_vector_reserve(tf_obj *v, size_t capacity) {
             tf_xrealloc(v->vector.elem, sizeof(tf_obj *) * new_cap);
     }
     v->vector.cap = new_cap;
-}
-
-void tf_vector_push(tf_obj *v, tf_obj *elem) {
-    tf_vector_reserve(v, v->vector.len + 1);
-    v->vector.elem[v->vector.len++] = elem;
-}
-
-// pop object only if the type is correct
-tf_obj *tf_vector_pop_type(tf_obj *v, tf_type type) {
-    if (v->vector.len == 0) return NULL;
-    tf_obj *o = v->vector.elem[v->vector.len - 1];
-    if (tf_obj_typeof(o) != type) return NULL;
-    return tf_vector_pop(v);
-}
-
-tf_obj *tf_vector_pop(tf_obj *v) {
-    if (v->vector.len == 0) return NULL;
-    /* Stack pops retain capacity so removal never reallocates. */
-    return v->vector.elem[--v->vector.len];
 }
 
 tf_obj *tf_vector_clone(tf_obj *src) {

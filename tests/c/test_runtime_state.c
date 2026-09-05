@@ -103,6 +103,85 @@ static int check_quick_program_cache(void) {
     return 0;
 }
 
+static toy_status cached_native_one(toy_state *state) {
+    return toy_push_int(state, 11);
+}
+
+static toy_status cached_native_two(toy_state *state) {
+    return toy_push_int(state, 22);
+}
+
+static toy_status cached_native_replace_self(toy_state *state) {
+    /* The public registration API requires an idle state; runtime def uses
+     * the internal dictionary boundary while the VM is active. */
+    tf_dict_set_native(state, "cached-native", cached_native_two);
+    return toy_push_int(state, 33);
+}
+
+static bool cached_program_returns(tf_ctx *ctx, tf_obj *program,
+                                    int64_t expected) {
+    if (tf_vm_exec(ctx, program) != TF_OK) return false;
+    int64_t value = 0;
+    bool matches = toy_stack_size(ctx) == 1 &&
+                   toy_get_int(ctx, 0, &value) && value == expected;
+    toy_pop(ctx, toy_stack_size(ctx));
+    return matches;
+}
+
+static int check_cached_native_targets(void) {
+    tf_ctx *first = tf_ctx_new(0, NULL);
+    tf_ctx *second = tf_ctx_new(0, NULL);
+    CHECK(first && second, "native cache contexts");
+    tf_obj *program = tf_obj_new_vector();
+    tf_vector_push(program, tf_obj_new_call("cached-native", 13));
+
+    CHECK(toy_register_word(first, "cached-native", cached_native_one) ==
+              TOY_OK &&
+              toy_register_word(second, "cached-native", cached_native_two) ==
+                  TOY_OK,
+          "register different native targets in two contexts");
+    for (int i = 0; i < 3; i++) {
+        CHECK(cached_program_returns(first, program, 11) &&
+                  cached_program_returns(second, program, 22),
+              "shared program caches native targets per context");
+    }
+    CHECK(toy_register_word(first, "cached-native", cached_native_two) ==
+              TOY_OK &&
+              cached_program_returns(first, program, 22),
+          "native replacement invalidates a cached native target");
+    CHECK(toy_eval(first, "<native-to-user>", "'cached-native [ 44 ] def") ==
+              TOY_OK &&
+              cached_program_returns(first, program, 44) &&
+              cached_program_returns(first, program, 44),
+          "a cached native target can become a user word");
+
+    /* Force dictionary growth after caching a user target. */
+    size_t old_capacity = first->words.entry_capacity;
+    for (size_t i = 0; i < old_capacity; i++) {
+        char name[48];
+        snprintf(name, sizeof(name), "cache-padding-%zu", i);
+        CHECK(toy_register_word(first, name, cached_native_one) == TOY_OK,
+              "grow dictionary around a cached user target");
+    }
+    CHECK(first->words.entry_capacity > old_capacity &&
+              cached_program_returns(first, program, 44),
+          "cached user target survives dictionary reallocation");
+
+    first->words.resolution_generation = SIZE_MAX - 1;
+    CHECK(toy_register_word(first, "cached-native", cached_native_replace_self) ==
+              TOY_OK &&
+              cached_program_returns(first, program, 33) &&
+              first->words.resolution_generation == 1 &&
+              cached_program_returns(first, program, 22) &&
+              cached_program_returns(second, program, 22),
+          "native self-replacement clears active caches on generation wrap");
+
+    tf_obj_release(program);
+    tf_ctx_free(first);
+    tf_ctx_free(second);
+    return 0;
+}
+
 #ifdef TF_OBSERVE
 static int check_runtime_metrics(void) {
     toy_state *state = toy_state_new(NULL);
@@ -284,6 +363,7 @@ int main(void) {
     CHECK(check_runtime_metrics() == 0, "runtime metrics");
 #endif
     CHECK(check_quick_program_cache() == 0, "quick-program cache");
+    CHECK(check_cached_native_targets() == 0, "cached native targets");
     CHECK(check_pcg_sequence() == 0, "PCG32 implementation");
     CHECK(check_random_ranges() == 0, "unbiased integer ranges");
 

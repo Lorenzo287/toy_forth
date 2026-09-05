@@ -212,9 +212,21 @@ tf_obj *tf_obj_new_map(void);
 tf_obj *tf_obj_new_set(void);
 tf_obj *tf_obj_new_deque(void);
 tf_obj *tf_obj_new_pqueue(void);
-tf_obj *tf_obj_new_int(int64_t i);
-/* Parser-only form for source literals whose debugger span must be retained. */
+/* Always boxes; the parser uses this to retain literal source metadata. */
 tf_obj *tf_obj_new_int_boxed(int64_t i);
+
+static inline tf_obj *tf_obj_new_int(int64_t i) {
+#if UINTPTR_MAX == UINT64_MAX
+    const int64_t immediate_min = -(INT64_C(4611686018427387903)) - 1;
+    const int64_t immediate_max = INT64_C(4611686018427387903);
+    if (i >= immediate_min && i <= immediate_max) {
+        uintptr_t encoded = ((uintptr_t)(uint64_t)i << 1) | (uintptr_t)1;
+        return (tf_obj *)encoded;
+    }
+#endif
+    return tf_obj_new_int_boxed(i);
+}
+
 tf_obj *tf_obj_new_bool(bool b);
 tf_obj *tf_obj_new_float(double f);
 tf_obj *tf_obj_new_symbol(const char *s, size_t len);
@@ -246,9 +258,29 @@ int tf_obj_compare_number(tf_obj *a, tf_obj *b);
 void tf_format_double(char *buf, size_t size, double value);
 void tf_string_reserve(tf_obj *s, size_t capacity);
 void tf_vector_reserve(tf_obj *v, size_t capacity);
-void tf_vector_push(tf_obj *v, tf_obj *elem);
-tf_obj *tf_vector_pop_type(tf_obj *v, tf_type type);
-tf_obj *tf_vector_pop(tf_obj *v);
+
+/* Transfer ownership without changing refcounts. Keep the common storage
+ * operations visible to callers; only growth needs an out-of-line call. */
+static inline void tf_vector_push(tf_obj *v, tf_obj *elem) {
+    if (v->vector.len == v->vector.cap) {
+        tf_vector_reserve(v, v->vector.len + 1);
+    }
+    v->vector.elem[v->vector.len++] = elem;
+}
+
+static inline tf_obj *tf_vector_pop(tf_obj *v) {
+    if (v->vector.len == 0) return NULL;
+    /* Stack pops retain capacity so removal never reallocates. */
+    return v->vector.elem[--v->vector.len];
+}
+
+static inline tf_obj *tf_vector_pop_type(tf_obj *v, tf_type type) {
+    if (v->vector.len == 0) return NULL;
+    tf_obj *o = v->vector.elem[v->vector.len - 1];
+    if (tf_obj_typeof(o) != type) return NULL;
+    return tf_vector_pop(v);
+}
+
 tf_obj *tf_vector_clone(tf_obj *src);
 
 /* Equality, hashing, and collection storage helpers. */

@@ -22,6 +22,14 @@ Keep optimization work benchmark-driven and record durable experiments under
 - cache behavior for list, vector, and string workloads;
 - structural hashes if map/set key policy expands.
 
+The [native fast-path measurements](../benchmarks/results/2026-09-05-native-fast-paths.md)
+establish a baseline for the next stage. Investigate remaining continuation
+scheduling, dynamic capture traversal, and temporary boolean allocation costs.
+Compare further inlining against executable size, and evaluate link-time
+optimization separately from portable source changes. A future bytecode
+prototype should replace executable object fetches rather than add a second
+instruction stream beside them.
+
 ### C Interop
 
 Embedding, C extensions, `core:ffi`, and generated bindings share one

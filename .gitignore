@@ -8,6 +8,8 @@ obj/
 compile_commands.json
 
 # Binaries and object files
+/nob
+/nob.old
 *.o
 *.obj
 *.a

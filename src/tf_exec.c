@@ -176,34 +176,11 @@ void tf_scratch_clear(tf_ctx *ctx) {
 
 /* === Data Stack === */
 
-size_t tf_stack_len(tf_ctx *ctx) {
-    return ctx->data_stack->vector.len;
-}
-
-void tf_stack_push(tf_ctx *ctx, tf_obj *o) {
-    tf_vector_push(ctx->data_stack, o);
-    TF_METRIC_MAX(ctx, max_data_stack_depth, ctx->data_stack->vector.len);
-}
-
-tf_obj *tf_stack_pop(tf_ctx *ctx) {
-    return tf_vector_pop(ctx->data_stack);
-}
-
-tf_obj *tf_stack_pop_type(tf_ctx *ctx, tf_type type) {
-    return tf_vector_pop_type(ctx->data_stack, type);
-}
-
 tf_obj *tf_stack_pop_callable(tf_ctx *ctx) {
     if (tf_stack_len(ctx) == 0) return NULL;
     tf_obj *o = tf_stack_peek(ctx, 0);
     if (!tf_obj_is_callable(o)) return NULL;
     return tf_stack_pop(ctx);
-}
-
-tf_obj *tf_stack_peek(tf_ctx *ctx, size_t depth) {
-    size_t len = tf_stack_len(ctx);
-    if (depth >= len) return NULL;
-    return ctx->data_stack->vector.elem[len - 1 - depth];
 }
 
 /* === Deferred Calls === */
@@ -388,15 +365,8 @@ static tf_quick_program *quick_program_acquire(tf_ctx *ctx, tf_obj *program,
     return quick;
 }
 
-static tf_word *quickened_call_lookup(tf_ctx *ctx, tf_frame *frame,
-                                      tf_obj *call, size_t pc) {
-    tf_quick_program *quick = frame->as.program.quick;
-    tf_quick_call *cached = quick && pc < quick->len ? &quick->calls[pc] : NULL;
-    if (cached && cached->generation == ctx->words.resolution_generation &&
-        cached->entry_index < ctx->words.count) {
-        TF_METRIC_INC(ctx, quickened_lookup_hits);
-        return &ctx->words.entries[cached->entry_index];
-    }
+static tf_word *quickened_call_resolve(tf_ctx *ctx, tf_frame *frame,
+                                       tf_obj *call, tf_quick_call *cached) {
     TF_METRIC_INC(ctx, quickened_lookup_misses);
 
     tf_word *word = tf_dict_lookup_from(
@@ -406,6 +376,8 @@ static tf_word *quickened_call_lookup(tf_ctx *ctx, tf_frame *frame,
         cached->entry_index = (size_t)(word - ctx->words.entries);
         cached->kind = TF_QUICK_CALL_WORD;
         if (word->type == TF_WORD_NATIVE) {
+            cached->native_impl = word->native_impl;
+            cached->kind = TF_QUICK_CALL_NATIVE;
             if (word->native_impl == tf_dup)
                 cached->kind = TF_QUICK_CALL_DUP;
             else if (word->native_impl == tf_pred)
@@ -883,9 +855,8 @@ const char *tf_obj_type_name(tf_obj *o) {
     return o ? tf_type_name(tf_obj_typeof(o)) : "missing";
 }
 
-bool tf_ctx_require_stack(tf_ctx *ctx, size_t needed) {
+bool tf_ctx_stack_error(tf_ctx *ctx, size_t needed) {
     size_t found = tf_stack_len(ctx);
-    if (found >= needed) return true;
 
     tf_ctx_runtime_errorf(ctx, "'%s' expected %zu value%s on the stack, found %zu\n",
                           current_word_name(ctx), needed, needed == 1 ? "" : "s",
@@ -893,51 +864,14 @@ bool tf_ctx_require_stack(tf_ctx *ctx, size_t needed) {
     return false;
 }
 
-bool tf_ctx_require_type(tf_ctx *ctx, size_t depth, tf_type type) {
+bool tf_ctx_type_error(tf_ctx *ctx, size_t depth, const char *expected) {
     if (!tf_ctx_require_stack(ctx, depth + 1)) return false;
 
     tf_obj *o = tf_stack_peek(ctx, depth);
-    if (tf_obj_typeof(o) == type) return true;
 
     tf_ctx_runtime_errorf(ctx, "'%s' expected %s at stack depth %zu, found %s\n",
-                          current_word_name(ctx), tf_type_name(type), depth,
+                          current_word_name(ctx), expected, depth,
                           tf_obj_type_name(o));
-    return false;
-}
-
-bool tf_ctx_require_number(tf_ctx *ctx, size_t depth) {
-    if (!tf_ctx_require_stack(ctx, depth + 1)) return false;
-
-    tf_obj *o = tf_stack_peek(ctx, depth);
-    tf_type type = tf_obj_typeof(o);
-    if (type == TF_OBJ_TYPE_INT || type == TF_OBJ_TYPE_FLOAT) return true;
-
-    tf_ctx_runtime_errorf(ctx, "'%s' expected number at stack depth %zu, found %s\n",
-                          current_word_name(ctx), depth, tf_obj_type_name(o));
-    return false;
-}
-
-bool tf_ctx_require_sequence(tf_ctx *ctx, size_t depth) {
-    if (!tf_ctx_require_stack(ctx, depth + 1)) return false;
-
-    tf_obj *o = tf_stack_peek(ctx, depth);
-    tf_type type = tf_obj_typeof(o);
-    if (type == TF_OBJ_TYPE_VECTOR || type == TF_OBJ_TYPE_LIST ||
-        type == TF_OBJ_TYPE_STR) return true;
-
-    tf_ctx_runtime_errorf(ctx, "'%s' expected sequence at stack depth %zu, found %s\n",
-                          current_word_name(ctx), depth, tf_obj_type_name(o));
-    return false;
-}
-
-bool tf_ctx_require_callable(tf_ctx *ctx, size_t depth) {
-    if (!tf_ctx_require_stack(ctx, depth + 1)) return false;
-
-    tf_obj *o = tf_stack_peek(ctx, depth);
-    if (tf_obj_is_callable(o)) return true;
-
-    tf_ctx_runtime_errorf(ctx, "'%s' expected callable at stack depth %zu, found %s\n",
-                          current_word_name(ctx), depth, tf_obj_type_name(o));
     return false;
 }
 
@@ -968,6 +902,12 @@ static bool frame_handle_error(tf_ctx *ctx, size_t entry_depth,
 
 /* === Dynamic Capture Scope === */
 
+static bool capture_name_equal(tf_obj *left, tf_obj *right) {
+    return left == right ||
+           (left->str.len == right->str.len &&
+            memcmp(left->str.ptr, right->str.ptr, left->str.len) == 0);
+}
+
 static void scope_bind_var(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
     if (ctx->call_stack_len == 0) return;
     tf_frame *f = &ctx->call_stack[ctx->call_stack_len - 1];
@@ -977,7 +917,7 @@ static void scope_bind_var(tf_ctx *ctx, tf_obj *name, tf_obj *val) {
     tf_var_table *vars = &f->as.program.vars;
     tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
     for (int i = (int)vars->len - 1; i >= 0; i--) {
-        if (tf_obj_compare_string(bindings[i].name, name) == 0) {
+        if (capture_name_equal(bindings[i].name, name)) {
             tf_obj_release(bindings[i].val);
             bindings[i].val = val;
             tf_obj_retain(val);
@@ -1010,7 +950,7 @@ tf_obj *tf_scope_lookup_var(tf_ctx *ctx, tf_obj *name) {
         tf_var_table *vars = &f->as.program.vars;
         tf_var *bindings = vars->vars ? vars->vars : vars->inline_vars;
         for (int j = (int)vars->len - 1; j >= 0; j--) {
-            if (tf_obj_compare_string(bindings[j].name, name) == 0) {
+            if (capture_name_equal(bindings[j].name, name)) {
                 return bindings[j].val;
             }
         }
@@ -1132,15 +1072,28 @@ static tf_ret quick_lt(tf_ctx *ctx) {
 }
 
 static tf_ret quickened_call_dispatch(tf_ctx *ctx, tf_frame *frame,
-                                      tf_word *word, size_t pc) {
+                                      tf_obj *instruction, size_t pc) {
     tf_quick_program *quick = frame->as.program.quick;
-    if (!quick || pc >= quick->len) return dict_call_resolved(ctx, word);
-    tf_quick_call *call = &quick->calls[pc];
-    if (call->generation != ctx->words.resolution_generation) {
-        return dict_call_resolved(ctx, word);
+    tf_quick_call *call = quick && pc < quick->len ? &quick->calls[pc] : NULL;
+    /* A validated native target needs no dictionary access. User targets keep
+     * dense indexes because dictionary storage can move on a later def. */
+    if (call && call->generation == ctx->words.resolution_generation) {
+        TF_METRIC_INC(ctx, quickened_lookup_hits);
+    } else {
+        tf_word *word = quickened_call_resolve(ctx, frame, instruction, call);
+        if (!word) {
+            tf_ctx_runtime_errorf(ctx, "undefined word '%s'\n",
+                                  instruction->str.ptr);
+            return TF_ERR;
+        }
+        if (!call) return dict_call_resolved(ctx, word);
     }
 
     switch (call->kind) {
+    case TF_QUICK_CALL_NATIVE:
+        TF_METRIC_INC(ctx, native_word_calls);
+        TF_METRIC_INC(ctx, general_dispatches);
+        return call->native_impl(ctx);
     case TF_QUICK_CALL_DUP:
         TF_METRIC_INC(ctx, native_word_calls);
         TF_METRIC_INC(ctx, specialized_dispatches);
@@ -1162,9 +1115,10 @@ static tf_ret quickened_call_dispatch(tf_ctx *ctx, tf_frame *frame,
         TF_METRIC_INC(ctx, specialized_dispatches);
         return quick_lt(ctx);
     case TF_QUICK_CALL_WORD:
-        return dict_call_resolved(ctx, word);
+        assert(call->entry_index < ctx->words.count);
+        return dict_call_resolved(ctx, &ctx->words.entries[call->entry_index]);
     }
-    return dict_call_resolved(ctx, word);
+    return TF_ERR;
 }
 
 /*
@@ -1262,16 +1216,7 @@ static tf_ret vm_exec_package(tf_ctx *ctx, tf_obj *program,
         case TF_OBJ_TYPE_CALL: {
             TF_METRIC_INC(ctx, call_instructions);
             ctx->current_word = o->str.ptr;
-            tf_word *word = quickened_call_lookup(ctx, f, o, pc);
-            if (!word) {
-                tf_ctx_runtime_errorf(ctx, "undefined word '%s'\n",
-                                      o->str.ptr);
-                if (frame_handle_error(ctx, entry_depth, TF_ERR)) {
-                    continue;
-                }
-                return TF_ERR;
-            }
-            tf_ret call_res = quickened_call_dispatch(ctx, f, word, pc);
+            tf_ret call_res = quickened_call_dispatch(ctx, f, o, pc);
             if (call_res == TF_INTERRUPTED) {
                 frame_unwind_to(ctx, entry_depth, TF_INTERRUPTED);
                 return TF_INTERRUPTED;
@@ -1341,13 +1286,6 @@ tf_ret tf_vm_exec_package(tf_ctx *ctx, tf_obj *program,
 
 tf_ret tf_vm_exec(tf_ctx *ctx, tf_obj *program) {
     return tf_vm_exec_package(ctx, program, TF_ROOT_PACKAGE);
-}
-
-bool tf_obj_is_callable(tf_obj *o) {
-    if (!o) return false;
-    tf_type type = tf_obj_typeof(o);
-    return type == TF_OBJ_TYPE_VECTOR || type == TF_OBJ_TYPE_SYMBOL ||
-           type == TF_OBJ_TYPE_CALL;
 }
 
 tf_ret tf_vm_call_callable(tf_ctx *ctx, tf_obj *callable) {

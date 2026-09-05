@@ -1,0 +1,25 @@
+paired comparison
+baseline: build/perf/baseline/toy
+candidate: build/perf/baseline/toy
+pairs: 3, warmups: 1, platform: Linux, logical processors: 16
+
+json.toy
+pair 1 (baseline first): 568.904 ms baseline, 556.628 ms candidate, ratio 0.9784
+pair 2 (candidate first): 555.325 ms baseline, 559.983 ms candidate, ratio 1.0084
+pair 3 (baseline first): 554.689 ms baseline, 560.117 ms candidate, ratio 1.0098
+medians: 555.325 ms baseline, 559.983 ms candidate
+median paired ratio: 1.0084 (slower 0.84%)
+
+runtime-internals.toy
+pair 1 (baseline first): 482.968 ms baseline, 488.161 ms candidate, ratio 1.0108
+pair 2 (candidate first): 483.112 ms baseline, 483.046 ms candidate, ratio 0.9999
+pair 3 (baseline first): 487.330 ms baseline, 488.047 ms candidate, ratio 1.0015
+medians: 483.112 ms baseline, 488.047 ms candidate
+median paired ratio: 1.0015 (slower 0.15%)
+
+graph-search.toy
+pair 1 (baseline first): 76.868 ms baseline, 76.547 ms candidate, ratio 0.9958
+pair 2 (candidate first): 77.326 ms baseline, 78.068 ms candidate, ratio 1.0096
+pair 3 (baseline first): 77.719 ms baseline, 77.685 ms candidate, ratio 0.9996
+medians: 77.326 ms baseline, 77.685 ms candidate
+median paired ratio: 0.9996 (faster 0.04%)

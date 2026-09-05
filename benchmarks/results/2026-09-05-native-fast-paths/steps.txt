@@ -1,0 +1,195 @@
+paired comparison
+baseline: build/perf/baseline/toy
+candidate: build/perf/inline-stack/toy
+pairs: 5, warmups: 1, platform: Linux, logical processors: 16
+
+json.toy
+pair 1 (baseline first): 546.819 ms baseline, 489.371 ms candidate, ratio 0.8949
+pair 2 (candidate first): 555.646 ms baseline, 483.446 ms candidate, ratio 0.8701
+pair 3 (baseline first): 553.517 ms baseline, 486.163 ms candidate, ratio 0.8783
+pair 4 (candidate first): 556.777 ms baseline, 486.241 ms candidate, ratio 0.8733
+pair 5 (baseline first): 555.050 ms baseline, 489.132 ms candidate, ratio 0.8812
+medians: 555.050 ms baseline, 486.241 ms candidate
+median paired ratio: 0.8783 (faster 12.17%)
+
+runtime-internals.toy
+pair 1 (baseline first): 483.614 ms baseline, 376.465 ms candidate, ratio 0.7784
+pair 2 (candidate first): 485.670 ms baseline, 375.925 ms candidate, ratio 0.7740
+pair 3 (baseline first): 481.270 ms baseline, 363.673 ms candidate, ratio 0.7557
+pair 4 (candidate first): 481.744 ms baseline, 364.844 ms candidate, ratio 0.7573
+pair 5 (baseline first): 481.807 ms baseline, 375.852 ms candidate, ratio 0.7801
+medians: 481.807 ms baseline, 375.852 ms candidate
+median paired ratio: 0.7740 (faster 22.60%)
+
+graph-search.toy
+pair 1 (baseline first): 77.689 ms baseline, 64.646 ms candidate, ratio 0.8321
+pair 2 (candidate first): 81.416 ms baseline, 64.102 ms candidate, ratio 0.7873
+pair 3 (baseline first): 80.105 ms baseline, 63.361 ms candidate, ratio 0.7910
+pair 4 (candidate first): 76.900 ms baseline, 63.472 ms candidate, ratio 0.8254
+pair 5 (baseline first): 78.339 ms baseline, 63.441 ms candidate, ratio 0.8098
+medians: 78.339 ms baseline, 63.472 ms candidate
+median paired ratio: 0.8098 (faster 19.02%)
+
+dispatch.toy
+pair 1 (baseline first): 1683.030 ms baseline, 1748.456 ms candidate, ratio 1.0389
+pair 2 (candidate first): 1701.615 ms baseline, 1749.066 ms candidate, ratio 1.0279
+pair 3 (baseline first): 1719.603 ms baseline, 1753.841 ms candidate, ratio 1.0199
+pair 4 (candidate first): 1707.682 ms baseline, 1758.414 ms candidate, ratio 1.0297
+pair 5 (baseline first): 1702.540 ms baseline, 1761.312 ms candidate, ratio 1.0345
+medians: 1702.540 ms baseline, 1753.841 ms candidate
+median paired ratio: 1.0297 (slower 2.97%)
+
+paired comparison
+baseline: build/perf/inline-stack/toy
+candidate: build/perf/inline-int/toy
+pairs: 5, warmups: 1, platform: Linux, logical processors: 16
+
+dispatch.toy
+pair 1 (baseline first): 1780.830 ms baseline, 1773.435 ms candidate, ratio 0.9958
+pair 2 (candidate first): 1777.071 ms baseline, 1779.070 ms candidate, ratio 1.0011
+pair 3 (baseline first): 1750.209 ms baseline, 1768.815 ms candidate, ratio 1.0106
+pair 4 (candidate first): 1778.204 ms baseline, 1769.009 ms candidate, ratio 0.9948
+pair 5 (baseline first): 1747.327 ms baseline, 1772.204 ms candidate, ratio 1.0142
+medians: 1777.071 ms baseline, 1772.204 ms candidate
+median paired ratio: 1.0011 (slower 0.11%)
+
+json.toy
+pair 1 (baseline first): 484.880 ms baseline, 492.108 ms candidate, ratio 1.0149
+pair 2 (candidate first): 484.318 ms baseline, 484.561 ms candidate, ratio 1.0005
+pair 3 (baseline first): 482.278 ms baseline, 486.352 ms candidate, ratio 1.0084
+pair 4 (candidate first): 477.505 ms baseline, 508.919 ms candidate, ratio 1.0658
+pair 5 (baseline first): 482.632 ms baseline, 486.029 ms candidate, ratio 1.0070
+medians: 482.632 ms baseline, 486.352 ms candidate
+median paired ratio: 1.0084 (slower 0.84%)
+
+runtime-internals.toy
+pair 1 (baseline first): 366.013 ms baseline, 366.699 ms candidate, ratio 1.0019
+pair 2 (candidate first): 366.026 ms baseline, 367.081 ms candidate, ratio 1.0029
+pair 3 (baseline first): 365.311 ms baseline, 380.295 ms candidate, ratio 1.0410
+pair 4 (candidate first): 364.934 ms baseline, 364.532 ms candidate, ratio 0.9989
+pair 5 (baseline first): 363.266 ms baseline, 366.627 ms candidate, ratio 1.0093
+medians: 365.311 ms baseline, 366.699 ms candidate
+median paired ratio: 1.0029 (slower 0.29%)
+
+paired comparison
+baseline: build/perf/inline-int/toy
+candidate: build/perf/direct-call/toy
+pairs: 5, warmups: 1, platform: Linux, logical processors: 16
+
+dispatch.toy
+pair 1 (baseline first): 1760.050 ms baseline, 1698.691 ms candidate, ratio 0.9651
+pair 2 (candidate first): 1776.766 ms baseline, 1718.565 ms candidate, ratio 0.9672
+pair 3 (baseline first): 1768.164 ms baseline, 1690.763 ms candidate, ratio 0.9562
+pair 4 (candidate first): 1769.693 ms baseline, 1709.017 ms candidate, ratio 0.9657
+pair 5 (baseline first): 1783.015 ms baseline, 1707.633 ms candidate, ratio 0.9577
+medians: 1769.693 ms baseline, 1707.633 ms candidate
+median paired ratio: 0.9651 (faster 3.49%)
+
+json.toy
+pair 1 (baseline first): 494.588 ms baseline, 484.363 ms candidate, ratio 0.9793
+pair 2 (candidate first): 485.913 ms baseline, 483.272 ms candidate, ratio 0.9946
+pair 3 (baseline first): 495.668 ms baseline, 486.580 ms candidate, ratio 0.9817
+pair 4 (candidate first): 488.511 ms baseline, 488.517 ms candidate, ratio 1.0000
+pair 5 (baseline first): 493.938 ms baseline, 484.285 ms candidate, ratio 0.9805
+medians: 493.938 ms baseline, 484.363 ms candidate
+median paired ratio: 0.9817 (faster 1.83%)
+
+runtime-internals.toy
+pair 1 (baseline first): 364.023 ms baseline, 361.479 ms candidate, ratio 0.9930
+pair 2 (candidate first): 363.313 ms baseline, 360.451 ms candidate, ratio 0.9921
+pair 3 (baseline first): 366.363 ms baseline, 362.027 ms candidate, ratio 0.9882
+pair 4 (candidate first): 362.900 ms baseline, 363.160 ms candidate, ratio 1.0007
+pair 5 (baseline first): 366.016 ms baseline, 363.619 ms candidate, ratio 0.9934
+medians: 364.023 ms baseline, 362.027 ms candidate
+median paired ratio: 0.9930 (faster 0.70%)
+
+graph-search.toy
+pair 1 (baseline first): 65.871 ms baseline, 62.732 ms candidate, ratio 0.9524
+pair 2 (candidate first): 64.016 ms baseline, 62.323 ms candidate, ratio 0.9736
+pair 3 (baseline first): 63.664 ms baseline, 63.052 ms candidate, ratio 0.9904
+pair 4 (candidate first): 63.572 ms baseline, 62.478 ms candidate, ratio 0.9828
+pair 5 (baseline first): 63.672 ms baseline, 63.020 ms candidate, ratio 0.9898
+medians: 63.672 ms baseline, 62.732 ms candidate
+median paired ratio: 0.9828 (faster 1.72%)
+
+paired comparison
+baseline: build/perf/direct-call/toy
+candidate: build/perf/inline-validation/toy
+pairs: 5, warmups: 1, platform: Linux, logical processors: 16
+
+dispatch.toy
+pair 1 (baseline first): 1706.645 ms baseline, 1574.404 ms candidate, ratio 0.9225
+pair 2 (candidate first): 1691.342 ms baseline, 1562.631 ms candidate, ratio 0.9239
+pair 3 (baseline first): 1710.606 ms baseline, 1591.724 ms candidate, ratio 0.9305
+pair 4 (candidate first): 1707.970 ms baseline, 1570.373 ms candidate, ratio 0.9194
+pair 5 (baseline first): 1710.604 ms baseline, 1556.796 ms candidate, ratio 0.9101
+medians: 1707.970 ms baseline, 1570.373 ms candidate
+median paired ratio: 0.9225 (faster 7.75%)
+
+json.toy
+pair 1 (baseline first): 492.728 ms baseline, 461.829 ms candidate, ratio 0.9373
+pair 2 (candidate first): 482.800 ms baseline, 456.107 ms candidate, ratio 0.9447
+pair 3 (baseline first): 490.113 ms baseline, 452.998 ms candidate, ratio 0.9243
+pair 4 (candidate first): 487.064 ms baseline, 455.751 ms candidate, ratio 0.9357
+pair 5 (baseline first): 487.857 ms baseline, 455.916 ms candidate, ratio 0.9345
+medians: 487.857 ms baseline, 455.916 ms candidate
+median paired ratio: 0.9357 (faster 6.43%)
+
+runtime-internals.toy
+pair 1 (baseline first): 362.730 ms baseline, 340.129 ms candidate, ratio 0.9377
+pair 2 (candidate first): 361.391 ms baseline, 343.114 ms candidate, ratio 0.9494
+pair 3 (baseline first): 367.388 ms baseline, 344.154 ms candidate, ratio 0.9368
+pair 4 (candidate first): 374.343 ms baseline, 344.762 ms candidate, ratio 0.9210
+pair 5 (baseline first): 368.823 ms baseline, 341.124 ms candidate, ratio 0.9249
+medians: 367.388 ms baseline, 343.114 ms candidate
+median paired ratio: 0.9368 (faster 6.32%)
+
+graph-search.toy
+pair 1 (baseline first): 62.103 ms baseline, 58.413 ms candidate, ratio 0.9406
+pair 2 (candidate first): 62.827 ms baseline, 58.699 ms candidate, ratio 0.9343
+pair 3 (baseline first): 63.158 ms baseline, 58.221 ms candidate, ratio 0.9218
+pair 4 (candidate first): 62.505 ms baseline, 58.332 ms candidate, ratio 0.9332
+pair 5 (baseline first): 63.029 ms baseline, 58.480 ms candidate, ratio 0.9278
+medians: 62.827 ms baseline, 58.413 ms candidate
+median paired ratio: 0.9332 (faster 6.68%)
+
+paired comparison
+baseline: build/perf/inline-validation/toy
+candidate: build/perf/capture-equality/toy
+pairs: 5, warmups: 1, platform: Linux, logical processors: 16
+
+json.toy
+pair 1 (baseline first): 451.717 ms baseline, 415.565 ms candidate, ratio 0.9200
+pair 2 (candidate first): 458.701 ms baseline, 415.757 ms candidate, ratio 0.9064
+pair 3 (baseline first): 449.416 ms baseline, 411.689 ms candidate, ratio 0.9161
+pair 4 (candidate first): 444.580 ms baseline, 406.715 ms candidate, ratio 0.9148
+pair 5 (baseline first): 456.304 ms baseline, 415.328 ms candidate, ratio 0.9102
+medians: 451.717 ms baseline, 415.328 ms candidate
+median paired ratio: 0.9148 (faster 8.52%)
+
+dispatch.toy
+pair 1 (baseline first): 1548.049 ms baseline, 1542.743 ms candidate, ratio 0.9966
+pair 2 (candidate first): 1563.829 ms baseline, 1548.611 ms candidate, ratio 0.9903
+pair 3 (baseline first): 1554.727 ms baseline, 1540.329 ms candidate, ratio 0.9907
+pair 4 (candidate first): 1553.052 ms baseline, 1543.209 ms candidate, ratio 0.9937
+pair 5 (baseline first): 1557.197 ms baseline, 1541.678 ms candidate, ratio 0.9900
+medians: 1554.727 ms baseline, 1542.743 ms candidate
+median paired ratio: 0.9907 (faster 0.93%)
+
+runtime-internals.toy
+pair 1 (baseline first): 340.784 ms baseline, 337.851 ms candidate, ratio 0.9914
+pair 2 (candidate first): 341.776 ms baseline, 335.585 ms candidate, ratio 0.9819
+pair 3 (baseline first): 342.334 ms baseline, 339.162 ms candidate, ratio 0.9907
+pair 4 (candidate first): 340.306 ms baseline, 336.181 ms candidate, ratio 0.9879
+pair 5 (baseline first): 343.497 ms baseline, 334.811 ms candidate, ratio 0.9747
+medians: 341.776 ms baseline, 336.181 ms candidate
+median paired ratio: 0.9879 (faster 1.21%)
+
+graph-search.toy
+pair 1 (baseline first): 57.644 ms baseline, 56.639 ms candidate, ratio 0.9826
+pair 2 (candidate first): 58.961 ms baseline, 55.708 ms candidate, ratio 0.9448
+pair 3 (baseline first): 58.934 ms baseline, 56.250 ms candidate, ratio 0.9545
+pair 4 (candidate first): 59.737 ms baseline, 56.073 ms candidate, ratio 0.9387
+pair 5 (baseline first): 60.144 ms baseline, 57.601 ms candidate, ratio 0.9577
+medians: 58.961 ms baseline, 56.250 ms candidate
+median paired ratio: 0.9545 (faster 4.55%)
